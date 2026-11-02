@@ -15,6 +15,57 @@ export const MODES = {
 };
 export const MODE_IDS = Object.keys(MODES);
 
+/* ---------------- where you walk ---------------- */
+
+/** Walking surfaces. On 'flat' and 'outdoor' climbs become extra pace; outdoors the player coaches by effort, not numbers. */
+export const SURFACES = {
+  incline: { id: 'incline', name: 'Incline treadmill', short: 'Incline', icon: 'climb', blurb: 'Speed and incline targets for every interval.' },
+  flat: { id: 'flat', name: 'Flat treadmill or walking pad', short: 'Flat', icon: 'flat', blurb: 'Speed targets only. Climbs become faster walking.' },
+  outdoor: { id: 'outdoor', name: 'Outdoors', short: 'Outdoors', icon: 'route', blurb: 'Coached by effort and the talk test. Hills are a bonus.' },
+};
+export const SURFACE_IDS = Object.keys(SURFACES);
+
+/** Where the user usually walks. */
+export function usualSurface(p = state.main.profile) {
+  return SURFACES[p.surface] ? p.surface : p.treadmill && p.treadmill.hasIncline === false ? 'flat' : 'incline';
+}
+/** Where they walk today: a just-for-today choice if they made one, else their usual surface. */
+export function activeSurface(today = new Date()) {
+  const t = state.main.todaySurface;
+  return t && SURFACES[t.surface] && t.d === ymd(today) ? t.surface : usualSurface();
+}
+/** Set (or clear with null) today's surface. Mutates main; call inside store.update. */
+export function setTodaySurface(main, surface, today = new Date()) {
+  main.todaySurface = surface && SURFACES[surface] && surface !== usualSurface(main.profile) ? { d: ymd(today), surface } : null;
+}
+/** Set the usual surface and keep treadmill.hasIncline in step. Mutates main; call inside store.update. */
+export function setUsualSurface(main, surface) {
+  if (!SURFACES[surface]) return;
+  main.profile.surface = surface;
+  if (surface === 'incline') main.profile.treadmill.hasIncline = true;
+  if (surface === 'flat') main.profile.treadmill.hasIncline = false;
+  main.todaySurface = null;
+}
+/** Does today's surface use incline targets? */
+export const usesIncline = (surface = activeSurface()) => surface === 'incline';
+
+/** How each mode should feel: for outdoor coaching and for everyone's effort cues (talk test, RPE out of 10). */
+export const EFFORT = {
+  walk: { rpe: '2–3', feel: 'Easy', talk: 'You can talk in full sentences', say: 'Easy pace. You should be able to chat.' },
+  brisk: { rpe: '4–5', feel: 'Brisk', talk: 'You can talk, but you couldn’t sing', say: 'Brisk pace. You can talk, but not sing.' },
+  power: { rpe: '6–7', feel: 'Hard walking', talk: 'Short phrases only', say: 'Walk hard. Short phrases only. Pump your arms.' },
+  jog: { rpe: '7–8', feel: 'Jog', talk: 'A few words at a time', say: 'Jog gently. A few words at a time.' },
+  run: { rpe: '8–9', feel: 'Fast', talk: 'You can’t hold a conversation', say: 'Go fast. Too hard to talk.' },
+};
+export const effortFor = (type) => EFFORT[type] || EFFORT.brisk;
+
+/** "Just walk": an open-ended walk. The player runs it in open mode (it never finishes on its own). */
+export const FREE_WALK_ID = 'free';
+export function freeWalkSegments({ surface = activeSurface(), type = 'brisk' } = {}) {
+  const inc = surface === 'incline' ? Math.min(state.main.profile.treadmill.maxIncline ?? 15, 3) : 0;
+  return [seg(type, 10, inc, 'Just walk', 'work')];
+}
+
 export const PHASES = [
   { id: 0, name: 'Foundation', weeks: [1, 4], blurb: 'Build the habit with moderate climbs and short efforts.' },
   { id: 1, name: 'Build', weeks: [5, 8], blurb: 'Steeper hills and longer jog intervals.' },
@@ -107,6 +158,7 @@ export const customs = () => state.main.customs || [];
 
 /** Resolve any workout id to { id, name, focus, desc, category, kind, intensity, custom, build(L, short) }. */
 export function getWorkout(id) {
+  if (id === FREE_WALK_ID) return { id, free: true, category: 'free', kind: 'easy', name: 'Just walk', focus: 'Open-ended walk', intensity: 1, desc: 'Walk for as long as you like. Change your pace as you go; Hillpace keeps time, distance and an estimate of your effort.', build: () => freeWalkSegments() };
   if (WORKOUTS[id]) return { id, ...WORKOUTS[id] };
   const c = customs().find((x) => x.id === id);
   if (!c) return null;
@@ -165,10 +217,11 @@ export function speedFor(x, nudge = 0) {
  *  - treadmill limits (incline cap; on a treadmill without incline a work interval's climb becomes extra speed:
  *    +0.1 km/h per incline point above 2%, at most +1 km/h, so levels and effort adjustments still change the work)
  */
-export function personalise(segs, { applyAdjust = true } = {}) {
+export function personalise(segs, { applyAdjust = true, surface = activeSurface() } = {}) {
   const p = state.main.profile, t = p.treadmill, adj = state.main.plan.adjust || { incline: 0, speed: 0 };
   const moderate = restrictedToModerate();
-  const noJog = p.canJog !== 'yes' || moderate;
+  const noJog = p.walkOnly || p.canJog !== 'yes' || moderate;
+  const incline = surface === 'incline';
   return segs.map((s0) => {
     const s = { ...s0 };
     if (noJog && (s.type === 'jog' || s.type === 'run')) { s.type = 'power'; s.incline = Math.max((s.incline || 0) + 4, 5); delete s.add; delete s.speed; s.label = String(s.label || '').replace(/Jog|Sprint/g, 'Push'); }
@@ -176,11 +229,12 @@ export function personalise(segs, { applyAdjust = true } = {}) {
       s.incline = (s.incline || 0) + (adj.incline || 0);
       if (s.type === 'jog' || s.type === 'run') s.add = (s.add || 0) + (adj.speed || 0);
     }
-    if (!t.hasIncline) {
+    if (!incline) {
+      // flat treadmill or outdoors: the climb becomes extra pace (outdoors this only feeds estimates; cues are by effort)
       if (s.role === 'work' && s.speed == null && (s.incline || 0) > 2) s.add = Math.round(((s.add || 0) + Math.min(1, ((s.incline || 0) - 2) * 0.1)) * 100) / 100;
       s.incline = 0;
     }
-    s.incline = Math.max(0, Math.min(t.maxIncline ?? 15, Math.round((s.incline || 0) * 2) / 2));
+    s.incline = incline ? Math.max(0, Math.min(t.maxIncline ?? 15, Math.round((s.incline || 0) * 2) / 2)) : 0;
     if (moderate) keepModerate(s);
     return s;
   });
@@ -242,13 +296,14 @@ function builtinSegs(w, level, length) {
  * Intervals for a workout as the user will do it.
  * length: minutes, usually 30 | 45 | 60; lighter weeks use deloadLength() (built-ins only; custom workouts keep their own length).
  */
-export function segmentsFor(id, { level = 0, length = 45, applyAdjust = true } = {}) {
+export function segmentsFor(id, { level = 0, length = 45, applyAdjust = true, surface = activeSurface() } = {}) {
+  if (id === FREE_WALK_ID) return freeWalkSegments({ surface });
   const w = getWorkout(id);
   if (!w) return [];
   let segs = w.custom ? w.build() : builtinSegs(w, level, length);
   // Fixed speeds (Steep Steady Walk) only make sense with incline; without it the workout uses the user's paces.
-  if (!w.custom && !state.main.profile.treadmill.hasIncline) segs = segs.map((s) => { const x = { ...s }; delete x.speed; return x; });
-  return personalise(segs, { level, applyAdjust: applyAdjust && !w.custom });
+  if (!w.custom && surface !== 'incline') segs = segs.map((s) => { const x = { ...s }; delete x.speed; return x; });
+  return personalise(segs, { level, applyAdjust: applyAdjust && !w.custom, surface });
 }
 
 /** Estimated totals for a list of intervals (net kcal). */
@@ -584,7 +639,7 @@ export function applyAdaptation(plan, kind, reason) {
  */
 export function jogOfferDue(today = new Date()) {
   const p = state.main.profile, plan = state.main.plan, r = state.main.readiness;
-  if (p.canJog === 'yes' || restrictedToModerate() || r.pregnant || !plan.startDate) return false;
+  if (p.canJog === 'yes' || p.walkOnly || restrictedToModerate() || r.pregnant || !plan.startDate) return false;
   const wk = currentWeek(today);
   if (wk < 1 || ((plan.block || 1) === 1 && wk < 5)) return false;
   const since = plan.jogAsked || '';
@@ -604,9 +659,9 @@ export function jogOfferDue(today = new Date()) {
  */
 export function quickDraft({ minutes = 30, focus = 'climb', intensity = 'moderate', maxIncline = null }) {
   const t = state.main.profile.treadmill;
-  const cap = Math.min(maxIncline ?? 15, t.hasIncline ? t.maxIncline ?? 15 : 0);
+  const cap = Math.min(maxIncline ?? 15, usesIncline() ? t.maxIncline ?? 15 : 0);
   const lvl = intensity === 'easy' ? 0 : intensity === 'moderate' ? 1 : 2;
-  const canJog = state.main.profile.canJog === 'yes' && !restrictedToModerate();
+  const canJog = state.main.profile.canJog === 'yes' && !state.main.profile.walkOnly && !restrictedToModerate();
   const wu = minutes <= 20 ? 3 : 5, cd = minutes <= 20 ? 2 : minutes <= 30 ? 3 : 5;
   let main = minutes - wu - cd;
   const segs = [seg('walk', Math.ceil(wu / 2), 1, 'Warm-up', 'warm'), seg('brisk', Math.floor(wu / 2), 2, 'Warm-up', 'warm')];

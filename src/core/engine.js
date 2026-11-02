@@ -7,10 +7,12 @@ import { activeKcalPerMin, isVigorous } from './science.js';
 /** A session counts as completed only when at least this share of the planned time was actually walked. */
 export const COMPLETE_AT = 0.98;
 
-export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, now = () => Date.now() } = {}) {
+export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, open = false, now = () => Date.now() } = {}) {
+  // open: an open-ended walk ("Just walk"). The last interval keeps extending; it ends only when the user ends it.
   const handlers = {};
   const planTotal = segs.reduce((a, s) => a + s.dur, 0);
   const e = {
+    open: !!open,
     segs,
     planTotal,
     idx: 0,
@@ -43,7 +45,7 @@ export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, now =
   e.planRemaining = () => Math.max(0, e.planTotal - e.planElapsed());
   e.progress = () => (e.planTotal ? Math.min(1, e.planElapsed() / e.planTotal) : 0);
   /** Share of the planned time actually walked (skipped time never counts), 0–1 to three decimals. */
-  e.completion = () => (e.planTotal ? Math.min(1, Math.round((e.total / e.planTotal) * 1000) / 1000) : 0);
+  e.completion = () => (e.open ? 1 : e.planTotal ? Math.min(1, Math.round((e.total / e.planTotal) * 1000) / 1000) : 0);
 
   function splitFor(i) {
     let sp = e.splits.find((x) => x.idx === i);
@@ -72,6 +74,7 @@ export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, now =
         if (left <= 10 && left > 3 && !e.marks[`w${e.idx}`] && s.dur > 20) { e.marks[`w${e.idx}`] = 1; emit('warn', segs[e.idx + 1], left); }
       }
       if (e.segEl >= s.dur - 1e-6) {
+        if (e.open && e.idx === segs.length - 1) { s.dur += 600; e.planTotal += 600; continue; } // open walk: keep going
         e.idx++; e.segEl = 0; changed = true;
         if (e.idx >= segs.length) { finish(true); return changed; }
       }
@@ -131,6 +134,34 @@ export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, now =
   };
   /** Add seconds to the current interval (e.g. +30 s). */
   e.extend = (sec = 30) => { e.tick(); const s = segs[e.idx]; if (!s) return; s.dur += sec; e.planTotal += sec; Object.keys(e.marks).forEach((k) => { if (k.startsWith('c' + e.idx + '-') || k === 'w' + e.idx) delete e.marks[k]; }); emit('extend', sec); emit('tick'); };
+  /**
+   * Open walks: log what the user is doing now (pace mode, speed in km/h, incline). Splits the current interval so
+   * distance and energy before the change keep their old values. patch: {type?, speed?, incline?, label?}
+   */
+  e.changeCurrent = (patch = {}) => {
+    e.tick();
+    const s = segs[e.idx];
+    if (!s || e.finished) return;
+    const clean = {};
+    if (patch.type) clean.type = patch.type;
+    if (patch.speed != null && isFinite(patch.speed)) clean.speed = Math.max(0.8, Math.min(25, +patch.speed));
+    if (patch.incline != null && isFinite(patch.incline)) clean.incline = Math.max(0, Math.min(15, Math.round(patch.incline * 2) / 2));
+    if (patch.label) clean.label = String(patch.label).slice(0, 40);
+    if (e.segEl < 1) { Object.assign(s, clean); if (clean.type && patch.speed == null) delete s.speed; }
+    else {
+      const used = Math.max(1, Math.round(e.segEl));
+      const rest = Math.max(60, s.dur - used);
+      e.planTotal += used + rest - s.dur;
+      s.dur = used;
+      const next = { ...s, ...clean, dur: rest };
+      if (clean.type && patch.speed == null) delete next.speed;
+      delete next.add;
+      segs.splice(e.idx + 1, 0, next);
+      e.idx++; e.segEl = 0;
+    }
+    emit('segment', e.idx, { catchUp: false, manual: true, changed: true });
+    emit('tick');
+  };
   e.setNudge = (n) => { e.tick(); e.nudge = Math.max(-3, Math.min(3, Math.round(n * 100) / 100)); emit('nudge', e.nudge); emit('tick'); };
 
   function finish(completed) {
@@ -140,7 +171,7 @@ export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, now =
     closePause(Date.parse(e.endedAt)); // ended from the pause sheet: the pause lasts until the end
     emit('finish', completed);
   }
-  e.end = () => { e.tick(); finish(false); };
+  e.end = () => { e.tick(); finish(!!e.open); }; // ending an open walk is the normal way to finish it
 
   /** Upcoming interval boundaries as absolute times (ms) from now, for lock-screen notifications. */
   e.upcoming = (limit = 60) => {

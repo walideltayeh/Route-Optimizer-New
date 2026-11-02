@@ -98,3 +98,15 @@ Owners register at module load: `actions.startWorkout = (opts) => {...}`. Caller
 
 ## Lessons (P1, content owned by me.js)
 Short cards (≈120–180 words each) unlocked one per completed session: why incline works, effort and the talk test, warm-up and cool-down, handrails and form, NEAT and daily steps, protein and appetite, plateaus and water weight, sleep and recovery, treadmill safety, building the habit. Each ends with a one-line source (CDC, ACSM, WHO, NHS). Ids: letters/digits/hyphens.
+
+## Walking surfaces, walking-only and "Just walk" (v1.1)
+Core APIs (src/core/program.js, src/core/engine.js) — use these, never `treadmill.hasIncline` directly for display decisions:
+- `SURFACES` {incline, flat, outdoor} with `name`, `short`, `icon` (kit icon name), `blurb`; `SURFACE_IDS`.
+- `usualSurface()` (profile.surface, or derived from treadmill.hasIncline), `activeSurface()` (a just-for-today choice in `main.todaySurface` {d, surface} if set today, else usual), `usesIncline(surface = activeSurface())`.
+- `setTodaySurface(main, surface|null)` and `setUsualSurface(main, surface)` mutate main — call inside `store.update`. `setUsualSurface` keeps `treadmill.hasIncline` in step (incline → true, flat → false).
+- `segmentsFor(id, {level, length, surface})` and `personalise(segs, {surface})` default to `activeSurface()`. On flat/outdoor every incline is 0 and climbs become extra pace (+0.1 km/h per point above 2%, max +1). Outdoors the numbers only feed estimates: the player coaches by effort.
+- `EFFORT[type]` / `effortFor(type)` → {rpe: '6–7', feel: 'Hard walking', talk: 'Short phrases only', say: '<voice cue>'}.
+- `profile.walkOnly` (bool): jogs/runs always become walking pushes; `jogOfferDue()` never fires; Quick Draft uses no jogs.
+- `FREE_WALK_ID = 'free'`: `getWorkout('free')` → {free: true, name: 'Just walk', category: 'free'}; `segmentsFor('free', {surface})` → one 10-minute brisk interval. Run it with `createEngine(segs, {open: true})`: the last interval extends by 10 minutes whenever it runs out, so it never finishes on its own; `engine.end()` finishes it as completed; `engine.completion()` is 1.
+- `engine.changeCurrent({type?, speed?, incline?, label?})` splits the current interval and applies the change from now on (for logging pace/speed/incline changes during an open walk).
+- Session records gain `surface` ('incline' | 'flat' | 'outdoor'). Free walks: `workoutId: 'free'`, `name: 'Just walk'`, `planSlot: null`, `completed: true`.

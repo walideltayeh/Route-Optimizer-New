@@ -35,6 +35,8 @@ export const DEFAULT_PROFILE = {
   units: { speed: 'kmh', weight: 'kg', height: 'cm' },
   paces: { walk: 4.5, brisk: 5.5, power: 6.0, jog: 8.0, run: 9.5 }, // km/h
   treadmill: { hasIncline: true, maxIncline: 12, maxSpeed: 16, handsFree: true },
+  surface: null, // where they usually walk: 'incline' | 'flat' | 'outdoor' (null = from treadmill.hasIncline); see program.SURFACES
+  walkOnly: false, // never plan jogs or runs: they become brisk walking pushes
   sessionLength: 45, // 30 | 45 | 60
   busyLength: 30,
   cues: { voice: true, beeps: true, lead: 10, detail: 2, rate: 1, voiceId: null }, // detail 1=changes only, 2=+milestones, 3=+splits
