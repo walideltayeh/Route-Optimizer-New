@@ -146,9 +146,10 @@ function offerResume() {
   if (!snap || !snap.engine || snap.engine.finished) return;
   const age = Date.now() - (snap.savedAt || 0);
   if (age > 6 * 3600 * 1000) { try { localStorage.removeItem('hp.run'); } catch { /* ignore */ } return; }
+  const walk = !!snap.free || snap.workoutId === 'free'; // Just walk
   confirmSheet({
-    title: 'Resume your workout?',
-    body: `You were ${clock(snap.engine.total || 0)} into <b>${esc(snap.name || 'a workout')}</b> when the app closed.`,
+    title: walk ? 'Resume your walk?' : 'Resume your workout?',
+    body: `You were ${clock(snap.engine.total || 0)} into <b>${esc(snap.name || (walk ? 'your walk' : 'a workout'))}</b> when the app closed.`,
     confirm: 'Resume', cancel: 'Discard',
   }).then((yes) => {
     if (yes) actions.resumeWorkout(snap);

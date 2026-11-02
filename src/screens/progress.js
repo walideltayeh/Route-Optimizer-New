@@ -3,7 +3,10 @@
 // Actions: logWeight(), openSession(id), logManualSession().
 import * as store from '../core/store.js';
 import { state } from '../core/store.js';
-import { MODES, WEEKLY_TARGET, sessionActivityMin, currentWeek, phaseForWeek, weekSlots, slotSegments, planStats, bodyKg } from '../core/program.js';
+import {
+  MODES, WEEKLY_TARGET, sessionActivityMin, currentWeek, phaseForWeek, weekSlots, slotSegments, planStats, bodyKg,
+  SURFACES, activeSurface, usualSurface, effortFor, FREE_WALK_ID, vigorousExamples,
+} from '../core/program.js';
 import {
   activeKcalPerMin, mets, roundKcal, ewmaTrend, trendSlope, projectionBand, intakePlan, tdee, rmr, PACES, KMH_PER_MPH, paceCap,
 } from '../core/science.js';
@@ -15,11 +18,12 @@ import { totals, weekStreak, records, catalogue, collectNew, nextSummit, SUMMITS
 import { features, haptic, healthSaveWeight, healthReadWeights, healthSaveWorkout } from '../core/platform.js';
 import { actions } from '../ui/actions.js';
 import { icon, topo, toast, sheet, confirmSheet, segmented, bindSegmented, switchHtml, navBar, watchScroll, row } from '../ui/kit.js';
-import { intervalChart, lineChart, barChart } from '../ui/charts.js';
+import { lineChart, barChart } from '../ui/charts.js';
+import { surfaceTag, surfaceChart, chartLabel, surfacePicker } from './plan.js';
 
 /* ---------------- shared helpers ---------------- */
 
-const NB = ' ';
+const NB = '\u00a0'; // non-breaking space: a number never wraps away from its unit
 const DAY = 864e5;
 const has = (name) => name in actions; // only actions a module registered
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -40,6 +44,10 @@ const distTxt = (km, dec = 2) => `${dec === 1 ? fmt1(toDist(km)) : fmt2(toDist(k
 const elevTxt = (m) => `${fmtInt(toElev(m))}${NB}${elevUnit()}`;
 const kcalTxt = (k) => `≈${NB}${fmtInt(roundKcal(k))}${NB}kcal`;
 const minOf = (sec) => Math.round((sec || 0) / 60);
+/** Where a session was walked, or null (sessions saved before surfaces existed). */
+const surfaceOf = (s) => (s && SURFACES[s.surface] ? s.surface : null);
+/** Outdoors the app estimates distance from your paces (until matched to a watch or phone); logged sessions use what you entered. */
+const distEstimated = (s) => surfaceOf(s) === 'outdoor' && s.source !== 'manual' && !s.consoleEdited;
 const dayMonth = (d) => {
   const x = new Date(d);
   const o = { day: 'numeric', month: 'long' };
@@ -279,7 +287,7 @@ function projection(m) {
 /* ---------------- sessions: weeks and rows ---------------- */
 
 function weekAgg(list) {
-  return { n: list.length, min: sum(list, sessionActivityMin), km: sum(list, (s) => s.distanceKm), elev: sum(list, (s) => s.elevM) };
+  return { n: list.length, min: sum(list, sessionActivityMin), km: sum(list, (s) => s.distanceKm), elev: sum(list, (s) => s.elevM), sec: sum(list, (s) => s.durationSec) };
 }
 function between(a, b) { return state.sessions.filter((s) => { const t = new Date(s.date); return t >= a && t < b; }); }
 
@@ -319,7 +327,7 @@ function weeklyTotals(metric, n, now = new Date()) {
 function sessionMeta(s) {
   return [
     `${minOf(s.durationSec)}${NB}min`,
-    s.distanceKm > 0 ? distTxt(s.distanceKm) : '',
+    s.distanceKm > 0 ? `${distEstimated(s) ? `≈${NB}` : ''}${distTxt(s.distanceKm)}` : '',
     !noNumbers() && s.kcal > 0 ? kcalTxt(s.kcal) : '',
     s.elevM > 0 ? elevTxt(s.elevM) : '',
   ].filter(Boolean).join(' · ');
@@ -328,6 +336,9 @@ function sessionChips(s) {
   const out = [];
   const wk = /^w(\d+)d/.exec(s.planSlot || '');
   if (wk) out.push(`<span class="tag">Week ${esc(wk[1])}</span>`);
+  // where it was walked: only flat and outdoor sessions get a tag (incline is the default, so those rows stay calm)
+  const surf = surfaceOf(s);
+  if (surf && surf !== 'incline') out.push(surfaceTag(surf));
   if (s.source === 'manual') out.push('<span class="tag">Manual</span>');
   else if (!s.completed && (s.completion ?? 1) < 1) out.push(`<span class="tag warn">Partial · ${Math.round(clamp(s.completion || 0, 0, 1) * 100)}%</span>`);
   return out.join('');
@@ -409,7 +420,10 @@ function heroHtml(now) {
     ['Sessions', i(sn.cur.n), '', deltaHtml(sn.cur.n, sn.prev.n, i, '')],
     ['Activity minutes', i(sn.cur.min), 'min', deltaHtml(sn.cur.min, sn.prev.min, i, 'min')],
     ['Distance', fmt1(toDist(sn.cur.km)), distUnit(), deltaHtml(toDist(sn.cur.km), toDist(sn.prev.km), fmt1, distUnit())],
-    ['Climb', fmtInt(toElev(sn.cur.elev)), elevUnit(), deltaHtml(toElev(sn.cur.elev), toElev(sn.prev.elev), fmtInt, elevUnit())],
+    // Walkers without an incline see their walking time instead of a climb that stays at 0 m.
+    usualSurface() !== 'incline' && !(sn.cur.elev > 0) && !(sn.prev.elev > 0)
+      ? ['Walking time', i(sn.cur.sec / 60), 'min', deltaHtml(sn.cur.sec / 60, sn.prev.sec / 60, i, 'min')]
+      : ['Climb', fmtInt(toElev(sn.cur.elev)), elevUnit(), deltaHtml(toElev(sn.cur.elev), toElev(sn.prev.elev), fmtInt, elevUnit())],
   ];
   const foot = !any ? 'Finish your first workout and this week starts filling in.'
     : deltas ? `Arrows compare with last week up to this time on ${dayName(now, 'long')}. Vigorous minutes count double.`
@@ -460,8 +474,8 @@ function chartBodyHtml() {
   if (m.id === 'min') {
     const wk = currentWeek();
     const target = WEEKLY_TARGET[wk >= 1 && wk <= 12 ? phaseForWeek(wk).id : 0];
-    note = `<p class="pg-chart-note"><i class="pg-lg-dash" aria-hidden="true"></i>Weekly target: ${target} activity minutes. Vigorous minutes, like jogs and steep climbs, count double.</p>`;
-  } else if (m.id === 'time') note = '<p class="pg-chart-note">Time on the treadmill, including warm-up and cool-down.</p>';
+    note = `<p class="pg-chart-note"><i class="pg-lg-dash" aria-hidden="true"></i>Weekly target: ${target} activity minutes. Vigorous minutes, ${esc(vigorousExamples())}, count double.</p>`;
+  } else if (m.id === 'time') note = '<p class="pg-chart-note">Time walking, including warm-up and cool-down.</p>';
   else if (m.id === 'climb') note = `<p class="pg-chart-note">Vertical ${elevUnit() === 'ft' ? 'feet' : 'metres'} climbed: distance × incline.</p>`;
   return `
     <div class="pg-chart-sum"><span class="pg-chart-big num">${esc(big)}</span>${unit && m.id !== 'n' ? `<span class="pg-chart-unit">${esc(unit)}</span>` : ''}<span class="pg-chart-cap">${esc(cap)}</span></div>
@@ -1072,7 +1086,7 @@ function healthStatusHtml(s) {
   const h = state.main.profile.health;
   let title, sub, btn = '', ico = 'heart';
   if (s.source === 'manual') { title = 'Kept in Hillpace only'; sub = 'Logged sessions aren’t saved to Apple Health, so nothing is counted twice.'; }
-  else if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
+  else if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : surfaceOf(s) === 'outdoor' ? 'Saved as a walking workout.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
   else if (!h.enabled) { title = 'Apple Health is off'; sub = 'Turn it on in Me to save workouts.'; }
   else if ((s.durationSec || 0) < 60) { title = 'Not saved to Apple Health'; sub = 'Workouts under a minute aren’t saved.'; }
   else { title = 'Not in Apple Health'; sub = 'Save this workout to Apple Health.'; btn = '<button type="button" class="btn btn-sm" data-act="s-health">Save</button>'; }
@@ -1085,18 +1099,34 @@ function sessionSheetHtml(s) {
   const d = new Date(s.date);
   const manual = s.source === 'manual';
   const chips = sessionChips(s);
+  const surf = surfaceOf(s);
+  const approx = distEstimated(s) ? '≈' : '';
+  const hours = (s.durationSec || 0) / 3600;
+  const avgKmh = hours > 0 ? (s.distanceKm || 0) / hours : 0;
+  // No incline (flat treadmill or outdoors) and no climb: average speed says more than "0 m". Outdoors, until it is
+  // matched to a watch, that speed only echoes the usual paces, so the minutes of hard effort show instead.
+  const sp = s.splits || [];
+  const effMin = (types) => Math.round(sp.filter((x) => types.includes(x.type)).reduce((a, x) => a + (x.sec || 0), 0) / 60);
+  const hardMin = effMin(['power', 'jog', 'run']);
+  const third = distEstimated(s) && sp.length
+    ? (hardMin > 0 ? ['Hard effort', String(hardMin), 'min'] : ['Brisk or harder', String(effMin(['brisk', 'power', 'jog', 'run'])), 'min'])
+    : surf && surf !== 'incline' && !(s.elevM > 0) && avgKmh > 0
+      ? ['Avg speed', `${approx}${fmt1(toSpeed(avgKmh))}`, speedUnit()]
+      : ['Climb', fmtInt(toElev(s.elevM || 0)), elevUnit()];
   const stats = [
     ['Time', String(minOf(s.durationSec)), 'min'],
-    ['Distance', fmt2(toDist(s.distanceKm || 0)), distUnit()],
-    ['Climb', fmtInt(toElev(s.elevM || 0)), elevUnit()],
+    ['Distance', `${approx}${fmt2(toDist(s.distanceKm || 0))}`, distUnit()],
+    third,
     ...(noNumbers() ? [] : [['Energy', `≈${fmtInt(roundKcal(s.kcal))}`, 'kcal']]),
   ];
   const segs = sessionSegs(s);
   let profile = '';
   if (segs.length) {
     const types = ['walk', 'brisk', 'power', 'jog', 'run'].filter((t) => segs.some((x) => x.type === t));
-    profile = `<div class="card tight pg-ss-chart">${intervalChart(segs, { h: 104, label: `${s.name || 'Workout'} profile: bars show speed, the line shows incline` })}
-      <div class="legend">${types.map((t) => `<span class="mode-${t}"><i class="mode-dot" aria-hidden="true"></i>${esc(MODES[t].name)}</span>`).join('')}<span><i class="ln" aria-hidden="true"></i>Incline</span></div></div>`;
+    const where = surf || 'incline';
+    const free = s.workoutId === FREE_WALK_ID; // Just walk names its hardest pace "Hard walking", as the player did
+    profile = `<div class="card tight pg-ss-chart">${surfaceChart(segs, where, { h: 104, label: chartLabel(s.name || 'Workout', where) })}
+      <div class="legend">${types.map((t) => `<span class="mode-${t}"><i class="mode-dot" aria-hidden="true"></i>${esc(free && t === 'power' ? effortFor('power').feel : MODES[t].name)}</span>`).join('')}${where === 'incline' ? '<span><i class="ln" aria-hidden="true"></i>Incline</span>' : ''}</div></div>`;
   } else {
     const hours = (s.durationSec || 0) / 3600;
     const kmh = hours > 0 ? (s.distanceKm || 0) / hours : 0;
@@ -1107,16 +1137,19 @@ function sessionSheetHtml(s) {
     ].filter(Boolean);
     if (items.length) profile = `<div class="group">${items.map((x) => `<div class="row"><span class="row-main"><span class="row-title">${esc(x[0])}</span></span><span class="row-value num">${esc(x[1])}</span></div>`).join('')}</div>`;
   }
+  const estNote = noNumbers()
+    ? approx ? 'Outdoors, distance is estimated from your usual walking paces.' : ''
+    : `${approx ? 'Outdoors, distance is estimated from your usual walking paces. ' : ''}Energy is an estimate of active calories, not a measurement.`;
   return `
     <p class="pg-ss-when">${esc(dateLong(d))}${manual ? '' : ` · ${esc(timeTxt(d))}`}</p>
     ${chips ? `<div class="pg-chips">${chips}</div>` : ''}
     <div class="card tight"><div class="stat-grid pg-2x2" style="--cols:2">${stats.map((x) => `<div><span class="stat-label">${x[0]}</span><span class="stat-value num">${esc(x[1])}<small>${esc(x[2])}</small></span></div>`).join('')}</div>
-    ${noNumbers() ? '' : '<p class="body-xs pg-ss-est">Energy is an estimate of active calories, not a measurement.</p>'}</div>
+    ${estNote ? `<p class="body-xs pg-ss-est">${esc(estNote)}</p>` : ''}</div>
     ${profile}
     <div class="field"><span class="label" id="pg-ss-eff">Effort</span>${rpeGrid(s.rpe || null)}<p class="hint pg-rpe-line" aria-live="polite">${esc(effortLine(s.rpe))}</p></div>
     <div class="field"><label for="pg-ss-notes">Notes</label><textarea class="input" id="pg-ss-notes" maxlength="600" placeholder="How did it feel? Anything to remember next time?">${esc(s.notes || '')}</textarea></div>
     <div class="pg-ss-health-wrap">${healthStatusHtml(s)}</div>
-    ${s.source !== 'manual' && has('openSummary') ? `<div class="group"><button type="button" class="row has-icon" data-act="s-summary"><span class="row-icon">${icon('sparkline')}</span><span class="row-main"><span class="row-title">View full summary</span><span class="row-sub">Every interval, plan position and sharing</span></span>${icon('chevR', 'chev')}</button></div>` : ''}
+    ${s.source !== 'manual' && has('openSummary') ? `<div class="group"><button type="button" class="row has-icon" data-act="s-summary"><span class="row-icon">${icon('sparkline')}</span><span class="row-main"><span class="row-title">View full summary</span><span class="row-sub">${s.workoutId === FREE_WALK_ID ? 'Your paces, effort and sharing' : 'Every interval, plan position and sharing'}</span></span>${icon('chevR', 'chev')}</button></div>` : ''}
     <button type="button" class="btn btn-danger btn-block" data-act="s-del">${icon('trash')}Delete workout</button>`;
 }
 
@@ -1181,21 +1214,31 @@ actions.openSession = (id) => {
    Sheet: log a session done without the app
    ===================================================================== */
 
+/** Hint under the manual-entry numbers, by where the walk happened. */
+const MANUAL_HINT = {
+  incline: 'Use the average incline for the whole session.',
+  flat: 'Use the time and distance on your treadmill or walking pad.',
+  outdoor: 'If a watch or phone app tracked it, use its time and distance.',
+};
+
 actions.logManualSession = () => {
   const p = state.main.profile;
   const todayKey = ymd();
-  let type = 'walk', rpe = null, distTouched = false;
+  // walking-only: nothing to choose, it was a walk
+  let type = 'walk', rpe = null, distTouched = false, surface = activeSurface();
+  const inclineOn = () => surface === 'incline';
   const speedFor = (t) => (t === 'jog' ? p.paces.jog : t === 'mix' ? (p.paces.power + p.paces.jog) / 2 : p.paces.brisk) || 5;
   const suggestDist = (min) => toDist((speedFor(type) * min) / 60);
   const body = `
     <div class="field"><label for="pg-mdate">Date</label><input class="input" type="date" id="pg-mdate" value="${todayKey}" max="${todayKey}" required></div>
-    <div class="field"><span class="label">Workout</span>${segmented('mtype', Object.entries(MANUAL_TYPES).map(([value, label]) => ({ value, label })), type, { block: true, label: 'Workout type' })}</div>
-    <div class="pg-mgrid">
+    <div class="field"><span class="label" id="pg-mwhere">Where</span>${surfacePicker('msurf', surface, { label: 'Where you walked' })}</div>
+    ${p.walkOnly ? '' : `<div class="field"><span class="label">Workout</span>${segmented('mtype', Object.entries(MANUAL_TYPES).map(([value, label]) => ({ value, label })), type, { block: true, label: 'Workout type' })}</div>`}
+    <div class="pg-mgrid${inclineOn() ? '' : ' pg-mgrid-2'}">
       <div class="field"><label for="pg-mmin">Duration</label><div class="input-unit"><input class="input num" id="pg-mmin" type="text" inputmode="numeric" autocomplete="off" value="30"><span class="unit">min</span></div></div>
       <div class="field"><label for="pg-mdist">Distance</label><div class="input-unit"><input class="input num" id="pg-mdist" type="text" inputmode="decimal" autocomplete="off" value="${fmt2(suggestDist(30))}"><span class="unit">${distUnit()}</span></div></div>
-      <div class="field"><label for="pg-minc">Incline</label><div class="input-unit"><input class="input num" id="pg-minc" type="text" inputmode="decimal" autocomplete="off" value="3"><span class="unit">%</span></div></div>
+      <div class="field pg-minc-field"${inclineOn() ? '' : ' hidden'}><label for="pg-minc">Incline</label><div class="input-unit"><input class="input num" id="pg-minc" type="text" inputmode="decimal" autocomplete="off" value="3"><span class="unit">%</span></div></div>
     </div>
-    <p class="pg-mhint">Use the average incline for the whole session. Outdoors on the flat, enter 0.</p>
+    <p class="pg-mhint">${esc(MANUAL_HINT[surface])}</p>
     <p class="pg-mest" aria-live="polite"></p>
     <div class="field"><span class="label">Effort <span class="faint">(optional)</span></span>${rpeGrid(null)}<p class="hint pg-rpe-line" aria-live="polite">${esc(effortLine(null))}</p></div>
     <div class="field"><label for="pg-mnotes">Notes <span class="faint">(optional)</span></label><textarea class="input" id="pg-mnotes" maxlength="600" placeholder="Where you went, how it felt"></textarea></div>
@@ -1209,10 +1252,10 @@ actions.logManualSession = () => {
   const errEl = $('.pg-merr');
 
   function calc() {
-    const min = num('#pg-mmin'), dist = num('#pg-mdist'), inc = num('#pg-minc');
+    const min = num('#pg-mmin'), dist = num('#pg-mdist'), inc = inclineOn() ? num('#pg-minc') : 0;
     if (!(min > 0) || !(dist > 0) || !Number.isFinite(inc)) return null;
     const km = fromDist(dist), kmh = km / (min / 60), incl = clamp(inc, 0, 30);
-    const kg = withHealth(bodyKg), hf = p.treadmill.handsFree !== false;
+    const kg = withHealth(bodyKg), hf = surface === 'outdoor' || p.treadmill.handsFree !== false; // no rails outdoors
     const per = type === 'mix' ? (activeKcalPerMin(kmh, incl, kg, 'walk', hf) + activeKcalPerMin(kmh, incl, kg, 'jog', hf)) / 2 : activeKcalPerMin(kmh, incl, kg, type === 'jog' ? 'jog' : 'walk', hf);
     const met = type === 'mix' ? (mets(kmh, incl, 'walk', hf) + mets(kmh, incl, 'jog', hf)) / 2 : mets(kmh, incl, type === 'jog' ? 'jog' : 'walk', hf);
     return { min, km, kmh, incl, kcal: per * min, elev: (km * 1000 * incl) / 100, met };
@@ -1220,8 +1263,8 @@ actions.logManualSession = () => {
   function updateEstimate() {
     const c = calc();
     const box = $('.pg-mest');
-    if (!c) { box.textContent = 'Enter duration, distance and incline to see the estimate.'; return; }
-    const meta = `${elevTxt(c.elev)} climb · ${fmt1(toSpeed(c.kmh))}${NB}${speedUnit()} average`;
+    if (!c) { box.textContent = inclineOn() ? 'Enter duration, distance and incline to see the estimate.' : 'Enter duration and distance to see the estimate.'; return; }
+    const meta = `${inclineOn() ? `${elevTxt(c.elev)} climb · ` : ''}${fmt1(toSpeed(c.kmh))}${NB}${speedUnit()} average`;
     box.innerHTML = noNumbers()
       ? `<span class="pg-mest-main">${esc(meta)}</span>`
       : `<span class="pg-mest-main">${esc(kcalTxt(c.kcal))} <span class="pg-mest-tag">estimate</span></span><span class="pg-mest-meta">${esc(meta)}</span>`;
@@ -1229,6 +1272,14 @@ actions.logManualSession = () => {
   updateEstimate();
 
   bindSegmented(el, (name, value) => {
+    if (name === 'msurf') {
+      surface = value;
+      $('.pg-minc-field').hidden = !inclineOn();
+      $('.pg-mgrid').classList.toggle('pg-mgrid-2', !inclineOn());
+      $('.pg-mhint').textContent = MANUAL_HINT[surface];
+      updateEstimate();
+      return;
+    }
     if (name !== 'mtype') return;
     type = value;
     const min = num('#pg-mmin');
@@ -1259,7 +1310,7 @@ actions.logManualSession = () => {
     if (saved) return;
     const d = $('#pg-mdate').value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d > todayKey) return fail('Choose today or an earlier date.', '#pg-mdate');
-    const min = num('#pg-mmin'), dist = num('#pg-mdist'), inc = num('#pg-minc');
+    const min = num('#pg-mmin'), dist = num('#pg-mdist'), inc = inclineOn() ? num('#pg-minc') : 0;
     if (!(min >= 5 && min <= 300)) return fail('Enter a duration between 5 and 300 minutes.', '#pg-mmin');
     if (!(dist > 0)) return fail(`Enter the distance in ${distUnit() === 'mi' ? 'miles' : 'kilometres'}.`, '#pg-mdist');
     if (!(inc >= 0 && inc <= 30)) return fail('Enter an average incline between 0 and 30%.', '#pg-minc');
@@ -1271,11 +1322,11 @@ actions.logManualSession = () => {
     else { start = parseYmd(d); start.setHours(12, 0, 0, 0); }
     const s = {
       id: store.uid('m'), date: start.toISOString(), endedAt: new Date(start.getTime() + sec * 1000).toISOString(),
-      workoutId: null, name: MANUAL_TYPES[type], planSlot: null, level: null, length: Math.round(min),
+      workoutId: null, name: MANUAL_TYPES[type], planSlot: null, level: null, length: Math.round(min), surface,
       durationSec: sec, plannedSec: sec, completion: 1, completed: true,
       distanceKm: Math.round(c.km * 1000) / 1000, kcal: Math.round(c.kcal), elevM: Math.round(c.elev), avgMETs: Math.round(c.met * 10) / 10,
       rpe, notes: $('#pg-mnotes').value.trim(), splits: [], nudgeKmh: 0, source: 'manual', healthUUID: null,
-      manualType: type, avgIncline: Math.round(c.incl * 10) / 10,
+      manualType: type, avgIncline: inclineOn() ? Math.round(c.incl * 10) / 10 : null,
     };
     saved = true;
     el.querySelectorAll('[data-act="m-save"]').forEach((x) => { x.disabled = true; });

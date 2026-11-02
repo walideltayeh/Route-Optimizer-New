@@ -11,12 +11,14 @@ let patternSeq = 0;
  * Two-band interval profile on one time axis:
  *   top band  = incline as a filled hill outline,
  *   bottom    = speed bars colored by mode.
- * opts: {h, mini, progress (sec), current (index), nudge, ticks (bool), label}
+ * opts: {h, mini, progress (sec), current (index), nudge, ticks (bool), label, incline (bool, default true)}
+ * incline: false drops the top band (a flat treadmill or outdoors has no incline to show); the bars use the full height.
  */
 export function intervalChart(segs, opts = {}) {
   const W = 1000, H = opts.h || (opts.mini ? 46 : 132);
   const total = segs.reduce((a, s) => a + s.dur, 0) || 1;
-  const topH = opts.mini ? H * 0.36 : H * 0.34, gap = opts.mini ? 3 : 8, barTop = topH + gap, barH = H - barTop;
+  const showInc = opts.incline !== false;
+  const topH = !showInc ? 0 : opts.mini ? H * 0.36 : H * 0.34, gap = !showInc ? 0 : opts.mini ? 3 : 8, barTop = topH + gap, barH = H - barTop;
   const maxI = Math.max(10, ...segs.map((s) => s.incline || 0));
   const speeds = segs.map((s) => speedFor(s, opts.nudge || 0));
   const maxS = Math.max(...speeds, 7) * 1.04, minS = Math.min(2.5, ...speeds) * 0.6;
@@ -47,9 +49,10 @@ export function intervalChart(segs, opts = {}) {
     const px = (Math.min(total, opts.progress) / total) * W;
     prog = `<line x1="${fx(px)}" x2="${fx(px)}" y1="0" y2="${H}" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
   }
-  const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px" role="img" aria-label="${esc(opts.label || 'Workout profile: bars show speed, the line shows incline')}">
-    <path d="${hill}" fill="var(--ink)" opacity=".07"/>
-    <path d="${line}" fill="none" stroke="var(--ink)" stroke-width="${opts.mini ? 1.4 : 2}" stroke-linejoin="round" opacity=".7" vector-effect="non-scaling-stroke"/>
+  const band = showInc ? `<path d="${hill}" fill="var(--ink)" opacity=".07"/>
+    <path d="${line}" fill="none" stroke="var(--ink)" stroke-width="${opts.mini ? 1.4 : 2}" stroke-linejoin="round" opacity=".7" vector-effect="non-scaling-stroke"/>` : '';
+  const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px" role="img" aria-label="${esc(opts.label || (showInc ? 'Workout profile: bars show speed, the line shows incline' : 'Workout profile: bars show speed'))}">
+    ${band}
     ${defs}${bars}${prog}</svg>`;
   if (opts.mini || opts.ticks === false) return `<div class="chart">${svg}</div>`;
   const mins = Math.round(total / 60);

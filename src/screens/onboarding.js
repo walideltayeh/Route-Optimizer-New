@@ -8,7 +8,10 @@
 import * as store from '../core/store.js';
 import { state, DEFAULT_PROFILE } from '../core/store.js';
 import * as sci from '../core/science.js';
-import { PHASES, WEEKLY_TARGET, weekSlots, slotSegments, slotStatus, planStats, startPlanThisWeek, currentWeek, planStart, getWorkout, segmentsFor, setTrainingDays } from '../core/program.js';
+import {
+  PHASES, WEEKLY_TARGET, MODES, SURFACES, SURFACE_IDS, weekSlots, slotSegments, slotStatus, planStats, startPlanThisWeek, currentWeek, planStart,
+  getWorkout, segmentsFor, setTrainingDays, usualSurface, setUsualSurface, workoutFocus, phaseBlurbFor,
+} from '../core/program.js';
 import { ymd, parseYmd, addDays, startOfDay, daysBetween, isoDay, DAY_SHORT, esc, fmt1, fmtInt } from '../core/format.js';
 import { features, requestHealth, requestNotifications, scheduleReminders, healthSaveWeight, haptic } from '../core/platform.js';
 import { actions } from '../ui/actions.js';
@@ -21,7 +24,8 @@ const MPH = sci.KMH_PER_MPH;
 const DRAFT_KEY = 'hp.onb.draft';
 const DAY_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const PRESET_DAYS = { 3: [1, 3, 5], 4: [1, 3, 5, 6], 5: [1, 2, 4, 5, 6], 6: [1, 2, 3, 4, 5, 6] };
-const ORDER = ['welcome', 'goal', 'about', 'body', 'goalweight', 'pace', 'fitness', 'treadmill', 'schedule', 'readiness', 'reveal', 'permissions'];
+// 'treadmill' is the "Where will you walk most?" step (the id is kept so saved drafts and deep links still resolve).
+const ORDER = ['welcome', 'goal', 'about', 'body', 'goalweight', 'pace', 'treadmill', 'fitness', 'schedule', 'readiness', 'reveal', 'permissions'];
 const ACCEPT_TEXT = 'I understand Hillpace is not a medical device. I’ll check with a doctor before starting and before making medical decisions.';
 
 const GOALS = [
@@ -117,8 +121,9 @@ function newDraft() {
   return {
     v: 1, name: '', goal: null, sex: null, age: null, heightCm: null, weightKg: null, goalWeight: null,
     pace: 'steady', targetOn: false, targetDate: null,
-    activity: null, canJog: null, hardExercise: null, noNumbers: false,
+    activity: null, canJog: null, hardExercise: null, walkOnly: null, noNumbers: false,
     units,
+    surface: null, // 'incline' | 'flat' | 'outdoor' (program.SURFACES)
     treadmill: { hasIncline: true, maxIncline: 12, maxSpeed: defaultMaxSpeed(units.speed), handsFree: null },
     days: PRESET_DAYS[4].slice(), sessionLength: 45, reminderTime: '18:00',
     answers: {}, betaBlocker: null, achilles: null, accepted: false,
@@ -140,8 +145,10 @@ function draftFromState() {
     weightKg: lw ? r2(lw) : null, goalWeight: p.goalWeight || null, pace: p.pace || 'steady',
     targetOn: !!p.targetDate, targetDate: p.targetDate || null,
     activity: p.activity || null, canJog: p.canJog || null, hardExercise: typeof p.hardExercise === 'boolean' ? p.hardExercise : null,
+    walkOnly: !!p.walkOnly,
     noNumbers: !!p.noNumbers,
     units: { ...DEFAULT_PROFILE.units, ...p.units },
+    surface: usualSurface(p),
     treadmill: { ...DEFAULT_PROFILE.treadmill, ...p.treadmill },
     days: [...(pl.days && pl.days.length ? pl.days : PRESET_DAYS[4])].sort((a, b) => a - b),
     sessionLength: p.sessionLength || 45, reminderTime: (p.reminders && p.reminders.time) || '18:00',
@@ -173,10 +180,10 @@ function loadDraft() {
     const x = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
     if (!x || !x.d || Date.now() - (x.at || 0) > 14 * 864e5) return null;
     const base = newDraft();
-    return {
-      step: x.step,
-      d: { ...base, ...x.d, units: { ...base.units, ...(x.d.units || {}) }, treadmill: { ...base.treadmill, ...(x.d.treadmill || {}) }, answers: { ...(x.d.answers || {}) }, perm: { health: null, notif: null } },
-    };
+    const dd = { ...base, ...x.d, units: { ...base.units, ...(x.d.units || {}) }, treadmill: { ...base.treadmill, ...(x.d.treadmill || {}) }, answers: { ...(x.d.answers || {}) }, perm: { health: null, notif: null } };
+    // A draft saved before "Where you walk" existed: its treadmill answers stand for an incline or flat treadmill.
+    if (!SURFACES[dd.surface]) dd.surface = typeof dd.treadmill.handsFree === 'boolean' ? (dd.treadmill.hasIncline === false ? 'flat' : 'incline') : null;
+    return { step: x.step, d: dd };
   } catch { return null; }
 }
 function clearDraft() { clearTimeout(saveT); try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ } }
@@ -190,12 +197,17 @@ const wantsGoalWeight = () => d.goal === 'lose' && adult();
 const effectiveLose = () => wantsGoalWeight() && !pregnantNow();
 const permStep = () => !edit && (features.health || features.notifications);
 const fitKey = () => JSON.stringify([d.activity, d.canJog, d.hardExercise]);
+/** Where the draft says they usually walk (incline until they choose). */
+const surfNow = () => (SURFACES[d.surface] ? d.surface : 'incline');
+const isIncline = () => surfNow() === 'incline';
+const isOutdoor = () => surfNow() === 'outdoor';
+const speedStr = (kmh) => `${fmt1(sDisp(kmh)).replace(/\.0$/, '')} ${sUnit()}`;
 
 function stepList() {
   const s = edit ? [] : ['welcome'];
   s.push('goal', 'about', 'body');
   if (wantsGoalWeight() && !d.noNumbers) s.push('goalweight', 'pace');
-  s.push('fitness', 'treadmill', 'schedule', 'readiness', 'reveal');
+  s.push('treadmill', 'fitness', 'schedule', 'readiness', 'reveal');
   if (permStep()) s.push('permissions');
   return s;
 }
@@ -236,6 +248,8 @@ function seedPaces() {
 /** Write the draft's profile fields into a main document. mode: 'new' | 'keep' | 'restart' | 'preview'. */
 function applyProfile(m, mode) {
   const p = m.profile, lose = effectiveLose();
+  const before = usualSurface(p);
+  const surf = SURFACES[d.surface] ? d.surface : before;
   p.name = String(d.name || '').trim().slice(0, 40);
   p.goal = d.goal === 'lose' && !lose ? 'fitter' : d.goal || 'lose';
   p.sex = d.sex || 'unspecified';
@@ -248,15 +262,19 @@ function applyProfile(m, mode) {
   p.activity = d.activity || 'sitting';
   p.canJog = d.canJog || 'unsure';
   p.hardExercise = !!d.hardExercise;
+  p.walkOnly = d.walkOnly === true;
   p.noNumbers = !!d.noNumbers;
   p.units = { ...d.units };
   if (!edit || fitKey() !== origFit) p.paces = seedPaces();
   p.treadmill = {
-    hasIncline: d.treadmill.hasIncline !== false,
+    hasIncline: surf === 'incline' ? true : surf === 'flat' ? false : d.treadmill.hasIncline !== false,
     maxIncline: clamp(d.treadmill.maxIncline ?? 12, 0, 15),
     maxSpeed: r2(d.treadmill.maxSpeed || 16),
     handsFree: d.treadmill.handsFree !== false,
   };
+  // A new usual surface also ends any just-for-today choice; an unchanged one keeps it.
+  if (surf !== before) setUsualSurface(m, surf);
+  else p.surface = surf;
   p.sessionLength = d.sessionLength || 45;
   p.busyLength = 30;
   p.reminders = { ...p.reminders, time: d.reminderTime || p.reminders.time || '18:00' };
@@ -286,6 +304,7 @@ function applyReadiness(m) {
 function withDraft(fn) {
   const saved = state.main;
   const m = structuredClone(saved);
+  m.todaySurface = null; // the reveal shows the usual week, not a one-off day
   applyProfile(m, 'preview');
   m.plan.days = [...d.days].sort((a, b) => a - b);
   if (!edit || !m.plan.startDate) startPlanThisWeek(m.plan);
@@ -298,7 +317,7 @@ function withDraft(fn) {
 /* ---------------- plan and energy estimates ---------------- */
 
 function planInfo() {
-  const key = JSON.stringify([d.days, d.sessionLength, d.weightKg, d.canJog, d.hardExercise, d.treadmill, d.units.speed, visibleAnswers(), edit]);
+  const key = JSON.stringify([d.days, d.sessionLength, d.weightKg, d.canJog, d.hardExercise, d.walkOnly, d.surface, d.treadmill, d.units.speed, visibleAnswers(), edit]);
   if (cache.has(key)) return cache.get(key);
   const info = withDraft(() => {
     const wk = edit && state.main.plan.startDate ? clamp(currentWeek(), 1, 12) : 1;
@@ -306,7 +325,8 @@ function planInfo() {
     const sessions = weekSlots(wk).map((slot) => {
       const segs = slotSegments(slot);
       const w = getWorkout(slot.workoutId);
-      return { slot, name: w ? w.name : 'Workout', focus: w ? w.focus : '', st: planStats(segs, 0, kg), chart: intervalChart(segs, { mini: true, h: 34, label: `${w ? w.name : 'Workout'} profile: bars show speed, the line shows incline` }) };
+      const what = isIncline() ? 'bars show speed, the line shows incline' : 'bars show the pace of each interval';
+      return { slot, name: w ? w.name : 'Workout', focus: w ? focusFor(w, segs) : '', st: planStats(segs, 0, kg), chart: intervalChart(segs, { mini: true, h: 34, incline: isIncline(), label: `${w ? w.name : 'Workout'} profile: ${what}` }) };
     });
     const sum = (k) => sessions.reduce((a, s) => a + s.st[k], 0);
     const startsOn = !edit && currentWeek() < 1 ? planStart() : null;
@@ -435,15 +455,15 @@ const STEPS = {
         ${topo({ w: 400, h: 460, seed: 7, lines: 18, cx: 0.8, cy: 0.16 })}
         <span class="onb-mark">${hillMark()}</span>
         <div class="onb-hero-text">
-          <p class="eyebrow">Incline treadmill coach</p>
+          <p class="eyebrow">Walking coach</p>
           <h1 class="onb-brand" tabindex="-1">Hillpace</h1>
-          <p class="onb-promise">Incline interval plans built for your treadmill.</p>
+          <p class="onb-promise">Walking plans that fit where you walk: incline, flat or outdoors.</p>
         </div>
         ${chart ? `<div class="onb-hero-chart">${chart}<div class="onb-hero-cap"><span>Hill Repeats</span><span class="num">45 min · 7 climbs</span></div></div>` : ''}
       </div>
       <ul class="onb-props">
         <li><span class="onb-prop-ico">${icon('plan')}</span><span><b>A 12-week plan that adapts</b><span>Three phases that adjust to how each session felt.</span></span></li>
-        <li><span class="onb-prop-ico">${icon('voice')}</span><span><b>Coached interval by interval</b><span>Voice cues for every speed and incline change.</span></span></li>
+        <li><span class="onb-prop-ico">${icon('voice')}</span><span><b>Coached interval by interval</b><span>Voice cues for every change of speed, incline or effort.</span></span></li>
         <li><span class="onb-prop-ico">${icon('shield')}</span><span><b>Honest numbers</b><span>Calories shown as estimates, and no promises.</span></span></li>
       </ul>`;
     },
@@ -574,57 +594,55 @@ const STEPS = {
 
   fitness: {
     html() {
-      const jog = isMph() ? '5 mph (8 km/h)' : '8 km/h (5 mph)';
-      return head('Your fitness', 'Where are you starting from?', 'Your answers set your starting paces. You can change speed during any workout.') + `
+      const out = isOutdoor();
+      const jogQ = out ? 'Can you jog gently for 1 minute without stopping?' : `Can you jog for 1 minute at ${isMph() ? '5 mph (8 km/h)' : '8 km/h (5 mph)'}?`;
+      return head('Your fitness', 'Where are you starting from?', out ? 'Your answers set your starting level and the paces behind your estimates.' : 'Your answers set your starting paces. You can change speed during any workout.') + `
       <div class="onb-field">
         <span class="onb-label" id="lbl-act">Day to day, are you…</span>
         ${choices('activity', sci.ACTIVITY_LEVELS.map((a) => ({ value: a.id, label: a.label, sub: a.detail })), d.activity, 'Daily activity')}
       </div>
       <div class="onb-field">
-        <span class="onb-label" id="lbl-jog">Can you jog for 1 minute at ${jog}?</span>
-        ${seg('canJog', [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'Not yet' }, { value: 'unsure', label: 'Not sure' }], d.canJog, '', { labelledby: 'lbl-jog' })}
-        <p class="onb-note">If not, your plan swaps jogs for steeper power walking. From week 5, after two sessions that feel comfortable, we’ll ask if you’d like to try short jogs.</p>
-      </div>
-      <div class="onb-field">
         <span class="onb-label" id="lbl-hard">Do you regularly do exercise that leaves you breathing hard?</span>
         ${seg('hard', YES_NO, yn(d.hardExercise), '', { labelledby: 'lbl-hard' })}
       </div>
+      <div class="onb-field">
+        <span class="onb-label" id="lbl-wo">Do you want short jogs in your plan?</span>
+        ${choices('walkOnly', [
+          { value: 'yes', label: 'Walking only', sub: 'Every session is walking. Harder parts become power walking.', icon: 'stride' },
+          { value: 'no', label: 'Add short jogs when I’m ready', sub: 'Short jog intervals that grow with your fitness. You can switch to walking only at any time.', icon: 'jog' },
+        ], yn(d.walkOnly), 'Short jogs in your plan')}
+      </div>
+      ${d.walkOnly === false ? `<div class="onb-field">
+        <span class="onb-label" id="lbl-jog">${jogQ}</span>
+        ${seg('canJog', [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'Not yet' }, { value: 'unsure', label: 'Not sure' }], d.canJog, '', { labelledby: 'lbl-jog' })}
+        <p class="onb-note">If not, your plan swaps jogs for ${isIncline() ? 'steeper ' : ''}power walking. From week 5, after two sessions that feel comfortable, we’ll ask if you’d like to try short jogs.</p>
+      </div>` : ''}
       <div data-live="paces">${pacesPreview()}</div>`;
     },
     live: () => ({ paces: pacesPreview() }),
     valid() {
       if (!d.activity) return 'Choose how active you are day to day.';
-      if (!d.canJog) return 'Answer the jogging question to continue.';
       if (typeof d.hardExercise !== 'boolean') return 'Answer the hard-exercise question to continue.';
+      if (typeof d.walkOnly !== 'boolean') return 'Choose whether you want short jogs in your plan.';
+      if (!d.walkOnly && !d.canJog) return 'Answer the jogging question to continue.';
       return null;
     },
   },
 
   treadmill: {
     html() {
-      const t = d.treadmill;
-      return head('Your treadmill', 'Tell us about your treadmill', 'Every workout stays within these limits, so you’re never asked for more than it can do.') + `
-      <div class="onb-field">
-        <span class="onb-label" id="lbl-inc">Does it have incline?</span>
-        ${seg('incline', YES_NO, t.hasIncline === false ? 'no' : 'yes', '', { labelledby: 'lbl-inc' })}
-      </div>
-      ${t.hasIncline === false
-        ? banner('good', 'speed', 'No incline? No problem.', 'Climbs become slightly faster walking intervals on the flat.')
-        : `<div class="onb-field"><label class="onb-label" for="onb-maxIncline">Max incline</label>${stepper('maxIncline', '%', 'Max incline')}<p class="onb-note">Most home treadmills go up to 10–15%.</p></div>`}
-      <div class="onb-field">
-        <div class="onb-label"><label for="onb-maxSpeed">Max speed</label>${seg('sunit', [{ value: 'kmh', label: 'km/h' }, { value: 'mph', label: 'mph' }], d.units.speed, 'Speed unit', { mini: true })}</div>
-        ${stepper('maxSpeed', sUnit(), 'Max speed')}
-      </div>
-      <div class="onb-field">
-        <span class="onb-label" id="lbl-rails">Do you usually walk without holding the rails?</span>
-        ${seg('hands', YES_NO, yn(t.handsFree), '', { labelledby: 'lbl-rails' })}
-        <p class="onb-note">Holding the rails on a steep incline takes some of the work out of climbing, so we lower the energy estimate when you do.</p>
-      </div>`;
+      const cards = choices('surface', SURFACE_IDS.map((id) => ({ value: id, label: SURFACES[id].name, sub: SURFACES[id].blurb, icon: SURFACES[id].icon })), d.surface, 'Where you walk most');
+      let more = '';
+      if (d.surface === 'incline' || d.surface === 'flat') more = treadmillFields();
+      else if (d.surface === 'outdoor') more = outdoorFields();
+      return head('Where you walk', 'Where will you walk most?', 'This sets how each session is coached. You can switch for a single day whenever you need to.') + cards + more;
     },
     valid() {
       const t = d.treadmill;
-      if (t.hasIncline !== false && (t.maxIncline == null || fieldErr('maxIncline'))) return fieldErr('maxIncline') || 'Enter your treadmill’s max incline.';
-      if (t.maxSpeed == null) return 'Enter your treadmill’s max speed.';
+      if (!SURFACES[d.surface]) return 'Choose where you’ll walk most.';
+      if (d.surface === 'outdoor') return null;
+      if (d.surface === 'incline' && (t.maxIncline == null || fieldErr('maxIncline'))) return fieldErr('maxIncline') || 'Enter your treadmill’s max incline.';
+      if (t.maxSpeed == null) return `Enter your ${d.surface === 'flat' ? 'treadmill or walking pad’s' : 'treadmill’s'} max speed.`;
       if (fieldErr('maxSpeed')) return fieldErr('maxSpeed');
       if (typeof t.handsFree !== 'boolean') return 'Answer the handrail question to continue.';
       return null;
@@ -722,6 +740,39 @@ const STEPS = {
 
 /* ---------------- step-specific helpers ---------------- */
 
+/** Treadmill questions under the surface cards: max incline (incline only), max speed and handrails. */
+function treadmillFields() {
+  const t = d.treadmill, inc = d.surface === 'incline';
+  const speedNote = inc ? '' : `<p class="onb-note">Walking pads often top out at about ${isMph() ? '4 mph' : '6 km/h'}, treadmills at ${isMph() ? '10–12 mph' : '16–20 km/h'}. Check yours.</p>`;
+  const railNote = inc
+    ? 'Holding the rails on a steep incline takes some of the work out of climbing, so we lower the energy estimate when you do.'
+    : 'Many walking pads have no rails. On the flat this doesn’t change your numbers; it matters if you walk on an incline for a day, when holding on takes some of the work out of a steep climb.';
+  return `<div class="onb-sub">
+      <h2 class="title-m">${inc ? 'Your treadmill' : 'Your treadmill or walking pad'}</h2>
+      <p class="onb-note">Every workout stays within these limits, so you’re never asked for more than it can do.</p>
+    </div>
+    ${inc ? `<div class="onb-field"><label class="onb-label" for="onb-maxIncline">Max incline</label>${stepper('maxIncline', '%', 'Max incline')}<p class="onb-note">Most home treadmills go up to 10–15%.</p></div>` : ''}
+    <div class="onb-field">
+      <div class="onb-label"><label for="onb-maxSpeed">Max speed</label>${seg('sunit', [{ value: 'kmh', label: 'km/h' }, { value: 'mph', label: 'mph' }], d.units.speed, 'Speed unit', { mini: true })}</div>
+      ${stepper('maxSpeed', sUnit(), 'Max speed')}
+      ${speedNote}
+    </div>
+    <div class="onb-field">
+      <span class="onb-label" id="lbl-rails">Do you usually walk without holding the rails?</span>
+      ${seg('hands', YES_NO, yn(t.handsFree), '', { labelledby: 'lbl-rails' })}
+      <p class="onb-note">${railNote}</p>
+    </div>`;
+}
+
+/** Outdoors: no treadmill questions, just how coaching works and the distance unit. */
+function outdoorFields() {
+  return banner('good', 'route', 'No treadmill needed', 'Each session is coached by effort: how hard it feels and how easily you can talk. Hills on your route are a bonus.') + `
+    <div class="onb-field">
+      <div class="onb-label"><span id="lbl-dist">Show distance in</span>${seg('sunit', [{ value: 'kmh', label: 'km' }, { value: 'mph', label: 'miles' }], d.units.speed, 'Distance unit', { mini: true })}</div>
+      <p class="onb-note">Using a treadmill some days? Switch for that day from Today or before a workout.</p>
+    </div>`;
+}
+
 function kidNote() {
   if (!(d.age != null && d.age >= 13 && d.age < 18)) return '';
   const body = d.goal === 'lose'
@@ -792,10 +843,11 @@ function targetText() {
 }
 
 function pacesPreview() {
-  if (!d.canJog || typeof d.hardExercise !== 'boolean') return '';
+  if (typeof d.hardExercise !== 'boolean' || typeof d.walkOnly !== 'boolean' || (!d.walkOnly && !d.canJog)) return '';
   const P = seedPaces();
-  const item = (t, label) => `<span class="mode-${t}"><i class="mode-dot"></i>${label} <b class="num">${fmt1(sDisp(P[t]))}</b></span>`;
-  return `<div class="card tight onb-paces"><span class="stat-label">Your starting paces</span><div class="legend">${item('walk', 'Easy walk')}${item('power', 'Power walk')}${item('jog', 'Jog')}<span class="faint">${sUnit()}</span></div></div>`;
+  const types = d.walkOnly ? ['walk', 'brisk', 'power'] : ['walk', 'power', 'jog'];
+  const item = (t) => `<span class="mode-${t}"><i class="mode-dot"></i>${esc(MODES[t].name)} <b class="num">${fmt1(sDisp(P[t]))}</b></span>`;
+  return `<div class="card tight onb-paces"><span class="stat-label">${isOutdoor() ? 'Starting paces for your estimates' : 'Your starting paces'}</span><div class="legend">${types.map(item).join('')}<span class="faint">${sUnit()}</span></div></div>`;
 }
 
 function daysNote() {
@@ -816,7 +868,7 @@ function qRow(q) {
 
 function doctorCard() {
   if (!anyYes()) return '';
-  let body = 'Tell them about your answers and that you plan to start incline walking. Until you confirm you’ve checked, your plan sticks to light and moderate workouts. You can confirm any time in Me, under Health & safety.';
+  let body = `Tell them about your answers and that you plan to start ${isIncline() ? 'incline walking' : 'a brisk walking plan'}. Until you confirm you’ve checked, your plan sticks to light and moderate workouts. You can confirm any time in Me, under Health & safety.`;
   if (d.answers.ill) body += ' If you’re unwell or recovering, start once you feel better.';
   return banner('onb-doctor', 'heart', 'Check with your doctor before starting', body);
 }
@@ -841,14 +893,15 @@ function revealHtml() {
   const greet = d.name && d.name.trim() ? `, ${esc(d.name.trim())}` : '';
   const title = edit ? 'Your updated plan' : `Your plan is ready${greet}`;
   const goalId = d.goal === 'lose' && !lose ? 'fitter' : d.goal;
-  const lede = `${n} sessions a week, ${d.sessionLength} minutes each, on ${listJoin(days.map((x) => DAY_SHORT[x - 1]))}.${GOAL_LINE[goalId] && !pregnantNow() ? ' ' + GOAL_LINE[goalId] : ''}`;
+  const goalLine = goalLineFor(goalId);
+  const lede = `${n} sessions a week, ${d.sessionLength} minutes each, on ${listJoin(days.map((x) => DAY_SHORT[x - 1]))}.${goalLine && !pregnantNow() ? ' ' + goalLine : ''}`;
 
   const weeks = Array.from({ length: 12 }, (_, i) => ({ week: i + 1, pct: i + 1 < info.wk ? weekDone(i + 1) : 0 }));
   const hero = `<div class="hero-card onb-reveal-hero">
     ${topo({ w: 400, h: 300, seed: 11, lines: 14, cx: 0.86, cy: 0.1 })}
     <div class="onb-rh-top"><p class="eyebrow">Week ${info.wk} of 12</p><span class="tag onb-rh-tag">${esc(info.phase.name)}</span></div>
     <h2 class="title-l">${edit && info.wk > 1 ? `You’re in the ${esc(info.phase.name)} phase` : `Starts with ${esc(info.phase.name)}`}</h2>
-    <p class="body-s">${esc(info.phase.blurb)}</p>
+    <p class="body-s">${esc(phaseBlurb(info.phase))}</p>
     ${planMeter(weeks, info.wk)}
     <p class="onb-deload-key"><i aria-hidden="true"></i>Weeks 4, 8 and 12 are lighter, so your body can adapt.</p>
   </div>`;
@@ -867,10 +920,12 @@ function revealHtml() {
   const stats = `<div class="card onb-stats">
     <div class="stat-grid" style="--cols:3">
       <div><span class="stat-label">Activity</span><span class="stat-value">${minutes}<small>min</small></span><span class="onb-stat-sub">Target ${info.target}</span></div>
-      <div><span class="stat-label">Distance</span><span class="stat-value">${distStr(info.weekKm).split(' ')[0]}<small>${isMph() ? 'mi' : 'km'}</small></span><span class="onb-stat-sub">A week</span></div>
+      <div><span class="stat-label">Distance</span><span class="stat-value">${distStr(info.weekKm).split(' ')[0]}<small>${isMph() ? 'mi' : 'km'}</small></span><span class="onb-stat-sub">${isOutdoor() ? 'A week, estimate' : 'A week'}</span></div>
       ${nums
         ? `<div><span class="stat-label">Per session</span><span class="stat-value onb-kcal">${kcalCell}</span><span class="onb-stat-sub">kcal, estimate</span></div>`
-        : `<div><span class="stat-label">Climb</span><span class="stat-value">${elevStr(info.weekElev).split(' ')[0]}<small>${isMph() ? 'ft' : 'm'}</small></span><span class="onb-stat-sub">A week</span></div>`}
+        : isIncline()
+          ? `<div><span class="stat-label">Climb</span><span class="stat-value">${elevStr(info.weekElev).split(' ')[0]}<small>${isMph() ? 'ft' : 'm'}</small></span><span class="onb-stat-sub">A week</span></div>`
+          : `<div><span class="stat-label">Walking</span><span class="stat-value">${fmtInt(info.sessions.reduce((a, x) => a + x.st.sec, 0) / 60)}<small>min</small></span><span class="onb-stat-sub">A week</span></div>`}
     </div>
     <p class="onb-note">${minutes >= info.target
       ? `Activity minutes count vigorous minutes twice. This week reaches the ${info.target}-minute target.`
@@ -880,23 +935,23 @@ function revealHtml() {
   let goalBlock = '';
   if (lose && nums && !(d.goalWeight > 0)) goalBlock = banner('', 'flag', 'Set a goal weight', 'Add a goal weight and pace to see a projected goal date and a suggested daily intake.<button type="button" class="onb-inline-link" data-act="to-goalweight">Set a goal weight</button>');
   else if (lose && nums) goalBlock = goalSection();
-  else if (lose && !nums) goalBlock = banner('', 'eyeOff', 'Numbers are hidden', 'Calories, intake and weight projections are turned off. Your plan tracks minutes, distance and climb. You can turn numbers back on in Me.');
+  else if (lose && !nums) goalBlock = banner('', 'eyeOff', 'Numbers are hidden', `Calories, intake and weight projections are turned off. Your plan tracks minutes, distance${isIncline() ? ' and climb' : ' and effort'}. You can turn numbers back on in Me.`);
   else if (d.goal === 'lose' && !adult()) goalBlock = banner('', 'info', 'Built for fitness', 'Calorie and weight targets are for adults, so your plan focuses on getting fitter.');
   else if (d.goal === 'lose' && pregnantNow()) goalBlock = banner('', 'heart', 'Built for staying active', 'During pregnancy, Hillpace doesn’t set weight-loss targets, and the hardest interval workouts stay locked. Your plan is set to Get fitter.');
 
   const safety = anyYes() ? banner('', 'heart', 'Light and moderate to start', 'Until you confirm you’ve checked with your doctor, your plan uses light and moderate workouts only. Confirm any time in Me, under Health & safety.') : '';
 
-  return head(edit ? 'Your plan' : 'Your 12-week plan', title, lede) + hero + `
+  return head(edit ? 'Your plan' : 'Your 12-week plan', title, lede) + hero + trainHtml() + `
     <section class="section">
       <div class="section-head"><h2 class="section-title">Week ${info.wk}</h2><span class="onb-note">Hard days are spaced apart</span></div>
       <div class="group onb-sessions">${sess}</div>
       ${started ? `<p class="onb-note">This week has already started, so training days that have passed are left out and won’t count as missed. Week 1 carries on from today.</p>` : ''}
-      ${info.startsOn ? `<p class="onb-note">Your training days this week have passed, so week 1 starts on ${esc(new Date(info.startsOn).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}. Until then, an easy walk is a good way to get to know your treadmill.</p>` : ''}
+      ${info.startsOn ? `<p class="onb-note">Your training days this week have passed, so week 1 starts on ${esc(new Date(info.startsOn).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}. Until then, an easy walk is a good way to ${isOutdoor() ? 'find a route you like' : isIncline() ? 'get to know your treadmill' : 'get used to your treadmill or walking pad'}.</p>` : ''}
     </section>
     ${stats}
     ${safety}
     ${goalBlock}
-    ${switchRow('onb-sw-nonumbers', d.noNumbers, 'Train without calorie and weight numbers', 'Show minutes, distance and climb only.')}
+    ${switchRow('onb-sw-nonumbers', d.noNumbers, 'Train without calorie and weight numbers', `Show minutes, distance${isIncline() ? ' and climb' : ' and effort'} only.`)}
     <button type="button" class="btn btn-text onb-how" data-act="how">${icon('book')}How we calculate${icon('chevR')}</button>`;
 }
 
@@ -910,10 +965,45 @@ function weekDone(w) {
 }
 
 const GOAL_LINE = {
-  fitter: 'Hills get steeper and efforts get longer as your fitness grows.',
-  habit: 'Regular sessions with lighter weeks built in, so the habit sticks.',
-  hike: 'Steep, steady climbs build the leg strength that trails ask for.',
+  fitter: { incline: 'Hills get steeper and efforts get longer as your fitness grows.', other: 'Efforts get faster and longer as your fitness grows.' },
+  habit: { incline: 'Regular sessions with lighter weeks built in, so the habit sticks.', other: 'Regular sessions with lighter weeks built in, so the habit sticks.' },
+  hike: { incline: 'Steep, steady climbs build the leg strength that trails ask for.', other: 'Long, steady efforts build the stamina that trails ask for.' },
 };
+const goalLineFor = (id) => (GOAL_LINE[id] ? GOAL_LINE[id][isIncline() ? 'incline' : 'other'] : '');
+
+/**
+ * A workout's one-line focus as it will really be done: program.WORKOUTS describes incline sessions with jogs,
+ * so climbs and jogs are reworded when the surface has no incline or the session has no jog intervals.
+ */
+function focusFor(w, segs) {
+  return workoutFocus(w, { surface: surfNow(), segs });
+}
+
+/** Phase blurbs that match where they walk and whether jogs are in the plan (program.PHASES is written for incline with jogs). */
+function phaseBlurb(phase) {
+  return phaseBlurbFor(phase, { surface: surfNow(), walkOnly: d.walkOnly === true });
+}
+
+/** "How you'll train": where they walk and whether jogs are in the plan. */
+function trainHtml() {
+  const sid = surfNow(), S = SURFACES[sid], t = d.treadmill;
+  const where = sid === 'outdoor'
+    ? 'Each session is coached by effort: how hard it feels and how easily you can talk.'
+    : sid === 'flat'
+      ? `Speed targets for every interval, up to your top speed of ${speedStr(t.maxSpeed || 16)}.`
+      : `Speed and incline targets for every interval, up to ${fmt1(t.maxIncline ?? 12).replace(/\.0$/, '')}% and ${speedStr(t.maxSpeed || 16)}.`;
+  const jogs = d.walkOnly === true
+    ? 'No jogs or runs. Harder parts are power walking.'
+    : d.canJog === 'yes' && !anyYes()
+      ? 'Short jog intervals that grow with your fitness.'
+      : 'Jogs join your plan when you’re ready. Until then, harder parts are power walking.';
+  const item = (ico, title, body) => `<div class="onb-train-row"><span class="onb-choice-ico">${icon(ico)}</span><span class="onb-train-main"><b>${esc(title)}</b><span>${esc(body)}</span></span></div>`;
+  return `<section class="section">
+    <div class="section-head"><h2 class="section-title">How you’ll train</h2></div>
+    <div class="group onb-train">${item(S.icon, S.name, where)}${item(d.walkOnly === true ? 'stride' : 'jog', d.walkOnly === true ? 'Walking only' : 'Short jogs', jogs)}</div>
+    <p class="onb-note">Walking somewhere else one day? Switch for that day from Today or before a workout.</p>
+  </section>`;
+}
 
 function goalSection() {
   const paceId = allowedPace();
@@ -1038,10 +1128,11 @@ const MISSING = {
   body: () => (d.heightCm == null || fieldErr('height') ? (d.units.height === 'ftin' ? '#onb-ft' : '#onb-heightCm') : '#onb-weight'),
   goalweight: () => (goalLimits() ? '#onb-goal' : '[data-act="to-fitter"]'),
   pace: () => (paceAllowed(d.pace) ? '#onb-date' : '[data-pick="pace"]:not([disabled])'),
-  fitness: () => (!d.activity ? '[data-pick="activity"]' : !d.canJog ? '[data-pick="canJog"]' : '[data-pick="hard"]'),
+  fitness: () => (!d.activity ? '[data-pick="activity"]' : typeof d.hardExercise !== 'boolean' ? '[data-pick="hard"]' : typeof d.walkOnly !== 'boolean' ? '[data-pick="walkOnly"]' : '[data-pick="canJog"]'),
   treadmill: () => {
     const t = d.treadmill;
-    if (t.hasIncline !== false && (t.maxIncline == null || fieldErr('maxIncline'))) return '#onb-maxIncline';
+    if (!SURFACES[d.surface]) return '[data-pick="surface"]';
+    if (d.surface === 'incline' && (t.maxIncline == null || fieldErr('maxIncline'))) return '#onb-maxIncline';
     return t.maxSpeed == null || fieldErr('maxSpeed') ? '#onb-maxSpeed' : '[data-pick="hands"]';
   },
   schedule: () => `[data-pick="day"][aria-pressed="${d.days.length < 3 ? 'false' : 'true'}"]`,
@@ -1264,8 +1355,13 @@ function doPick(name, value) {
     case 'pace': d.pace = value; break;
     case 'activity': d.activity = value; break;
     case 'canJog': d.canJog = value; break;
+    case 'walkOnly': d.walkOnly = value === 'yes'; break;
+    case 'surface':
+      d.surface = SURFACES[value] ? value : d.surface;
+      if (d.surface === 'incline') { d.treadmill.hasIncline = true; if (d.treadmill.maxIncline == null) d.treadmill.maxIncline = 12; }
+      if (d.surface === 'flat') d.treadmill.hasIncline = false;
+      break;
     case 'hard': d.hardExercise = value === 'yes'; break;
-    case 'incline': d.treadmill.hasIncline = value === 'yes'; if (d.treadmill.hasIncline && d.treadmill.maxIncline == null) d.treadmill.maxIncline = 12; break;
     case 'hands': d.treadmill.handsFree = value === 'yes'; break;
     case 'ndays': d.days = (PRESET_DAYS[value] || d.days).slice(); break;
     case 'day': { const v = +value; d.days = d.days.includes(v) ? d.days.filter((x) => x !== v) : [...d.days, v].sort((a, b) => a - b); break; }
@@ -1434,7 +1530,12 @@ function open({ edit: isEdit = false, step = null } = {}) {
   });
 
   const list = stepList();
-  const first = want || start || (edit ? 'goal' : 'welcome');
+  let first = want || start || (edit ? 'goal' : 'welcome');
+  if (!edit && start && !want) {
+    // A resumed draft (possibly saved by an older version with other steps) starts at the first step still unanswered.
+    const gap = list.slice(0, Math.max(0, list.indexOf(first))).find((x) => STEPS[x].valid());
+    if (gap) first = gap;
+  }
   goTo(list.includes(first) ? first : list[0], 1);
 }
 

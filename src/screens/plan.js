@@ -3,16 +3,18 @@
 import * as store from '../core/store.js';
 import { state } from '../core/store.js';
 import {
-  MODES, PHASES, WORKOUTS, INTENSITY, DELOAD_WEEKS, getWorkout, planSlots, slotSegments, planStats, currentWeek,
+  MODES, MODE_IDS, MODE_RANK, PHASES, WORKOUTS, INTENSITY, DELOAD_WEEKS, getWorkout, planSlots, planStats, currentWeek,
   phaseForWeek, planStart, startPlanThisWeek, lockReason, segmentsFor, mainMode as programMainMode, setTrainingDays,
-  planBegan as corePlanBegan, slotState as coreSlotState, deloadLength, daysChangeFrom } from '../core/program.js';
+  planBegan as corePlanBegan, slotState as coreSlotState, deloadLength, daysChangeFrom,
+  SURFACES, SURFACE_IDS, usualSurface, activeSurface, effortFor, speedFor, workoutFocus, phaseBlurbFor, restrictedToModerate } from '../core/program.js';
 import { roundKcal } from '../core/science.js';
 import {
   esc, ymd, addDays, startOfWeek, daysBetween, dateShort, dateLong, dayName, fmt1, toDist, distUnit, toElev, elevUnit, parseYmd,
+  toSpeed, speedUnit, isMph,
 } from '../core/format.js';
 import { actions } from '../ui/actions.js';
 import { icon, modeIcon, sheet, confirmSheet, toast, segmented, bindSegmented, switchHtml } from '../ui/kit.js';
-import { intervalChart, modeLegend } from '../ui/charts.js';
+import { intervalChart, modeLegend, HATCHED } from '../ui/charts.js';
 import { haptic } from '../core/platform.js';
 import { steepNoticeHtml } from './player.js';
 
@@ -64,18 +66,143 @@ export function nextPlanSlot(slots = planSlots(), today = new Date()) {
   return slots.find((s) => st(s) === 'upcoming') || null;
 }
 
-/** Everything a card needs about a slot. */
-export function slotInfo(slot) {
-  const segs = slotSegments(slot);
+/**
+ * Where a plan slot's preview is walked: today's slot (or a missed one, offered today) uses today's surface,
+ * later days the usual one, so a just-for-today choice never changes how the rest of the plan reads.
+ */
+export function surfaceFor(slot, today = new Date()) {
+  return daysBetween(today, slot.date) <= 0 ? activeSurface(today) : usualSurface();
+}
+
+/** Everything a card needs about a slot (intervals for the given surface; see surfaceFor). */
+export function slotInfo(slot, surface = surfaceFor(slot)) {
+  const segs = segmentsFor(slot.workoutId, { level: slot.level, length: slot.length, surface });
   const w = getWorkout(slot.workoutId) || { name: 'Workout', intensity: 2, focus: '' };
-  return { segs, st: planStats(segs), w, mode: mainMode(segs) };
+  return { segs, st: planStats(segs), w, mode: mainMode(segs), surface };
+}
+
+/* ======================================================================
+   Where you walk: shared display helpers (also used by today.js, library.js and builder.js)
+   ====================================================================== */
+
+/** The hardest mode anywhere in a list of intervals. */
+export function hardestMode(segs) {
+  return (segs || []).reduce((m, s) => (MODE_RANK[s.type] > MODE_RANK[m] ? s.type : m), 'walk');
+}
+
+/** "Hard walking" as a stat value: first word large, the rest small like a unit. */
+export function effortValue(type) {
+  const [first, ...rest] = effortFor(type).feel.split(' ');
+  return `${esc(first)}${rest.length ? `<small>${esc(rest.join(' '))}</small>` : ''}`;
+}
+
+/** Distance stat cell [label, html]. Outdoors it is always an estimate (≈). */
+export function distCell(km, surface = activeSurface()) {
+  return ['Distance', `${surface === 'outdoor' ? '≈' : ''}${fmt1(toDist(km))}<small>${esc(distUnit())}</small>`];
+}
+
+/** The surface's headline stat [label, html]: max incline, top speed, or (outdoors) the hardest effort out of 10
+ *  ("6–7 of 10", as the pre-run sheet shows it; a number fits a narrow stat column where "Hard walking" doesn't). */
+export function peakCell(st, segs, surface = activeSurface()) {
+  if (surface === 'incline') return ['Incline', `${fmt1(st.maxI).replace(/\.0$/, '')}<small>% max</small>`];
+  if (surface === 'flat') return ['Top speed', `${fmt1(toSpeed(st.maxS))}<small>${esc(speedUnit())}</small>`];
+  return ['Hardest', `${esc(effortFor(hardestMode(segs)).rpe)}<small>of 10</small>`];
+}
+
+/** Plain-text version of peakCell for card meta and labels: "8% max", "6.8 km/h top", "Hard walking". */
+export function peakText(st, segs, surface = activeSurface()) {
+  if (surface === 'incline') return `${fmt1(st.maxI).replace(/\.0$/, '')}% max`;
+  if (surface === 'flat') return `${fmt1(toSpeed(st.maxS))}${NB}${speedUnit()} top`;
+  return effortFor(hardestMode(segs)).feel;
+}
+/** Kit icon for peakCell. */
+export const peakIcon = (surface = activeSurface()) => (surface === 'incline' ? 'incline' : surface === 'flat' ? 'speed' : 'pulse');
+
+/**
+ * Legend for an interval chart, by surface. Incline: the shared legend (modes, speeds, incline line).
+ * Flat: modes and speeds, no incline line. Outdoors: modes and how hard each should feel (effort out of 10).
+ */
+export function surfaceLegend(segs, surface = activeSurface()) {
+  if (surface === 'incline') return modeLegend(segs, MODES);
+  const types = MODE_IDS.filter((t) => segs.some((s) => s.type === t));
+  // Flat: the speeds this workout really asks for (climbs become extra pace, so power walks can run above the usual pace).
+  const speeds = (t) => {
+    const v = segs.filter((s) => s.type === t).map((s) => Math.round(toSpeed(speedFor(s)) * 10) / 10);
+    const lo = Math.min(...v), hi = Math.max(...v);
+    return hi - lo < 0.05 ? fmt1(lo) : `${fmt1(lo)}–${fmt1(hi)}`;
+  };
+  const val = (t) => (surface === 'flat' ? speeds(t) : effortFor(t).rpe);
+  const unit = surface === 'flat' ? speedUnit() : 'effort out of 10';
+  return `<div class="legend">${types.map((t) => `<span class="mode-${t}"><i class="mode-dot${HATCHED.includes(t) ? ' hatch' : ''}"></i>${esc(MODES[t].name)} <span class="faint num">${esc(val(t))}</span></span>`).join('')}<span class="faint">${esc(unit)}</span></div>`;
+}
+
+/**
+ * intervalChart for a surface. Without an incline the chart's top band (the incline line) is always flat and empty,
+ * so it is left out (intervalChart's incline: false) and only the bars remain, at the height they have on an incline
+ * chart of the same h (h minus the top band: 34% of h, 36% mini, plus the gap).
+ * opts.chart: a chart function with intervalChart's signature (e.g. builder's profileChart). Default intervalChart.
+ */
+export function surfaceChart(segs, surface = activeSurface(), opts = {}) {
+  const { chart = intervalChart, ...o } = opts;
+  if (surface === 'incline') return chart(segs, o);
+  const H = o.h || (o.mini ? 46 : 132);
+  const band = o.mini ? H * 0.36 + 3 : H * 0.34 + 8;
+  return chart(segs, { ...o, h: Math.max(12, Math.round(H - band)), incline: false });
+}
+
+/** Accessible label for an interval chart on this surface. */
+export function chartLabel(name, surface = activeSurface()) {
+  if (surface === 'incline') return `${name} profile: bars show speed, the line shows incline`;
+  if (surface === 'flat') return `${name} profile: bars show speed`;
+  return `${name} profile: taller bars are harder efforts`;
+}
+
+/** The note that goes with estimated numbers. */
+export function estimateNote(surface = activeSurface(), noNumbers = state.main.profile.noNumbers) {
+  if (noNumbers) return 'Distance is an estimate';
+  return surface === 'outdoor' ? 'Calories and distance are estimates' : 'Calories are estimates';
+}
+
+/** "the incline treadmill" / "the flat treadmill or walking pad" / "walking outdoors" for sentences. */
+export const surfacePhrase = (id) => ({ incline: 'the incline treadmill', flat: 'the flat treadmill or walking pad', outdoor: 'walking outdoors' }[id] || 'your usual');
+
+/** Three-way "where" control (icon + short name), styled like the kit's segmented control; wire with bindSegmented. */
+export function surfacePicker(name, value, { label = 'Where you walk' } = {}) {
+  return `<div class="seg block surf-seg" role="group" aria-label="${esc(label)}" data-seg="${esc(name)}">${SURFACE_IDS.map((id) => `<button type="button" data-value="${id}" aria-pressed="${id === value}" aria-label="${esc(SURFACES[id].name)}">${icon(SURFACES[id].icon)}<span>${esc(SURFACES[id].short)}</span></button>`).join('')}</div>`;
+}
+
+/** Small tag naming a surface: icon + short name on screen, the full name for VoiceOver. */
+export function surfaceTag(id, { cls = '' } = {}) {
+  const s = SURFACES[id];
+  if (!s) return '';
+  return `<span class="tag surf-tag ${cls}">${icon(s.icon)}<span class="sr-only">${esc(s.name)}</span><span aria-hidden="true">${esc(s.short)}</span></span>`;
+}
+
+/**
+ * Effort adaptation in words for where they usually walk (Today and the summary share it). On an incline treadmill a
+ * step is 1% of incline on work intervals; without one core personalise turns that into a slightly faster pace.
+ * Jogs (0.2 km/h a step) are mentioned only when the plan has them.
+ */
+export function adaptWords() {
+  const p = state.main.profile;
+  const inc = usualSurface() === 'incline';
+  const jogs = !(p.walkOnly || p.canJog !== 'yes' || restrictedToModerate());
+  const jogStep = isMph() ? `0.1${NB}mph` : `0.2${NB}km/h`;
+  return {
+    ask: inc ? 'Want slightly steeper work intervals?' : 'Want a slightly faster pace on work intervals?',
+    change: `${inc ? '1% more incline on work intervals' : 'a slightly faster pace on work intervals'}${jogs ? ` and ${jogStep} more on jogs` : ''}`,
+    stepTitle: inc ? 'Work intervals are a little steeper' : 'Work intervals are a little faster',
+    chose: `You chose ${inc ? 'slightly steeper work intervals' : 'a slightly faster pace on work intervals'} after two sessions that felt easy.`,
+    eased: `Your last two sessions felt very hard, so work intervals are ${inc ? '1% less steep' : 'a little slower'}${jogs ? ' and jogs a little slower' : ''}.`,
+  };
 }
 
 /** Number of work intervals and a noun for them ("7 climbs"). */
-export function workSummary(segs, w) {
+export function workSummary(segs, w, surface = activeSurface()) {
   const work = segs.filter((s) => s.role === 'work');
   const mode = mainMode(segs);
-  const noun = { power: state.main.profile.treadmill.hasIncline ? ['climb', 'climbs'] : ['power interval', 'power intervals'], jog: ['jog', 'jogs'], run: ['sprint', 'sprints'], brisk: ['brisk block', 'brisk blocks'], walk: ['walk', 'walks'] }[mode] || ['interval', 'intervals'];
+  const power = surface === 'incline' ? ['climb', 'climbs'] : surface === 'flat' ? ['power walk', 'power walks'] : ['hard effort', 'hard efforts'];
+  const noun = { power, jog: ['jog', 'jogs'], run: ['sprint', 'sprints'], brisk: ['brisk block', 'brisk blocks'], walk: ['walk', 'walks'] }[mode] || ['interval', 'intervals'];
   const n = work.filter((s) => s.type === mode).length;
   const parts = [INTENSITY[w.intensity] || ''];
   if (n > 1) parts.push(`${n} ${noun[1]}`);
@@ -163,23 +290,35 @@ function statCells(cells) {
   return `<div class="stat-grid pn-stats" style="grid-template-columns:repeat(${cells.length}, auto)">${cells.map(([l, v]) => `<div><span class="stat-label">${l}</span><span class="stat-value">${v}</span></div>`).join('')}</div>`;
 }
 
-function plannedStats(st) {
+/** Planned numbers for the surface: time, ≈ kcal, distance and the surface's headline (max incline, top speed or hardest effort). */
+function plannedStats(st, segs, surface) {
   const p = state.main.profile;
   const cells = [['Time', `${Math.round(st.sec / 60)}<small>min</small>`]];
   if (!p.noNumbers) cells.push(['Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`]);
-  cells.push(['Distance', `${fmt1(toDist(st.km))}<small>${distUnit()}</small>`]);
-  if (p.treadmill.hasIncline) cells.push(['Incline', `${fmt1(st.maxI).replace(/\.0$/, '')}<small>% max</small>`]);
-  else cells.push(['Climb', `${Math.round(toElev(st.elev))}<small>${elevUnit()}</small>`]);
+  cells.push(distCell(st.km, surface));
+  cells.push(peakCell(st, segs, surface));
   return statCells(cells);
 }
 
+/** What a finished session logged. Climb only means something on an incline (older sessions have no surface). */
 function sessionStats(s) {
   const p = state.main.profile;
+  const surf = s.surface || null;
   const cells = [['Time', `${Math.round((s.durationSec || 0) / 60)}<small>min</small>`]];
-  cells.push(['Distance', `${fmt1(toDist(s.distanceKm || 0))}<small>${distUnit()}</small>`]);
+  cells.push(distCell(s.distanceKm || 0, surf));
   if (!p.noNumbers) cells.push(['Active', `≈${roundKcal(s.kcal)}<small>kcal</small>`]);
-  cells.push(['Climb', `${Math.round(toElev(s.elevM || 0))}<small>${elevUnit()}</small>`]);
+  if (!surf || surf === 'incline') cells.push(['Climb', `${Math.round(toElev(s.elevM || 0))}<small>${elevUnit()}</small>`]);
+  else if (surf === 'flat' && s.durationSec > 0) cells.push(['Avg speed', `${fmt1(toSpeed((s.distanceKm || 0) / (s.durationSec / 3600)))}<small>${esc(speedUnit())}</small>`]);
   return statCells(cells);
+}
+
+/** Footnote for the session sheet: what is estimated, and (planned, not usual surface) that the numbers are for today. */
+function sheetNote(surface, noNumbers, done) {
+  const parts = [];
+  if (surface === 'outdoor') parts.push(noNumbers ? 'Distance is an estimate from your paces.' : 'Calories and distance are estimates from your paces.');
+  else parts.push(noNumbers ? 'Distance is an estimate from your paces.' : 'Calories are estimates of active energy.');
+  if (!done && surface !== usualSurface()) parts.push(`Numbers are for ${surfacePhrase(surface)}, your choice for today.`);
+  return parts.join(' ');
 }
 
 function openSlot(key) {
@@ -195,7 +334,9 @@ function openSlot(key) {
     const p = state.main.profile;
     const status = slotState(slot);
     const sess = status === 'done' ? slotSession(slot) : null;
-    const { segs, st, w, mode } = slotInfo(slot);
+    // Start in this sheet runs today, so planned numbers follow today's surface.
+    const surface = activeSurface();
+    const { segs, st, w, mode } = slotInfo(slot, surface);
     const phase = phaseForWeek(slot.week);
     titleEl.textContent = sess && sess.name ? sess.name : w.name;
 
@@ -205,15 +346,15 @@ function openSlot(key) {
         <p class="body-s">Pick another workout of the same kind for ${esc(dateLong(slot.date))}. It counts toward your plan the same way.</p>
         <div class="choices pn-swap" role="radiogroup" aria-label="Workouts">
           ${list.map(({ id, w: ww }) => {
-            const sg = segmentsFor(id, { level: slot.level, length: slot.length });
+            const sg = segmentsFor(id, { level: slot.level, length: slot.length, surface });
             const ss = planStats(sg);
             const on = id === slot.workoutId;
             return `<button type="button" class="choice pn-swap-item" role="radio" aria-checked="${on}" data-swap="${esc(id)}">
               <span class="radio" aria-hidden="true"></span>
               <span class="choice-main">
                 <span class="choice-title">${esc(ww.name)}${id === planned ? ' <span class="tag">Planned</span>' : ''}</span>
-                <span class="choice-sub">${esc(ww.focus)} · ${minLabel(ss.sec / 60)}${p.noNumbers ? '' : ` · ≈${roundKcal(ss.kcal)}${NB}kcal`}</span>
-                <span class="pn-swap-chart">${intervalChart(sg, { mini: true, h: 34, label: `${ww.name} profile` })}</span>
+                <span class="choice-sub">${esc(workoutFocus(ww, { surface, segs: sg }))} · ${minLabel(ss.sec / 60)}${p.noNumbers ? '' : ` · ≈${roundKcal(ss.kcal)}${NB}kcal`}</span>
+                <span class="pn-swap-chart">${surfaceChart(sg, surface, { mini: true, h: 34, label: `${ww.name} profile` })}</span>
               </span>
             </button>`;
           }).join('')}
@@ -245,22 +386,24 @@ function openSlot(key) {
         ? `<button type="button" class="row has-icon" data-act="unskip"><span class="row-icon">${icon('repeat')}</span><span class="row-main"><span class="row-title">Put back in the plan</span></span>${icon('chevR', 'chev')}</button>`
         : `<button type="button" class="row has-icon" data-act="skip"><span class="row-icon">${icon('skipDay')}</span><span class="row-main"><span class="row-title">Skip this session</span><span class="row-sub">Your plan carries on without it</span></span>${icon('chevR', 'chev')}</button>`);
     }
-    if (has('openWorkout')) rows.push(`<button type="button" class="row has-icon" data-act="view"><span class="row-icon">${icon('library')}</span><span class="row-main"><span class="row-title">View workout</span><span class="row-sub">Every interval, speed and incline</span></span>${icon('chevR', 'chev')}</button>`);
+    const viewSub = surface === 'incline' ? 'Every interval, speed and incline' : surface === 'flat' ? 'Every interval and its speed' : 'Every interval and how hard it should feel';
+    if (has('openWorkout')) rows.push(`<button type="button" class="row has-icon" data-act="view"><span class="row-icon">${icon('library')}</span><span class="row-main"><span class="row-title">View workout</span><span class="row-sub">${viewSub}</span></span>${icon('chevR', 'chev')}</button>`);
 
     s.body.innerHTML = `
       <div class="pn-sh-tags">
         <span class="mode-chip mode-${mode}">${modeIcon(mode)}${esc(MODES[mode].name)}</span>
         <span class="tag">Week ${slot.week} · ${esc(phase.name)}</span>
         ${slot.deload ? '<span class="tag">Lighter week</span>' : ''}
+        ${sess ? surfaceTag(sess.surface) : surfaceTag(surface)}
       </div>
       <p class="pn-sh-status ${line.cls}" tabindex="-1" autofocus>${icon(line.icon)}<span>${esc(line.text)}</span></p>
       ${sess || lockReason(slot.workoutId, slot.week) ? '' : steepNoticeHtml(segs)}
       <div class="card pn-sh-card">
-        ${sess ? sessionStats(sess) : plannedStats(st)}
+        ${sess ? sessionStats(sess) : plannedStats(st, segs, surface)}
         ${sess && sess.rpe ? `<p class="body-s pn-sh-rpe">Effort rating: <b class="num">${sess.rpe}</b> of 10</p>` : ''}
-        ${sess ? '' : `<div class="pn-sh-chart">${intervalChart(segs, { h: 96, label: `${w.name} profile: bars show speed, the line shows incline` })}</div>${modeLegend(segs, MODES)}`}
+        ${sess ? '' : `<div class="pn-sh-chart">${surfaceChart(segs, surface, { h: surface === 'incline' ? 96 : 104, label: chartLabel(w.name, surface) })}</div>${surfaceLegend(segs, surface)}`}
       </div>
-      <p class="body-xs">${sess ? '' : `${esc(w.focus || '')}. `}${p.noNumbers ? 'Distance is an estimate from your paces.' : 'Calories are estimates of active energy.'}</p>
+      <p class="body-xs">${sess ? '' : `${esc(workoutFocus(w, { surface, segs }) || '')}. `}${sheetNote(sess ? sess.surface : surface, p.noNumbers, !!sess)}</p>
       ${rows.length ? `<div class="group">${rows.join('')}</div>` : ''}`;
 
     if (sess) {
@@ -334,7 +477,7 @@ const STATUS_TEXT = { done: 'Done', today: 'Today', upcoming: '', missed: 'Misse
 function sessionItem(slot, status, today) {
   const p = state.main.profile;
   const sess = status === 'done' ? slotSession(slot) : null;
-  const { segs, st, w, mode } = slotInfo(slot);
+  const { segs, st, w, mode, surface } = slotInfo(slot, sess && SURFACES[sess.surface] ? sess.surface : surfaceFor(slot));
   const name = sess && sess.name ? sess.name : w.name;
   const min = sess ? (sess.durationSec || 0) / 60 : st.sec / 60;
   const kcal = sess ? sess.kcal : st.kcal;
@@ -345,13 +488,14 @@ function sessionItem(slot, status, today) {
   if (!p.noNumbers) meta.push(`≈${roundKcal(kcal)}${NB}kcal`);
   if (state.main.plan.busy && state.main.plan.busy[slot.key] && status !== 'done') meta.push('Busy day');
   if (slot.moved && status !== 'done') meta.push('Moved');
-  const aria = `${dateLong(slot.date)}: ${name}, ${Math.round(min)} minutes${stTxt ? ', ' + stTxt : ''}`;
+  const surf = sess && SURFACES[sess.surface] ? sess.surface : null;
+  const aria = `${dateLong(slot.date)}: ${name}, ${Math.round(min)} minutes${stTxt ? ', ' + stTxt : ''}${surf ? `, ${SURFACES[surf].name}` : ''}`;
   return `<button type="button" class="pn-sess ${status}" data-slot="${esc(slot.key)}" aria-label="${esc(aria)}">
     <span class="pn-day" aria-hidden="true"><span>${esc(dayName(slot.date, 'short'))}</span><b class="num">${new Date(slot.date).getDate()}</b></span>
     <span class="pn-sess-main">
       <span class="pn-sess-top"><span class="pn-sess-name">${esc(name)}</span>${stTxt ? `<span class="pn-st ${status}">${status === 'done' ? icon('check') : ''}${esc(stTxt)}</span>` : ''}</span>
-      <span class="pn-sess-meta">${meta.map(esc).join(' · ')}</span>
-      <span class="pn-mini mode-${mode}">${intervalChart(segs, { mini: true, h: 30, label: `${w.name} profile` })}</span>
+      <span class="pn-sess-meta">${meta.map(esc).join(' · ')}${surf ? surfaceTag(surf, { cls: 'pn-surf' }) : ''}</span>
+      <span class="pn-mini mode-${mode}">${surfaceChart(segs, sess && SURFACES[sess.surface] ? sess.surface : surface, { mini: true, h: 30, label: `${w.name} profile` })}</span>
     </span>
     ${icon('chevR', 'chev')}
   </button>`;
@@ -406,7 +550,7 @@ function phaseTimeline(curWeek, weeks, block = 1) {
       <span class="pn-dot" aria-hidden="true">${state0 === 'done' ? icon('check') : ''}</span>
       <div class="pn-ph-text">
         <div class="pn-ph-head"><span class="title-s">${esc(ph.name)}</span><span class="pn-ph-weeks num">Weeks ${a}–${b}</span>${state0 === 'current' ? `<span class="pn-now">Week ${curWeek}</span>` : ''}${state0 === 'done' ? '<span class="sr-only">(completed)</span>' : ''}</div>
-        <p class="body-s">${esc(ph.blurb)}</p>
+        <p class="body-s">${esc(phaseBlurbFor(ph))}</p>
         ${deloads.length ? `<p class="body-xs">Week ${deloads.join(', ')} is a lighter week${a === 1 ? ': shorter, easier sessions so your body can catch up' : ''}.</p>` : ''}
       </div>
     </li>`;

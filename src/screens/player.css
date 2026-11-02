@@ -127,6 +127,47 @@
 .pl-single .pl-num { font-size: 168px; }
 .player.pl-compact .pl-single .pl-num { font-size: 140px; }
 
+/* outdoors: how hard to walk instead of numbers to set (same mode panel, so the same ≥ 7:1 contrast in both themes) */
+.pl-effort { padding: 14px 18px 16px; }
+.pl-eff-name {
+  font-family: var(--font-display); font-stretch: 74%; font-weight: 800; font-size: 76px; line-height: .92; letter-spacing: -.028em;
+  white-space: nowrap; overflow: hidden; color: var(--pl-panel-ink); padding: 6px 0 14px;
+}
+.pl-eff-more { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1.5px solid var(--pl-panel-div); }
+.pl-eff-lvl { display: flex; align-items: baseline; gap: 8px; color: var(--pl-panel-ink); font-size: 16px; font-weight: 650; }
+.pl-eff-lvl b { font-family: var(--font-display); font-stretch: 92%; font-weight: 800; font-size: 26px; letter-spacing: -.01em; }
+.pl-eff-talk { font-size: 19px; font-weight: 700; line-height: 1.25; color: var(--pl-panel-ink); }
+
+/* ---------- Just walk: elapsed time counts up, pick a pace, set speed / incline as you go ---------- */
+.pl-free-time { margin-top: 18px; }
+.pl-free-clock { font-size: 150px; line-height: .84; margin-top: 10px; letter-spacing: -.035em; white-space: nowrap; }
+.pl-free-clock.hours { font-size: 108px; }
+.player.is-paused .pl-free-clock { color: var(--ink-3); }
+.player.is-paused .pl-free-time .pl-count-lbl { color: var(--ink); font-weight: 750; }
+.pl-pace { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+.pl-pace-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 72px; padding: 8px 6px;
+  border-radius: 16px; background: var(--pl-btn); box-shadow: inset 0 0 0 1px var(--line-soft); color: var(--ink);
+  font-family: var(--font-display); font-stretch: 100%; font-weight: 750; font-size: 14.5px; line-height: 1.1; text-align: center;
+  transition: background-color .2s, color .2s, transform .12s var(--ease);
+}
+.pl-pace-btn:active { transform: scale(.96); }
+.pl-pace-ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--mode); color: var(--mode-on); }
+.pl-pace-ico svg { width: 17px; height: 17px; }
+.pl-pace-btn[aria-pressed="true"] { background: var(--ink); color: var(--ink-inv); box-shadow: none; }
+.pl-step { display: flex; gap: 8px; }
+.pl-step button { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: var(--pl-chip-bg); color: var(--pl-panel-ink); transition: transform .12s var(--ease), opacity .15s; }
+.pl-step button:active { transform: scale(.92); }
+.pl-step button[disabled] { opacity: .32; }
+.pl-step svg { width: 20px; height: 20px; stroke-width: 2.3; }
+.pl-free .pl-meta { gap: 10px; }
+.pl-free .pl-panel { margin-top: 14px; }
+.pl-free .pl-row { padding: 12px 0 10px; }
+.pl-free .pl-single .pl-row { padding: 18px 0 16px; }
+.pl-free .pl-live { margin-top: 16px; }
+.pl-live-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pl-controls.pl-controls-free { justify-content: center; }
+
 /* ---------- interval countdown ---------- */
 .pl-count { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 12px; }
 .pl-count-main { min-width: 0; }
@@ -226,6 +267,22 @@ body:has(.overlay.player) .toast.show { transform: translate(-50%, 0); }
 .steep-notice .banner-body { display: flex; flex-direction: column; gap: 2px; }
 .steep-notice .banner-body b { margin-bottom: 0; }
 .pr-cap { align-self: flex-start; min-height: 44px; margin-top: 10px; }
+/* where are you walking? */
+.pr-where { display: flex; flex-direction: column; gap: 8px; }
+.pr-where-lbl { font-size: 13px; font-weight: 650; color: var(--ink-2); }
+.pr-where-note { min-height: 1.45em; }
+/* Just walk: the three paces */
+.pr-free-lead { font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.pr-paces { display: flex; flex-direction: column; }
+.pr-pace { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.pr-pace + .pr-pace { border-top: 1px solid var(--line-soft); }
+.pr-pace-ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; background: var(--mode); color: var(--mode-on); }
+.pr-pace-ico svg { width: 18px; height: 18px; }
+.pr-pace-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pr-pace-main b { font-weight: 700; font-size: 16px; }
+.pr-pace-main small { font-size: 13.5px; color: var(--ink-3); line-height: 1.3; }
+.pr-pace-val { flex: none; white-space: nowrap; font-family: var(--font-display); font-stretch: 92%; font-weight: 800; font-size: 21px; }
+.pr-pace-val small { font-family: var(--font-text); font-stretch: 100%; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-left: 4px; }
 
 /* ---------- short screens (set by fitLayout when content + safe areas overflow) ---------- */
 .player.pl-compact .pl-top { min-height: 44px; }
@@ -286,6 +343,39 @@ body:has(.overlay.player) .toast.show { transform: translate(-50%, 0); }
 .player.pl-mini .pl-ctl { gap: 3px; font-size: 12px; }
 .player.pl-mini .pl-ctl-c { width: 46px; height: 46px; }
 .player.pl-mini .pl-pause { width: 64px; height: 64px; }
+/* Just walk and outdoor sessions on short screens: the clock, pace buttons and effort name shrink with the tiers */
+.player.pl-compact .pl-free-time { margin-top: 8px; }
+.player.pl-compact .pl-free-clock { font-size: 124px; }
+.player.pl-compact .pl-free-clock.hours { font-size: 92px; }
+.player.pl-compact .pl-pace { margin-top: 12px; }
+.player.pl-compact .pl-pace-btn { min-height: 62px; padding: 6px; }
+.player.pl-compact .pl-eff-name { font-size: 66px; padding: 2px 0 10px; }
+.player.pl-compact .pl-effort { padding: 10px 18px 12px; }
+.player.pl-dense .pl-free-clock { font-size: 100px; }
+.player.pl-dense .pl-free-clock.hours { font-size: 76px; }
+.player.pl-dense .pl-pace-btn { min-height: 56px; gap: 4px; padding: 5px 4px; font-size: 13.5px; }
+.player.pl-dense .pl-pace-ico { width: 22px; height: 22px; border-radius: 7px; }
+.player.pl-dense .pl-pace-ico svg { width: 15px; height: 15px; }
+/* an open walk keeps its live stats (distance, energy) on short screens; the clock gives way instead */
+.player.pl-tight.pl-free .pl-live { display: grid; margin-top: 10px; }
+.player.pl-tight .pl-free-clock { font-size: 84px; }
+.player.pl-tight .pl-free-clock.hours { font-size: 64px; }
+.player.pl-dense .pl-eff-name { font-size: 56px; }
+.player.pl-dense .pl-eff-talk { font-size: 17px; }
+.player.pl-dense.pl-free .pl-row { padding: 6px 0 4px; }
+.player.pl-mini .pl-free-time { margin-top: 2px; }
+.player.pl-mini .pl-free-clock { font-size: 72px; margin-top: 4px; }
+.player.pl-mini .pl-free-clock.hours { font-size: 54px; }
+.player.pl-mini.pl-free .pl-live b { font-size: 20px; }
+.player.pl-mini .pl-pace { margin-top: 8px; gap: 6px; }
+.player.pl-mini .pl-pace-btn { min-height: 46px; font-size: 13.5px; }
+.player.pl-mini .pl-pace-ico { display: none; }
+.player.pl-mini .pl-eff-name { font-size: 46px; padding-bottom: 8px; }
+.player.pl-mini .pl-eff-more { padding-top: 8px; gap: 2px; }
+.player.pl-mini .pl-eff-lvl b { font-size: 22px; }
+.player.pl-mini .pl-eff-talk { font-size: 16px; }
+.player.pl-mini .pl-step { gap: 6px; }
+.player.pl-mini.pl-free .pl-panel { margin-top: 8px; }
 /* last resort: if even the smallest tier overflows, the controls stay pinned on screen while the rest scrolls */
 .player.pl-scroll .pl-controls {
   position: sticky; bottom: 0; z-index: 2; background: var(--pl-stage);

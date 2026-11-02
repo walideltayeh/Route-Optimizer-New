@@ -215,5 +215,181 @@ section('Starting block 2 after finishing block 1');
   ok(probe.startDate === '2026-11-09', `block 2 starts next Monday (${probe.startDate}), not in the week block 1 still owns`);
 }
 
+/* ---------------- 9. flat treadmill and outdoors: no incline, climbs become pace ---------------- */
+section('Flat treadmill and outdoors: every interval has 0% incline and work intervals are faster than an easy walk');
+for (const canJog of ['unsure', 'yes']) {
+  reset();
+  state.main.profile.canJog = canJog;
+  const walkPace = P.speedFor('walk');
+  for (const surface of ['flat', 'outdoor']) {
+    let inclined = [], slow = [], works = 0;
+    for (const id of ALL_IDS) for (const level of [0, 1, 2]) for (const length of LENGTHS) {
+      const segs = P.segmentsFor(id, { level, length, surface });
+      if (segs.some((s) => s.incline !== 0)) inclined.push(`${id} L${level} ${length}`);
+      for (const s of segs.filter((x) => x.role === 'work')) { works++; if (!(P.speedFor(s) > walkPace)) slow.push(`${id} L${level} ${length} "${s.label}" ${P.speedFor(s)}`); }
+    }
+    ok(inclined.length === 0, `canJog "${canJog}", ${surface}: every built-in workout at every level and length has 0% incline (${inclined.slice(0, 3).join(', ')})`);
+    ok(works > 0 && slow.length === 0, `canJog "${canJog}", ${surface}: all ${works} work intervals are faster than the easy-walk pace of ${walkPace} km/h (${slow.slice(0, 3).join(', ')})`);
+    ok(P.segmentsFor('free', { surface }).every((s) => s.incline === 0), `canJog "${canJog}", ${surface}: Just walk has no incline`);
+    const labels = ALL_IDS.flatMap((id) => P.segmentsFor(id, { level: 2, length: 60, surface }).map((s) => s.label));
+    ok(!labels.some((l) => /climb/i.test(l)), `canJog "${canJog}", ${surface}: no interval is called a climb (${labels.filter((l) => /climb/i.test(l)).slice(0, 3).join(', ')})`);
+    const descs = ALL_IDS.map((id) => [id, P.workoutDesc(id, { surface, segs: P.segmentsFor(id, { level: 1, surface }) })]);
+    const hilly = descs.filter(([, d]) => /incline|climb/i.test(d)).map(([id]) => id);
+    ok(descs.every(([, d]) => d.length > 20) && hilly.length === 0, `canJog "${canJog}", ${surface}: no workout description mentions incline or climbs (${hilly.join(', ')})`);
+    if (surface === 'outdoor') ok(!descs.some(([, d]) => /belt|rail/i.test(d)), `canJog "${canJog}": outdoor descriptions say nothing about a belt or rails`);
+  }
+  // A climb on the incline treadmill becomes extra pace without one (+0.1 km/h per point above 2%, at most +1).
+  const inc = P.segmentsFor('hills', { level: 2, length: 45, surface: 'incline' });
+  const flat = P.segmentsFor('hills', { level: 2, length: 45, surface: 'flat' });
+  const i = inc.findIndex((s) => s.role === 'work');
+  ok(inc[i].incline === 10 && Math.abs(P.speedFor(flat[i]) - (P.speedFor(inc[i]) + 0.8)) < 1e-9, `canJog "${canJog}": a 10% climb becomes +0.8 km/h on a flat treadmill (${P.speedFor(inc[i])} → ${P.speedFor(flat[i])} km/h)`);
+  ok(inc.some((s) => s.incline > 0), `canJog "${canJog}": the incline treadmill still gets incline targets`);
+  ok(P.segmentsFor('steep', { level: 1, surface: 'flat' }).every((s) => s.speed == null), `canJog "${canJog}": Steep Steady Walk's fixed 4.8 km/h is dropped without an incline`);
+}
+{
+  reset();
+  state.main.profile.treadmill.maxSpeed = 6; // a walking pad
+  P.setUsualSurface(state.main, 'flat');
+  const top = Math.max(...ALL_IDS.flatMap((id) => P.segmentsFor(id, { level: 2, length: 60 }).map((s) => P.speedFor(s))));
+  ok(top <= 6, `a 6 km/h walking pad is never asked to go faster (top ${top} km/h)`);
+  const qd = P.quickDraft({ minutes: 30, focus: 'climb', intensity: 'hard' });
+  ok(qd.segs.every((s) => s.incline === 0) && !qd.segs.some((s) => /climb/i.test(s.label)), 'Quick Draft on a flat day: no incline and no "climb" labels');
+}
+
+/* ---------------- 10. walking only ---------------- */
+section('Walking only removes every jog and run, everywhere');
+{
+  reset();
+  state.main.profile.canJog = 'yes';
+  state.main.profile.hardExercise = true;
+  const jogsIn = (segs) => segs.some((s) => s.type === 'jog' || s.type === 'run');
+  ok(ALL_IDS.some((id) => jogsIn(P.segmentsFor(id, { level: 2, length: 45, surface: 'incline' }))), 'without walking only, a jogger has jog intervals (control)');
+  state.main.profile.walkOnly = true;
+  const bad = [];
+  for (const surface of P.SURFACE_IDS) for (const id of ALL_IDS) for (const level of [0, 1, 2]) for (const length of LENGTHS) {
+    if (jogsIn(P.segmentsFor(id, { level, length, surface }))) bad.push(`${surface} ${id} L${level} ${length}`);
+  }
+  ok(bad.length === 0, `every built-in workout at every level, length and surface is walking only (${bad.slice(0, 4).join(', ')})`);
+  state.main.customs = [{ id: 'c_run', name: 'Runner', segs: [{ type: 'run', dur: 120, incline: 1 }, { type: 'jog', dur: 300, incline: 2 }, { type: 'walk', dur: 120, incline: 0 }] }];
+  ok(!jogsIn(P.segmentsFor('c_run')), 'a custom workout with runs and jogs becomes walking pushes');
+  const planJogs = () => P.planSlots().filter((s) => jogsIn(P.slotSegments(s))).map((s) => s.key);
+  ok(planJogs().length === 0, `no plan session in weeks 1–12 has a jog (${planJogs().slice(0, 4).join(', ')})`);
+  state.main.plan.block = 2;
+  ok(planJogs().length === 0, 'block 2 has no jogs either');
+  state.main.plan.block = 1;
+  const drafts = [];
+  for (const focus of ['climb', 'intervals', 'steady', 'mixed']) for (const intensity of ['easy', 'moderate', 'hard']) for (const minutes of [20, 30, 45, 60]) {
+    if (jogsIn(P.quickDraft({ minutes, focus, intensity }).segs)) drafts.push(`${focus} ${intensity} ${minutes}`);
+  }
+  ok(drafts.length === 0, `Quick Draft never adds a jog (${drafts.slice(0, 3).join(', ')})`);
+  const jogDescs = P.SURFACE_IDS.flatMap((surface) => ALL_IDS.filter((id) => /\bjog|\brun/i.test(P.workoutDesc(id, { surface }))).map((id) => `${surface} ${id}`));
+  ok(jogDescs.length === 0, `no workout description talks about jogs or runs (${jogDescs.slice(0, 3).join(', ')})`);
+  state.main.profile.canJog = 'no';
+  freeze('2026-09-14T09:00'); // Monday of week 5
+  logSession('w4d2', '2026-09-11T18:00', { rpe: 4 }); logSession('w4d3', '2026-09-12T18:00', { rpe: 4 });
+  ok(!P.jogOfferDue(), 'Today never offers short jogs to a walking-only user');
+  state.main.profile.walkOnly = false;
+  ok(P.jogOfferDue(), 'the jog offer comes back once walking only is turned off (control)');
+}
+
+/* ---------------- 11. a surface just for today ---------------- */
+section('A just-for-today surface applies only today and clears when set back to the usual one');
+{
+  reset({ start: '2026-08-19T08:00' });
+  P.setUsualSurface(state.main, 'incline');
+  ok(P.usualSurface() === 'incline' && P.activeSurface() === 'incline' && state.main.profile.treadmill.hasIncline === true, 'usual surface: incline treadmill');
+  P.setTodaySurface(state.main, 'outdoor');
+  ok(P.activeSurface() === 'outdoor' && P.usualSurface() === 'incline', 'today is outdoors; the usual surface is unchanged');
+  ok(state.main.todaySurface && state.main.todaySurface.d === '2026-08-19', `the choice is dated today (${state.main.todaySurface && state.main.todaySurface.d})`);
+  ok(P.segmentsFor('hills', { level: 1 }).every((s) => s.incline === 0), 'today’s intervals follow it (no incline)');
+  freeze('2026-08-19T23:30');
+  ok(P.activeSurface() === 'outdoor', 'it lasts all day');
+  freeze('2026-08-20T00:05');
+  ok(P.activeSurface() === 'incline', 'tomorrow is back to the usual surface');
+  ok(P.segmentsFor('hills', { level: 1 }).some((s) => s.incline > 0), 'tomorrow’s intervals have incline again');
+  freeze('2026-08-19T12:00');
+  P.setTodaySurface(state.main, 'flat');
+  ok(P.activeSurface() === 'flat', 'today can change again (flat)');
+  P.setTodaySurface(state.main, 'incline');
+  ok(state.main.todaySurface === null && P.activeSurface() === 'incline', 'choosing the usual surface clears the one-off choice');
+  P.setTodaySurface(state.main, 'outdoor'); P.setTodaySurface(state.main, null);
+  ok(state.main.todaySurface === null, 'null clears it');
+  P.setTodaySurface(state.main, 'moon');
+  ok(state.main.todaySurface === null && P.activeSurface() === 'incline', 'an unknown surface is ignored');
+  P.setTodaySurface(state.main, 'outdoor');
+  P.setUsualSurface(state.main, 'flat');
+  ok(P.usualSurface() === 'flat' && state.main.profile.treadmill.hasIncline === false && state.main.todaySurface === null && P.activeSurface() === 'flat', 'changing the usual surface keeps hasIncline in step and clears today’s choice');
+  P.setTodaySurface(state.main, 'flat');
+  ok(state.main.todaySurface === null, 'the usual surface (now flat) is never stored as a one-off');
+}
+
+/* ---------------- 12. Just walk: the open-ended engine ---------------- */
+section('Just walk: an open engine never finishes by itself; end() completes it; changeCurrent splits intervals');
+{
+  reset();
+  let t = new RealDate('2026-08-17T09:00:00Z').getTime();
+  const now = () => t;
+  const segs = P.segmentsFor('free', { surface: 'flat' }).map((s) => ({ ...s }));
+  ok(segs.length === 1 && segs[0].type === 'brisk' && segs[0].dur === 600, 'Just walk starts as one 10-minute brisk interval');
+  const e = E.createEngine(segs, { now, open: true });
+  e.start();
+  const sums = () => ({
+    dur: segs.reduce((a, s) => a + s.dur, 0), sec: e.splits.reduce((a, x) => a + x.sec, 0),
+    km: e.splits.reduce((a, x) => a + x.km, 0), kcal: e.splits.reduce((a, x) => a + x.kcal, 0),
+  });
+  const consistent = (tag) => {
+    const s = sums();
+    ok(Math.abs(s.dur - e.planTotal) < 1e-6 && Math.abs(s.sec - e.total) < 1e-6 && Math.abs(s.km - e.km) < 1e-9 && Math.abs(s.kcal - e.kcal) < 1e-6 && Math.abs(e.planElapsed() - e.total) < 1e-6,
+      `${tag}: totals agree (intervals ${s.dur} s = plan ${e.planTotal} s; splits ${Math.round(s.sec)} s = active ${Math.round(e.total)} s; distance and energy match)`);
+  };
+  for (let i = 0; i < 25 * 60; i++) { t += 1000; e.tick(); }
+  ok(!e.finished && e.running, `still running after 25 minutes (the 10-minute interval kept extending, now ${segs[0].dur / 60} min)`);
+  ok(Math.round(e.total) === 1500 && e.planTotal >= e.total, `active time 25:00 (${Math.round(e.total)} s), plan ${e.planTotal} s`);
+  ok(e.completion() === 1, 'an open walk counts as fully done whenever it ends');
+  consistent('after 25 min');
+  t += 3 * 3600 * 1000; e.tick(); // the phone slept for three hours
+  ok(!e.finished && Math.round(e.total) === 1500 + 3 * 3600, `a long gap (suspended app) never finishes it (active ${Math.round(e.total)} s)`);
+  // Change pace: the current interval is split; the time before the change keeps its old pace.
+  const kmBefore = e.km;
+  e.changeCurrent({ type: 'power' });
+  ok(segs.length === 2 && e.idx === 1 && segs[0].type === 'brisk' && segs[1].type === 'power', `changing pace splits the interval (${segs.map((s) => s.type).join(' → ')})`);
+  ok(Math.abs(segs[0].dur - e.total) < 1e-6 && Math.abs(e.km - kmBefore) < 1e-12, 'the brisk part ends now and keeps its distance');
+  for (let i = 0; i < 120; i++) { t += 1000; e.tick(); }
+  ok(Math.abs(e.splits.find((x) => x.idx === 1).km - (P.speedFor('power') * 120) / 3600) < 1e-9, 'two minutes of power walking add distance at the power-walk pace');
+  consistent('after a pace change');
+  e.changeCurrent({ speed: 6.6, incline: 2.3 });
+  ok(segs.length === 3 && segs[2].speed === 6.6 && segs[2].incline === 2.5 && segs[2].type === 'power', `a speed and incline change is logged as a new interval (${segs[2].speed} km/h, ${segs[2].incline}%)`);
+  for (let i = 0; i < 60; i++) { t += 1000; e.tick(); }
+  ok(Math.abs(e.speed() - 6.6) < 1e-9 && Math.abs(e.splits.find((x) => x.idx === 2).km - (6.6 * 60) / 3600) < 1e-9, 'the new speed is used from then on');
+  // Two changes within a second (a speed tap that just settled, then a pace tap): the log follows the last one.
+  e.changeCurrent({ speed: 5.8 }); t += 400; e.tick(); e.changeCurrent({ type: 'walk' });
+  for (let i = 0; i < 30; i++) { t += 1000; e.tick(); }
+  t += 600; e.tick(); // back on whole seconds (a split ends on a whole second)
+  const quick = e.splits.find((x) => x.idx === e.idx);
+  ok(segs[e.idx].type === 'walk' && quick.type === 'walk' && Math.abs(quick.speed - P.speedFor('walk')) < 1e-9, `a pace change right after a speed change is logged as that pace (${quick.type} at ${quick.speed} km/h)`);
+  e.changeCurrent({ speed: 99 });
+  ok(segs[segs.length - 1].speed <= 25, 'a silly speed is clamped');
+  for (let i = 0; i < 30; i++) { t += 1000; e.tick(); }
+  consistent('after speed and incline changes');
+  ok(!e.finished, 'still running after the changes');
+  const total = e.total;
+  t += 5000; e.end();
+  ok(e.finished && e.completed === true, 'end() finishes an open walk as completed');
+  ok(Math.round(e.total) === Math.round(total + 5), 'end() counts the last few seconds');
+  const nSegs = segs.length;
+  t += 60000; e.tick(); e.changeCurrent({ type: 'walk' });
+  ok(Math.round(e.total) === Math.round(total + 5) && segs.length === nSegs, 'nothing changes after the end');
+  // A planned workout ended early is not completed (control).
+  const plan = E.createEngine(P.segmentsFor('hills', { level: 0 }).map((s) => ({ ...s })), { now });
+  plan.start(); for (let i = 0; i < 60; i++) { t += 1000; plan.tick(); }
+  plan.end();
+  ok(plan.finished && plan.completed === false && plan.completion() < E.COMPLETE_AT, 'ending a planned workout early is not completed (control)');
+  // Pause: paused time is not active time in an open walk either.
+  const segs2 = P.segmentsFor('free', { surface: 'outdoor' }).map((s) => ({ ...s }));
+  const f = E.createEngine(segs2, { now, open: true });
+  f.start(); t += 60000; f.tick(); f.pause(); t += 600000; f.resume(); t += 60000; f.tick();
+  ok(Math.round(f.total) === 120 && !f.finished, `a 10-minute pause does not count (active ${Math.round(f.total)} s)`);
+}
+
 console.log(`\n${failed ? 'FAILED' : 'PASSED'}: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -9,6 +9,9 @@
   -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
 }
 .lib-filter .seg button { padding: 0 6px; }
+/* six filters: keep them on one line down to 320 px */
+@media (max-width: 400px) { .lib-filter .seg button { padding: 0 2px; font-size: min(calc(13.5 * var(--pt)), 17px); } }
+@media (max-width: 350px) { .lib-filter .seg button { font-size: min(calc(12.5 * var(--pt)), 16px); letter-spacing: -.01em; } }
 .lib .screen-head .body-s { max-width: 34ch; }
 .lib .screen-head h1[tabindex="-1"]:focus { outline: none; }
 .lib .section-link { text-decoration: none; }
@@ -28,6 +31,24 @@
 .lib-slot.done .row-title, .lib-slot.skipped .row-title, .lib-slot.missed .row-title { color: var(--ink-2); }
 .lib-slot .tag { flex: none; }
 .lib-today { background: var(--ink); color: var(--ink-inv); }
+
+/* ---- just walk: the screen's one dark hero element ---- */
+.lib-free {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  padding: 18px 18px 18px 20px; border-radius: var(--radius-l);
+  background: var(--hero-bg); color: var(--hero-ink); box-shadow: inset 0 0 0 1px var(--hero-line);
+}
+.lib-free .topo-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; color: var(--hero-topo); }
+.lib-free .topo-bg .strong { color: var(--hero-topo-strong); }
+.lib-free-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lib-free-eyebrow { color: var(--hero-ink-2); }
+.lib-free-t { font-family: var(--font-display); font-stretch: 112%; font-weight: 850; font-size: 26px; line-height: 1.1; }
+.lib-free-s { font-size: 14px; line-height: 1.4; color: var(--hero-ink-2); max-width: 36ch; }
+.lib-free-where { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 650; color: var(--hero-ink); }
+.lib-free-where svg { width: 16px; height: 16px; color: var(--hero-ink-2); }
+.lib-free-go { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--mode); color: var(--mode-on); box-shadow: 0 10px 26px -12px var(--mode); }
+.lib-free-go svg { width: 24px; height: 24px; margin-left: 3px; }
 
 /* ---- make-your-own tiles ---- */
 .lib-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

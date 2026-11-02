@@ -292,6 +292,7 @@ export async function healthSaveWorkout(s) {
     end: new Date(endMs).toISOString(),
     pauses: pauses.map(([a, b]) => ({ start: new Date(a).toISOString(), end: new Date(b).toISOString() })),
     activityType: runSec >= (s.durationSec || 0) * 0.5 ? 'running' : 'walking',
+    indoor: s.surface !== 'outdoor', // HKMetadataKeyIndoorWorkout / HKWorkoutConfiguration.locationType
     segments,
     totalKcal: h.watch ? 0 : s.kcal,
     totalDistanceM: h.watch ? 0 : (s.distanceKm || 0) * 1000,

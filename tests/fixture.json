@@ -35,6 +35,8 @@
     "maxSpeed": 16,
     "handsFree": true
    },
+   "surface": null,
+   "walkOnly": false,
    "sessionLength": 45,
    "busyLength": 30,
    "cues": {
@@ -135,7 +137,7 @@
  },
  "sessions": [
   {
-   "id": "mvyu2v1jzhofql",
+   "id": "mvyzkuc8imlyyp",
    "date": "2026-10-30T18:10:00.000Z",
    "endedAt": "2026-10-30T18:55:00.000Z",
    "workoutId": "steady",
@@ -278,7 +280,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jqa62mg",
+   "id": "mvyzkuc896wr5f",
    "date": "2026-10-28T18:10:00.000Z",
    "endedAt": "2026-10-28T18:55:00.000Z",
    "workoutId": "mixed",
@@ -564,7 +566,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jvaa2ai",
+   "id": "mvyzkuc8bwxj9k",
    "date": "2026-10-26T18:10:00.000Z",
    "endedAt": "2026-10-26T18:55:00.000Z",
    "workoutId": "pyramid",
@@ -762,7 +764,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jjy8g71",
+   "id": "mvyzkuc8c06nxz",
    "date": "2026-10-24T18:10:00.000Z",
    "endedAt": "2026-10-24T18:55:00.000Z",
    "workoutId": "easy",
@@ -905,7 +907,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jowjorl",
+   "id": "mvyzkuc7ey02ua",
    "date": "2026-10-23T18:10:00.000Z",
    "endedAt": "2026-10-23T18:55:00.000Z",
    "workoutId": "steady",
@@ -1048,7 +1050,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jky7xlp",
+   "id": "mvyzkuc77sis1s",
    "date": "2026-10-21T18:10:00.000Z",
    "endedAt": "2026-10-21T18:55:00.000Z",
    "workoutId": "walkjog",
@@ -1301,7 +1303,7 @@
    "source": "app"
   },
   {
-   "id": "mvyu2v1jflek38",
+   "id": "mvyzkuc7h2g8ga",
    "date": "2026-10-19T18:10:00.000Z",
    "endedAt": "2026-10-19T18:55:00.000Z",
    "workoutId": "hills",

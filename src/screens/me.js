@@ -1,5 +1,5 @@
 // Me tab: profile hero, grouped settings, learning, data and legal pages.
-// Routes: #me (root), #me-<page> (goal, treadmill, paces, cues, reminders, health, appearance, data, calc, safety,
+// Routes: #me (root), #me-<page> (goal, treadmill = "Where you walk", paces, cues, reminders, health, appearance, data, calc, safety,
 //         privacy, terms, support, lessons) and #lesson-<id>.
 // Actions: openStopSigns(), openHowWeCalculate(), openLesson(id), importBackup(), exportBackup().
 //
@@ -8,7 +8,10 @@
 import * as store from '../core/store.js';
 import { state, DEFAULT_PROFILE, getSync, currentAdapter } from '../core/store.js';
 import { ACTIVITY_LEVELS, PACES, paceCap, healthyRange, roundKcal, LB_PER_KG, intakeFloor } from '../core/science.js';
-import { MODES, MODE_IDS, currentWeek, phaseForWeek, bodyKg, getWorkout, planStart } from '../core/program.js';
+import {
+  MODES, MODE_IDS, currentWeek, phaseForWeek, bodyKg, getWorkout, planStart,
+  SURFACES, SURFACE_IDS, EFFORT, usualSurface, activeSurface, setUsualSurface,
+} from '../core/program.js';
 import { totals } from '../core/achievements.js';
 import {
   toSpeed, fromSpeed, speedUnit, toWeight, fromWeight, weightUnit, toDist, distUnit, toElev, elevUnit,
@@ -46,12 +49,13 @@ const POLICY_DATE = '1 November 2026';
 const HOST_THEME = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : null;
 
 const GOALS = { lose: 'Lose weight', fitter: 'Get fitter', habit: 'Build a walking habit', hike: 'Train for a hike' };
+// Effort numbers come from core EFFORT, so this page matches what the player, Today and Workouts coach.
 const TALK = {
-  walk: { effort: '2–3', text: 'Relaxed. You could chat or even sing.' },
-  brisk: { effort: '3–4', text: 'Purposeful. Full sentences are easy.' },
-  power: { effort: '5–6', text: 'Working. Short phrases only.' },
-  jog: { effort: '6–7', text: 'Comfortably hard. A few words at a time.' },
-  run: { effort: '7–8', text: 'Hard. Talking is a struggle.' },
+  walk: { effort: EFFORT.walk.rpe, text: 'Relaxed. You could chat or even sing.' },
+  brisk: { effort: EFFORT.brisk.rpe, text: 'Purposeful. You can talk, but you couldn’t sing.' },
+  power: { effort: EFFORT.power.rpe, text: 'Working. Short phrases only.' },
+  jog: { effort: EFFORT.jog.rpe, text: 'Comfortably hard. A few words at a time.' },
+  run: { effort: EFFORT.run.rpe, text: 'Hard. Talking is a struggle.' },
 };
 const DETAIL = [
   { value: 1, title: 'Changes only', sub: 'The next interval: mode, speed and incline' },
@@ -107,6 +111,16 @@ function planLine() {
   return `Week ${wk} of ${weeks} · ${phaseForWeek(wk).name}`;
 }
 const paceLabel = (kgPerWeek) => (isLb() ? `${fmt1(kgPerWeek * LB_PER_KG)} lb a week` : `${kgPerWeek} kg a week`);
+const speedTxt = (kmh) => `${trim0(toSpeed(kmh))} ${speedUnit()}`;
+/** One line for where they usually walk: "Incline treadmill · 12% · 16 km/h", "Walking pad · 6 km/h top", "Outdoors". */
+function whereLine(p = P()) {
+  const s = usualSurface(p), t = p.treadmill, max = t.maxSpeed || 16;
+  if (s === 'outdoor') return SURFACES.outdoor.name;
+  if (s === 'flat') return `${max <= 8.05 ? 'Walking pad' : 'Flat treadmill'} · ${speedTxt(max)} top`;
+  return `${SURFACES.incline.name} · ${trim0(t.maxIncline ?? 12)}% · ${speedTxt(max)}`;
+}
+/** What a spoken cue announces on the usual surface. */
+const cueWhat = () => ({ incline: 'mode, speed and incline', flat: 'mode and speed', outdoor: 'mode and how it should feel' })[usualSurface()];
 
 /* ---------------- HTML building blocks ---------------- */
 
@@ -270,7 +284,9 @@ function heroHtml() {
     ? `<div class="stat-grid me-stats" style="--cols:3">
         <div><span class="stat-label">Workouts</span><span class="stat-value num">${fmtInt(t.count)}</span></div>
         <div><span class="stat-label">Time</span><span class="stat-value num">${time}</span></div>
-        <div><span class="stat-label">Climbed</span><span class="stat-value num">${fmtInt(toElev(t.elev))}<small>${elevUnit()}</small></span></div>
+        ${t.elev > 0 || usualSurface(p) === 'incline'
+          ? `<div><span class="stat-label">Climbed</span><span class="stat-value num">${fmtInt(toElev(t.elev))}<small>${elevUnit()}</small></span></div>`
+          : `<div><span class="stat-label">Distance</span><span class="stat-value num">${fmt1(toDist(t.km))}<small>${distUnit()}</small></span></div>`}
       </div>`
     : '<p class="me-stats-empty">Your totals appear here after your first workout.</p>';
   return `<section class="hero-card me-hero" aria-label="Your profile">
@@ -289,8 +305,7 @@ function heroHtml() {
 }
 
 function rootHtml() {
-  const p = P(), t = p.treadmill, r = state.main.readiness;
-  const tm = `${t.hasIncline ? `${trim0(t.maxIncline ?? 12)}%` : 'No incline'} · ${trim0(toSpeed(t.maxSpeed || 16))} ${speedUnit()}`;
+  const p = P(), r = state.main.readiness;
   const read = state.main.lessonsRead || {};
   const nRead = LESSONS.filter((l) => read[l.id]).length;
   const unreadOpen = LESSONS.slice(0, unlockedCount()).filter((l) => !read[l.id]).length;
@@ -303,8 +318,8 @@ function rootHtml() {
     ${heroHtml()}
     ${sec({ title: 'Plan & goal', rows: [
       row({ title: 'Goal & body', value: GOALS[p.goal] || '', iconName: 'target', href: '#me-goal' }),
-      row({ title: 'Edit plan answers', sub: 'Goal, schedule, treadmill and readiness', iconName: 'edit', attrs: 'data-act="edit-plan"' }),
-      row({ title: 'Treadmill', value: tm, iconName: 'incline', href: '#me-treadmill' }),
+      row({ title: 'Edit plan answers', sub: 'Goal, schedule, where you walk and readiness', iconName: 'edit', attrs: 'data-act="edit-plan"' }),
+      row({ title: 'Where you walk', sub: whereLine(p) + (p.walkOnly ? ' · Walking only' : ''), iconName: SURFACES[usualSurface(p)].icon, href: '#me-treadmill' }),
       row({ title: 'Paces & units', value: `${speedUnit()} · ${weightUnit()}`, iconName: 'speed', href: '#me-paces' }),
     ].join('') })}
     ${sec({ title: 'Coaching', rows: [
@@ -360,7 +375,7 @@ function editName() {
 
 const PAGES = {
   goal: { title: 'Goal & body', lede: 'About you, your goal and your day. Changes apply right away.', html: goalPage },
-  treadmill: { title: 'Treadmill', lede: 'Every workout stays within your treadmill’s limits.', html: treadmillPage },
+  treadmill: { title: 'Where you walk', lede: 'Your usual setting shapes how every session is coached.', html: treadmillPage },
   paces: { title: 'Paces & units', lede: 'The speeds Hillpace uses for each kind of interval.', html: pacesPage },
   cues: { title: 'Voice & cues', lede: 'What you hear during a workout.', html: cuesPage },
   reminders: { title: 'Reminders', lede: 'A nudge on the days your plan has a workout.', html: remindersPage },
@@ -478,21 +493,53 @@ function paceNote() {
   return `Hillpace caps your pace at 1% of your body weight a week, up to 1 kg (2.2 lb). For you that’s ${capTxt} a week. Projections are estimates, not a promise.`;
 }
 
-/* ----- Treadmill ----- */
+/* ----- Where you walk ----- */
+
+function surfaceCard(id, checked) {
+  const S = SURFACES[id];
+  return `<button type="button" class="choice me-choice" role="radio" aria-checked="${checked}" data-choice="surface" data-value="${esc(id)}"><span class="me-choice-ico">${icon(S.icon)}</span><span class="choice-main"><span class="choice-title">${esc(S.name)}</span><span class="choice-sub">${esc(S.blurb)}</span></span><span class="radio" aria-hidden="true"></span></button>`;
+}
 
 function treadmillPage() {
-  const p = P(), t = p.treadmill;
-  const rows = [switchRow({ id: 'me-sw-incline', sw: 'hasIncline', title: 'My treadmill has incline', checked: t.hasIncline !== false })];
-  if (t.hasIncline !== false) rows.push(stepRow({ id: 'maxIncline', title: 'Max incline', sub: 'Highest setting on your console' }));
-  rows.push(stepRow({ id: 'maxSpeed', title: 'Max speed', sub: 'Fastest setting on your console' }));
-  const note = t.hasIncline !== false
-    ? 'Workouts never go above these settings.'
-    : 'Without incline, climbs become slightly faster flat intervals. Workouts never go above your max speed.';
-  const rail = p.noNumbers
-    ? 'Holding the rails on a steep incline supports part of your weight, which makes the workout easier than it looks. If you need to hold on, try a lower incline or speed.'
-    : 'Holding the rails on a steep incline supports part of your weight, so you use less energy than the incline suggests. When this is off, Hillpace counts only 75% of the incline on slopes of 8% and above. Energy figures are always estimates.';
-  return sec({ title: 'Limits', rows: rows.join(''), note, after: live('tm-note') })
-    + sec({ title: 'Handrails', rows: switchRow({ id: 'me-sw-hands', sw: 'handsFree', title: 'I walk hands-free', sub: 'Most of the time, without holding the rails', checked: t.handsFree !== false, iconName: 'hand' }), note: esc(rail) });
+  const p = P(), t = p.treadmill, us = usualSurface(p), today = activeSurface();
+  let note = 'You can switch for a single day from Today or before a workout.';
+  if (today !== us) note += ` Today you’re walking ${today === 'outdoor' ? 'outdoors' : `on ${today === 'flat' ? 'a flat treadmill or walking pad' : 'an incline treadmill'}`}; tomorrow goes back to your usual.`;
+  if (us === 'outdoor') note += ` On treadmill days, workouts stay within ${trim0(t.maxIncline ?? 12)}% and ${speedTxt(t.maxSpeed || 16)}.`;
+  let html = `<section class="me-sec"><h2 class="group-title">Usually</h2><div class="choices me-choices" role="radiogroup" aria-label="Where you usually walk">${SURFACE_IDS.map((id) => surfaceCard(id, id === us)).join('')}</div><p class="group-note">${esc(note)}</p></section>`;
+
+  if (us !== 'outdoor') {
+    const inc = us === 'incline';
+    const rows = [];
+    if (inc) rows.push(stepRow({ id: 'maxIncline', title: 'Max incline', sub: 'Highest setting on your console' }));
+    rows.push(stepRow({ id: 'maxSpeed', title: 'Max speed', sub: inc ? 'Fastest setting on your console' : 'Fastest setting on your treadmill or pad' }));
+    html += sec({
+      title: inc ? 'Your treadmill' : 'Your treadmill or walking pad',
+      rows: rows.join(''),
+      note: inc ? 'Workouts never go above these settings.' : 'Climbs become slightly faster walking. Workouts never go above your max speed.',
+      after: live('tm-note'),
+    });
+    let rail;
+    if (inc) {
+      rail = p.noNumbers
+        ? 'Holding the rails on a steep incline supports part of your weight, which makes the workout easier than it looks. If you need to hold on, try a lower incline or speed.'
+        : 'Holding the rails on a steep incline supports part of your weight, so you use less energy than the incline suggests. When this is off, Hillpace counts only 75% of the incline on slopes of 8% and above. Energy figures are always estimates.';
+    } else {
+      rail = p.noNumbers
+        ? 'Many walking pads have no rails. Walking without holding on keeps your posture natural; if you need support, try a slower speed.'
+        : 'Many walking pads have no rails. On the flat, holding on doesn’t change your estimates. On days you walk on an incline, Hillpace counts only 75% of the incline on slopes of 8% and above when this is off.';
+    }
+    html += sec({ title: 'Handrails', rows: switchRow({ id: 'me-sw-hands', sw: 'handsFree', title: 'I walk hands-free', sub: 'Most of the time, without holding the rails', checked: t.handsFree !== false, iconName: 'hand' }), note: esc(rail) });
+  }
+
+  const jogNote = p.walkOnly ? ''
+    : p.canJog === 'yes' ? 'Your plan includes short jog intervals.'
+      : 'Jogs join your plan once you’re ready: from week 5, after two sessions that feel comfortable, Hillpace asks first.';
+  html += sec({
+    title: 'Jogs',
+    rows: switchRow({ id: 'me-sw-walkonly', sw: 'walkOnly', title: 'Walking only', sub: 'No jogs or runs. Harder parts become power walking.', checked: !!p.walkOnly, iconName: 'stride' }),
+    note: jogNote,
+  });
+  return html;
 }
 function treadmillNote() {
   const p = P(), max = p.treadmill.maxSpeed || 16;
@@ -523,7 +570,9 @@ function pacesPage() {
       lead: `<span class="row-icon me-mode mode-${t}">${modeIcon(t)}</span>`,
     })).join(''),
     after: live('paces-note'),
-    note: `Use the talk test: if a pace feels easier or harder than described, adjust it by 0.1. Workouts never go above your max speed of ${fmt1(toSpeed(P().treadmill.maxSpeed || 16))} ${speedUnit()}.`,
+    note: usualSurface() === 'outdoor'
+      ? 'Use the talk test: if a pace feels easier or harder than described, adjust it by 0.1. Outdoors these paces feed your distance and energy estimates; you’re coached by effort.'
+      : `Use the talk test: if a pace feels easier or harder than described, adjust it by 0.1. Workouts never go above your max speed of ${fmt1(toSpeed(P().treadmill.maxSpeed || 16))} ${speedUnit()}.`,
   });
   return units + paces + `<button type="button" class="btn btn-ghost btn-block" data-act="reset-paces">${icon('refresh')}Reset to suggested paces</button>`;
 }
@@ -556,7 +605,7 @@ function loadVoices(v) {
 }
 function cuesPage() {
   const c = P().cues;
-  const voiceRows = [switchRow({ id: 'me-sw-voice', sw: 'voice', title: 'Spoken cues', sub: 'Announce each interval change: mode, speed and incline', checked: !!c.voice, iconName: 'voice' })];
+  const voiceRows = [switchRow({ id: 'me-sw-voice', sw: 'voice', title: 'Spoken cues', sub: `Announce each interval change: ${cueWhat()}`, checked: !!c.voice, iconName: 'voice' })];
   if (c.voice) {
     voiceRows.push(
       `<label class="row me-field" for="me-voice"><span class="row-main"><span class="row-title">Voice</span></span><span class="me-select-wrap"><select id="me-voice" class="me-select" data-select="voice">${voiceOptions()}</select>${icon('chevD')}</span></label>`,
@@ -573,7 +622,7 @@ function cuesPage() {
     html += sec({
       title: 'How much to say',
       group: 'role="radiogroup" aria-label="How much to say"',
-      rows: DETAIL.map((d) => radioRow({ group: 'detail', value: d.value, title: d.title, sub: d.sub, checked: (+c.detail || 2) === d.value })).join(''),
+      rows: DETAIL.map((d) => radioRow({ group: 'detail', value: d.value, title: d.title, sub: d.value === 1 ? `The next interval: ${cueWhat()}` : d.sub, checked: (+c.detail || 2) === d.value })).join(''),
     });
   }
   html += sec({
@@ -590,10 +639,15 @@ function testVoice() {
   if (!isNative && !('speechSynthesis' in window)) { toast('Spoken cues aren’t available in this browser'); return; }
   unlockAudio();
   const lead = +p.cues.lead || 10;
-  const sp = trim0(toSpeed(p.paces.power || 6));
-  const words = isMph() ? 'miles per hour' : 'kilometres per hour';
-  const inc = p.treadmill.hasIncline !== false ? `, incline ${trim0(Math.min(8, p.treadmill.maxIncline ?? 12))} percent` : '';
-  speak(`In ${lead} seconds: power walk, ${sp} ${words}${inc}.`, { interrupt: true });
+  const s = usualSurface(p);
+  if (s === 'outdoor') {
+    speak(`In ${lead} seconds: power walk. ${EFFORT.power.say}`, { interrupt: true });
+  } else {
+    const sp = trim0(toSpeed(p.paces.power || 6));
+    const words = isMph() ? 'miles per hour' : 'kilometres per hour';
+    const inc = s === 'incline' ? `, incline ${trim0(Math.min(8, p.treadmill.maxIncline ?? 12))} percent` : '';
+    speak(`In ${lead} seconds: power walk, ${sp} ${words}${inc}.`, { interrupt: true });
+  }
   toast('Playing a sample cue');
 }
 
@@ -656,7 +710,7 @@ function healthPage() {
   const h = P().health;
   const what = `<article class="card me-doc prose">
     <h3>What Hillpace saves</h3>
-    <ul><li>Indoor walking or running workouts, with estimated active energy and distance</li><li>Your weigh-ins, as body weight</li></ul>
+    <ul><li>Walking or running workouts, with estimated active energy and distance</li><li>Your weigh-ins, as body weight</li></ul>
     <h3>What Hillpace reads</h3>
     <ul><li>Your body weight, to keep your weight trend up to date</li></ul>
     <p>Health data stays on your iPhone and in Apple Health. Hillpace never shares it or uses it for advertising.</p>
@@ -970,7 +1024,7 @@ function calcHtml() {
   const p = P();
   const intro = p.noNumbers
     ? banner('', 'info', 'You’re training without numbers', 'Calorie and weight figures are hidden in your app. This page explains how they’re worked out, for reference.')
-    : banner('', 'info', 'Every figure is an estimate', 'Hillpace works out energy, distance and climb from your treadmill settings and body weight with published equations. Your actual burn can differ substantially from these estimates, and from what your treadmill or watch shows, because each uses its own formula and sensors.');
+    : banner('', 'info', 'Every figure is an estimate', 'Hillpace works out energy, distance and climb from your speeds, inclines and body weight with published equations. Your actual burn can differ substantially from these estimates, and from what your treadmill or watch shows, because each uses its own formula and sensors.');
   return `${intro}
   <article class="card me-doc prose">
     <h3>Workout energy</h3>
@@ -986,6 +1040,8 @@ function calcHtml() {
     <p>Holding on supports part of your weight, so a climb costs less than the incline suggests. If you turn off “I walk hands-free”, we count 75% of the incline on slopes of 8% and above (G′ = 0.75 × G). This is a rule of thumb, not a measured value.</p>
     <h3>Distance and climb</h3>
     <p>Distance is speed × time for each interval, using the speeds you actually ran, including any changes you make during the workout. Climb is distance × incline, the usual treadmill convention. If your belt runs faster or slower than its display, these will be off too.</p>
+    <h3>Walking outdoors</h3>
+    <p>Outdoors, Hillpace can’t see your real speed or the hills on your route. Sessions are coached by effort, and distance and energy are worked out from your paces as if the ground were flat, so they are rougher estimates than on a treadmill. Climb isn’t counted.</p>
     <h3>Activity minutes</h3>
     <p>Following WHO and CDC guidelines, a moderate minute counts once and a vigorous minute counts twice. A minute is vigorous during jog and run intervals, or when the estimated effort is 6 METs or more (METs = VO<sub>2</sub> ÷ 3.5). Your weekly targets are 150, 200 and 250 activity minutes in the Foundation, Build and Burn phases. The guidelines suggest 150 to 300 moderate minutes a week for adults.</p>
     <h3>Resting and daily energy</h3>
@@ -1027,10 +1083,17 @@ function stopSignsHtml() {
     ['alert', 'Nausea'],
     ['alert', 'Sharp pain in your calf, Achilles tendon or shin'],
   ];
+  // Today's surface: the sheet opens during workouts, which may be on a one-off surface.
+  const s = activeSurface();
+  const how = s === 'outdoor'
+    ? 'slow down and stop somewhere safe, away from traffic. Sit down if you feel faint, and ask someone nearby for help if you need it.'
+    : s === 'flat'
+      ? 'press Stop on the console or remote, or pull the safety key if there is one, and step off to the side once the belt has stopped. Sit down if you feel faint.'
+      : 'hold the side rails, press Stop or pull the safety key, and step off to the sides once the belt has stopped. Sit down if you feel faint.';
   return `<div class="me-stop">
-    <p class="me-stop-lead">Stop the belt safely and seek medical care if you have:</p>
+    <p class="me-stop-lead">${s === 'outdoor' ? 'Stop walking' : 'Stop the belt safely'} and seek medical care if you have:</p>
     <ul class="me-stop-list">${items.map(([ic, t]) => `<li><span class="me-stop-ico">${icon(ic)}</span><span>${esc(t)}</span></li>`).join('')}</ul>
-    <p class="me-stop-how"><b>To stop safely:</b> hold the side rails, press Stop or pull the safety key, and step off to the sides once the belt has stopped. Sit down if you feel faint.</p>
+    <p class="me-stop-how"><b>To stop safely:</b> ${how}</p>
     <p class="me-emergency">${icon('alert')}<span>If symptoms are severe or don’t ease quickly with rest, call your local emergency number.</span></p>
   </div>`;
 }
@@ -1050,21 +1113,31 @@ function safetyPage() {
   if (r.betaBlocker) extra.push('Your medicine can change your heart rate, so judge effort with the talk test rather than heart rate.');
   if (r.pregnant) extra.push('During pregnancy, hard intervals are hidden. Follow the advice of your midwife or doctor.');
 
+  const treadmillSafety = sec({
+    title: 'On a treadmill or walking pad',
+    rows: [
+      staticRow({ title: 'Clip on the safety key', sub: 'Attach it to your clothing every time, if your machine has one. If you slip, it stops the belt.', iconName: 'lock' }),
+      staticRow({ title: 'Start the belt slowly', sub: 'On a treadmill, stand on the side rails to start it, then step on.', iconName: 'grip' }),
+      staticRow({ title: 'Hold on while settings change', sub: 'Use the rails while speed or incline changes, then let go once you’re steady. No rails? Keep to a pace you can hold without support.', iconName: 'hand' }),
+      staticRow({ title: 'Slow down before stepping off', sub: 'Bring the belt to a walk or a stop first. Never step off backwards.', iconName: 'stop' }),
+      staticRow({ title: 'Go easy on steep inclines', sub: 'Steep climbs load your calves and Achilles tendons. Lower the incline if they hurt.', iconName: 'incline' }),
+    ].join(''),
+  });
+  const outdoorSafety = sec({
+    title: 'Outdoors',
+    rows: [
+      staticRow({ title: 'Be seen', sub: 'Wear bright or reflective clothing and carry a light after dark. With no pavement or path, walk facing oncoming traffic.', iconName: 'sun' }),
+      staticRow({ title: 'Keep hearing the road', sub: 'Set your cues to a volume that still lets you hear traffic and cyclists.', iconName: 'voice' }),
+      staticRow({ title: 'Mind the heat', sub: 'On hot days walk early or late, choose shade and carry water on longer walks.', iconName: 'alert' }),
+    ].join(''),
+  });
+
   const ansRows = answered
     ? qs.map((q) => { const a = r.answers[q.id]; return staticRow({ title: q.text, value: a === true ? 'Yes' : a === false ? 'No' : 'Not answered', cls: 'me-q' + (a === true ? ' yes' : '') }); }).join('')
     : '';
 
   return `<section class="me-sec"><h2 class="group-title">Stop signs</h2><div class="card me-stop-card">${stopSignsHtml()}</div></section>
-    ${sec({
-      title: 'On the treadmill',
-      rows: [
-        staticRow({ title: 'Clip on the safety key', sub: 'Attach it to your clothing every time. If you slip, it stops the belt.', iconName: 'lock' }),
-        staticRow({ title: 'Start from the side rails', sub: 'Stand on the rails, start the belt slowly, then step on.', iconName: 'grip' }),
-        staticRow({ title: 'Hold on while settings change', sub: 'Use the rails while speed or incline changes, then let go once you’re steady.', iconName: 'hand' }),
-        staticRow({ title: 'Slow down before stepping off', sub: 'Bring the belt to a walk or a stop first. Never step off backwards.', iconName: 'stop' }),
-        staticRow({ title: 'Go easy on steep inclines', sub: 'Steep climbs load your calves and Achilles tendons. Lower the incline if they hurt.', iconName: 'incline' }),
-      ].join(''),
-    })}
+    ${usualSurface(p) === 'outdoor' ? outdoorSafety + treadmillSafety : treadmillSafety + outdoorSafety}
     <section class="me-sec me-ready"><h2 class="group-title">Your readiness</h2>${status}
       ${r.doctorFlag ? `<div class="group">${switchRow({ id: 'me-sw-doc', sw: 'doctorAck', title: 'I’ve checked with my doctor', sub: 'A doctor has said harder exercise, such as jogging intervals, is OK for me', checked: !!r.doctorAck, iconName: 'shield' })}</div>` : ''}
       ${extra.length ? `<div class="card tight me-notes">${extra.map((t) => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
@@ -1177,7 +1250,7 @@ function privacyPage() {
     <h3>What we don’t collect</h3>
     <p>We don’t run servers that receive your data. Hillpace has no analytics or advertising tools and no third-party tracking. We can’t see your data, and we never sell or share it.</p>
     ${features.health ? `<h3>Apple Health</h3>
-    <p>If you connect Apple Health, Hillpace saves your workouts (indoor walks or runs with estimated active energy and distance) and your weigh-ins, and reads your body weight to keep your trend up to date. Health data is used only for these features. It is never shared, never used for advertising or marketing, and never leaves your iPhone through Hillpace. You can change or remove access at any time in the Health app.</p>` : ''}
+    <p>If you connect Apple Health, Hillpace saves your workouts (walks or runs with estimated active energy and distance) and your weigh-ins, and reads your body weight to keep your trend up to date. Health data is used only for these features. It is never shared, never used for advertising or marketing, and never leaves your iPhone through Hillpace. You can change or remove access at any time in the Health app.</p>` : ''}
     <h3>${features.notifications ? 'Notifications and voice' : 'Voice cues'}</h3>
     <p>${features.notifications ? 'Reminders and workout cues are local notifications scheduled on your iPhone. No push service or server is involved. ' : ''}Spoken cues use the speech voices built into your device.${isNative ? '' : ' In a web browser, some voices supplied by the browser may be processed online by the browser maker.'}</p>
     <h3>Your controls</h3>
@@ -1202,7 +1275,7 @@ function termsPage() {
     <h3>Not medical advice</h3>
     <p>Hillpace provides general fitness information and workout guidance. It is not a medical device. It doesn’t diagnose, treat or prevent any condition, and it isn’t a substitute for advice from a doctor or other qualified professional. Check with your doctor before starting a new exercise programme or changing how you eat, especially if you have a health condition, are pregnant or take regular medicine.</p>
     <h3>Exercise safely</h3>
-    <p>Exercise carries a risk of injury. You choose and control your treadmill settings. Use the safety key, follow your treadmill maker’s instructions, and stop straight away if you feel unwell. Health & safety lists the warning signs.</p>
+    <p>Exercise carries a risk of injury. You choose and control your treadmill settings and your route. On a treadmill, use the safety key and follow its maker’s instructions; outdoors, take care around traffic. Stop straight away if you feel unwell. Health & safety lists the warning signs.</p>
     <h3>Estimates</h3>
     <p>Calories, distance, climb, intake suggestions and weight projections are estimates based on published equations. They can differ substantially from actual values, and they are not a promise of any result.</p>
     <h3>Your data</h3>
@@ -1223,7 +1296,7 @@ function supportPage() {
       : ['Why do voice cues stop when my screen locks?', `<p>Browsers pause pages that aren’t on screen, so spoken cues play only while Hillpace is open and visible. During a workout Hillpace asks your browser to keep the screen awake, where your browser allows it. Keep the page open on your treadmill console and turn the volume up.</p>`],
     ['Why don’t my calories match my treadmill or watch?', `<p>Every device uses its own formula. Hillpace shows estimated active energy from the ACSM equations, which leaves out the energy you’d use at rest anyway, while many treadmills show total energy. All of these are estimates and can differ substantially from your actual burn. <a class="me-inline" href="#me-calc">How we calculate</a></p>`],
     ['How do I back up my data?', `<p>Go to Me, then Back up & restore, and tap Export backup. Save the file somewhere safe, such as iCloud Drive or Files. To restore, tap Import backup and choose the file. A monthly backup is a good habit. <a class="me-inline" href="#me-data">Back up now</a></p>`],
-    ['How do I change my plan or training days?', `<p>Tap Edit plan answers on the Me tab to change your goal, schedule, treadmill or readiness answers. Your plan updates from the current week.</p>`],
+    ['How do I change my plan or training days?', `<p>Tap Edit plan answers on the Me tab to change your goal, schedule, where you walk or readiness answers. Your plan updates from the current week.</p>`],
   ];
   if (isNative && legal.support) faq = legal.support.faq; // the same answers as the published support page
   if (USE_LINK) return `<section class="card me-contact">
@@ -1424,7 +1497,12 @@ async function onSwitch(v, sw, on, input) {
     case 'haptics': save((m) => { m.profile.haptics = on; }); if (on) haptic('medium'); break;
     case 'noNumbers': save((m) => { m.profile.noNumbers = on; }); haptic('selection'); paint(v); break;
     case 'hideWeight': save((m) => { m.profile.hideWeight = on; }); v.revealWeight = false; haptic('selection'); paint(v); break;
-    case 'hasIncline': save((m) => { m.profile.treadmill.hasIncline = on; }); paint(v); break;
+    case 'walkOnly':
+      save((m) => { m.profile.walkOnly = on; });
+      haptic('selection');
+      paint(v);
+      toast(on ? 'Walking only: jogs become power walking' : P().canJog === 'yes' ? 'Short jogs are back in your plan' : 'Jogs can join your plan when you’re ready');
+      break;
     case 'handsFree': save((m) => { m.profile.treadmill.handsFree = on; }); break;
     case 'voice': save((m) => { m.profile.cues.voice = on; }); if (on) loadVoices(v); else stopSpeaking(); paint(v); break;
     case 'beeps': save((m) => { m.profile.cues.beeps = on; }); if (on) { unlockAudio(); beep('tick'); } break;
@@ -1470,6 +1548,7 @@ function onPick(v, group, value, el) {
     case 'pace': save((m) => { m.profile.pace = value; }); break;
     case 'activity': save((m) => { m.profile.activity = value; }); break;
     case 'detail': save((m) => { m.profile.cues.detail = +value; }); break;
+    case 'surface': if (!SURFACES[value] || value === usualSurface()) return; save((m) => { setUsualSurface(m, value); }); break;
     case 'appearance': save((m) => { m.profile.appearance = value; }); applyTheme(value); break;
     default: return;
   }

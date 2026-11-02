@@ -1,14 +1,15 @@
-// Lesson cards (content owned by me.js). One unlocks per completed session; all are open after 10 sessions.
-// Order and titles match today.js. Copy rules: cautious, no outcome promises, calories only as estimates.
+// Lesson cards (content owned by me.js). One unlocks per completed session; all are open after LESSONS.length sessions.
+// Order and titles match today.js (its list needs ['outdoor', 'Walking outdoors'] at the end). Copy rules: cautious, no outcome promises, calories only as estimates.
 
 export const LESSONS = [
   {
     id: 'incline',
     title: 'Why incline works',
     minutes: 2,
-    body: `<p>Walking uphill asks your legs to lift your body as well as carry it forward. That extra work raises your heart rate and the energy you use without making you go faster. A few percent of incline can turn an easy walk into a real workout while your feet still land at walking pace, which many people find kinder to their joints than running.</p>
+    body: `<p>Walking uphill asks your legs to lift your body as well as carry it forward. That raises your heart rate and the energy you use without making you go faster, so your feet still land at walking pace, which many people find kinder to their joints than running.</p>
 <p>The standard ACSM walking equation shows the effect. At 5 km/h (3.1 mph), walking at a 10% incline uses well over twice the active energy of walking on the flat. Like every figure in Hillpace, that is an estimate.</p>
-<p>Climbing also works your calves, hamstrings and glutes harder than flat walking. That is why your plan raises the incline a little at a time: calves and Achilles tendons need a few weeks to get used to steeper slopes. If the back of your heel or calf feels sore, stay at a lower incline for a few more sessions.</p>`,
+<p>Climbing also works your calves, hamstrings and glutes harder, so your plan raises the incline a little at a time while your calves and Achilles tendons adapt. If the back of your heel or calf feels sore, stay lower for a few more sessions.</p>
+<p><b>No incline?</b> On a flat treadmill or walking pad, Hillpace turns each climb into slightly faster walking, so your sessions still get harder as the plan moves on. Outdoors, hills on your route do the same job as incline: slow down a little on the way up and let your effort, not your speed, guide you.</p>`,
     source: 'ACSM’s Guidelines for Exercise Testing and Prescription; CDC physical activity guidance.',
   },
   {
@@ -25,8 +26,8 @@ export const LESSONS = [
     id: 'warmup',
     title: 'Warm-up and cool-down',
     minutes: 2,
-    body: `<p>Every Hillpace workout starts with a few minutes of easy and brisk walking on a low incline, and ends the same way. The warm-up raises your heart rate and breathing gradually, warms your muscles and gives your calves and Achilles tendons time to adjust before the steeper work begins.</p>
-<p>The cool-down lets your heart rate and breathing settle. Stopping suddenly after hard effort can leave some people light-headed, because blood pools in the legs when they stop moving. A few easy minutes on the belt helps prevent that.</p>
+    body: `<p>Every Hillpace workout starts with a few minutes of easy and brisk walking, on a low incline if you have one, and ends the same way. The warm-up raises your heart rate and breathing gradually, warms your muscles and gives your calves and Achilles tendons time to adjust before the steeper work begins.</p>
+<p>The cool-down lets your heart rate and breathing settle. Stopping suddenly after hard effort can leave some people light-headed, because blood pools in the legs when they stop moving. A few easy minutes of walking helps prevent that.</p>
 <p>Gentle calf and hip stretches afterwards can feel good, but they are optional. If you are short on time, shorten the main set rather than the warm-up: the 30-minute version on Today keeps both ends of the workout and still counts toward your week.</p>`,
     source: 'ACSM’s Guidelines for Exercise Testing and Prescription; NHS exercise guidance.',
   },
@@ -34,7 +35,7 @@ export const LESSONS = [
     id: 'handrails',
     title: 'Handrails and form',
     minutes: 2,
-    body: `<p>Holding the handrails on a steep incline takes part of your weight off your legs. Research on treadmill walking shows this lowers the real effort, so energy figures on a console or in an app can be well above what you actually used. If you usually hold on, turn off “I walk hands-free” in Me, then Treadmill, and Hillpace lowers its estimates on inclines of 8% and above.</p>
+    body: `<p>Holding the handrails on a steep incline takes part of your weight off your legs. Research on treadmill walking shows this lowers the real effort, so energy figures on a console or in an app can be well above what you actually used. If you usually hold on, turn off “I walk hands-free” in Me, then Where you walk, and Hillpace lowers its estimates on inclines of 8% and above.</p>
 <p>A light touch for balance is fine. Good form on a slope looks like this:</p>
 <ul><li>Stand tall and lean slightly forward from the ankles, not the waist.</li><li>Look ahead rather than down at your feet.</li><li>Take shorter steps as the slope gets steeper.</li><li>Let your arms swing naturally.</li></ul>
 <p>If you can’t keep up without gripping the rails, lower the speed or incline instead. A setting you can walk hands-free is a better workout than a harder one you have to hang on to.</p>`,
@@ -86,10 +87,10 @@ export const LESSONS = [
     id: 'safety',
     title: 'Treadmill safety',
     minutes: 2,
-    body: `<p>A few habits make treadmill walking much safer:</p>
-<ul><li>Clip the safety key to your clothing every time. If you slip, it stops the belt.</li><li>Stand on the side rails to start the belt, then step on at a slow speed.</li><li>Hold the rails while you change speed or incline, then let go once you are steady.</li><li>Slow the belt right down before you step off, and never step off backwards.</li><li>Keep children and pets away, and leave clear space behind the treadmill.</li><li>Wear supportive shoes with the laces tied, and keep water within reach.</li></ul>
-<p>Steep inclines load your calves and Achilles tendons. Build up over weeks, and lower the incline if the back of your heel or calf starts to hurt.</p>
-<p><b>Stop the belt and seek care</b> if you feel chest pain or pressure, unusual breathlessness, dizziness, palpitations or nausea. Call your local emergency number if symptoms are severe.</p>`,
+    body: `<p>A few habits make treadmill and walking-pad sessions much safer:</p>
+<ul><li>Clip the safety key to your clothing every time, if your machine has one. If you slip, it stops the belt.</li><li>Start the belt slowly. On a treadmill, stand on the side rails to start it, then step on.</li><li>Hold the rails while you change speed or incline, then let go once you are steady.</li><li>Many walking pads have no rails. Stay at a pace you can hold without support, and keep the remote or stop button within reach.</li><li>Slow the belt right down before you step off, and never step off backwards.</li><li>Keep children and pets away, and leave clear space behind the belt.</li><li>Wear supportive shoes with the laces tied, and keep water within reach.</li></ul>
+<p>Steep inclines load your calves and Achilles tendons. Build up over weeks, and lower the incline if the back of your heel or calf starts to hurt. Walking outside instead? A later lesson covers traffic, footwear and heat.</p>
+<p><b>Stop and seek care</b> if you feel chest pain or pressure, unusual breathlessness, dizziness, palpitations or nausea. Call your local emergency number if symptoms are severe.</p>`,
     source: 'ACSM’s Guidelines for Exercise Testing and Prescription; NHS exercise safety advice.',
   },
   {
@@ -97,9 +98,18 @@ export const LESSONS = [
     title: 'Building the habit',
     minutes: 2,
     body: `<p>Lasting change comes from something you can repeat, not from one heroic week. A few things make workouts easier to keep doing:</p>
-<ul><li><b>Anchor it.</b> Same days, same time, straight after something you already do, like getting home from work.</li><li><b>Make starting easy.</b> Leave your shoes by the treadmill and lay out your kit the night before.</li><li><b>Use the short version.</b> A 30-minute session still counts toward your week and keeps the habit going.</li><li><b>Count weeks, not days.</b> Missing one session doesn’t undo anything. Your streak counts weeks.</li><li><b>Expect setbacks.</b> Illness, travel and busy weeks happen. Pick up where you left off.</li></ul>
+<ul><li><b>Anchor it.</b> Same days, same time, straight after something you already do, like getting home from work.</li><li><b>Make starting easy.</b> Leave your shoes by the door or the treadmill and lay out your kit the night before.</li><li><b>Use the short version.</b> A 30-minute session still counts toward your week and keeps the habit going.</li><li><b>Count weeks, not days.</b> Missing one session doesn’t undo anything. Your streak counts weeks.</li><li><b>Expect setbacks.</b> Illness, travel and busy weeks happen. Pick up where you left off.</li></ul>
 <p>Research suggests new habits take anywhere from a few weeks to several months to feel automatic, and it varies a lot from person to person. Keep going: the routine gets easier the more often you repeat it.</p>`,
     source: 'CDC physical activity guidelines; NHS Better Health.',
+  },
+  {
+    id: 'outdoor',
+    title: 'Walking outdoors',
+    minutes: 2,
+    body: `<p>Walking outside needs no equipment. Hillpace coaches it by effort: how hard it feels and how easily you can talk. A few habits keep it safe and comfortable:</p>
+<ul><li><b>Be seen.</b> Wear bright or reflective clothing, and carry a light after dark. Where there is no pavement or path, walk facing oncoming traffic.</li><li><b>Stay aware.</b> Keep your cues at a volume that still lets you hear traffic and cyclists, and look up when you cross.</li><li><b>Wear the right shoes.</b> Comfortable, supportive walking or running shoes with a good grip suit most routes.</li><li><b>Treat hills as a bonus.</b> Slow down on the way up so your effort stays where the cue asks, and take shorter steps on the way down.</li><li><b>Mind the heat.</b> On hot days walk early or late, choose shade, drink water before and after, and carry some on longer walks. Ease off if you feel dizzy, sick or unusually tired.</li></ul>
+<p>Outdoors, Hillpace can’t see your real speed or the slope under your feet, so distance and energy are estimates based on your paces on flat ground.</p>`,
+    source: 'NHS, Walking for health; CDC guidance on pedestrian safety and heat; The Highway Code (UK), rules for pedestrians.',
   },
 ];
 

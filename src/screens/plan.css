@@ -97,3 +97,15 @@
 .pn-swap-item .radio { margin-top: 2px; }
 .pn-swap-item .tag { height: 20px; margin-left: 4px; vertical-align: 2px; }
 .pn-swap-chart { display: block; margin-top: 8px; }
+.pn-sess-meta .pn-surf { height: 20px; padding: 0 6px; margin-left: 6px; gap: 4px; font-size: 11px; vertical-align: 1px; }
+.pn-sess-meta .pn-surf svg { width: 12px; height: 12px; }
+
+/* ---- where you walk (shared by Today, Plan, Workouts: plan.js surfacePicker / surfaceTag) ---- */
+.surf-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px; min-width: 0; }
+.surf-seg button svg { width: 17px; height: 17px; flex: none; }
+.surf-seg button span { overflow: hidden; text-overflow: ellipsis; }
+.surf-tag svg { width: 14px; height: 14px; }
+/* small phones (375 px): a narrow picker (Today's hero card) sizes each option to its name, so "Outdoors" fits beside its icon */
+@media (max-width: 389px) { .surf-seg button { flex: 1 1 auto; padding: 0 6px; gap: 5px; } }
+/* very narrow screens (< 360 px): names only, so "Outdoors" never truncates */
+@media (max-width: 359px) { .surf-seg button { padding: 0 4px; } .surf-seg button svg { display: none; } }

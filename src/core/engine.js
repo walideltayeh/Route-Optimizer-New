@@ -147,7 +147,12 @@ export function createEngine(segs, { kg = 75, nudge = 0, handsFree = true, open 
     if (patch.speed != null && isFinite(patch.speed)) clean.speed = Math.max(0.8, Math.min(25, +patch.speed));
     if (patch.incline != null && isFinite(patch.incline)) clean.incline = Math.max(0, Math.min(15, Math.round(patch.incline * 2) / 2));
     if (patch.label) clean.label = String(patch.label).slice(0, 40);
-    if (e.segEl < 1) { Object.assign(s, clean); if (clean.type && patch.speed == null) delete s.speed; }
+    if (e.segEl < 1) {
+      // Changed again within a second (e.g. two pace taps): change this interval in place, and its log entry too.
+      Object.assign(s, clean); if (clean.type && patch.speed == null) delete s.speed;
+      const sp = e.splits.find((x) => x.idx === e.idx);
+      if (sp) Object.assign(sp, { type: s.type, label: s.label, incline: s.incline });
+    }
     else {
       const used = Math.max(1, Math.round(e.segEl));
       const rest = Math.max(60, s.dur - used);

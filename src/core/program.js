@@ -152,6 +152,111 @@ export const WORKOUTS = {
 
 export const INTENSITY = ['', 'Easy', 'Moderate', 'Hard'];
 
+/* ---------------- words that match where they walk ---------------- */
+// WORKOUTS and PHASES are written for an incline treadmill with jogs. These reword them for a flat treadmill,
+// outdoors and walking-only plans, so every screen (and the voice coach) describes the session that is really done.
+
+/** Built-in interval labels without an incline: climbs become pushes ("Climb 2 of 7" → "Push 2 of 7"). */
+const FLAT_LABELS = [
+  [/Steep climb/g, 'Hard push'], [/Hill walk/g, 'Brisk walk'], [/Climb block/g, 'Block'], [/Finisher climb/g, 'Finisher'],
+  [/\bclimb\b/g, 'push'], [/^Climbing$/, 'Building'], [/^Descending$/, 'Easing off'], [/\bClimb\b/g, 'Push'],
+];
+export const flatLabel = (label) => FLAT_LABELS.reduce((t, [re, to]) => t.replace(re, to), String(label ?? ''));
+
+const hasJog = (segs) => (segs || []).some((x) => x.type === 'jog' || x.type === 'run');
+
+/**
+ * A workout's one-line focus as it will be done on this surface. w: a workout id or a getWorkout() result.
+ * segs (optional): the intervals as they will be done (decides whether jogs are in); else the user's jog settings.
+ */
+export function workoutFocus(w, { surface = activeSurface(), segs = null } = {}) {
+  const wk = typeof w === 'string' ? getWorkout(w) : w;
+  if (!wk) return '';
+  const inc = surface === 'incline';
+  const jog = segs ? hasJog(segs) : !(state.main.profile.walkOnly || state.main.profile.canJog !== 'yes' || restrictedToModerate());
+  switch (wk.id) {
+    case 'hills': return inc ? wk.focus : 'Power-walk intervals';
+    case 'walkjog': return jog ? wk.focus : 'Power-walk intervals';
+    case 'mixed': return inc ? (jog ? wk.focus : 'Climbs and power-walk pushes') : jog ? 'Fast walking and jogs' : 'Pace changes and pushes';
+    case 'pyramid': return inc ? wk.focus : 'Pace builds up and back down';
+    case 'steep': return inc ? wk.focus : 'One long, steady effort';
+    default: return wk.focus || '';
+  }
+}
+
+/**
+ * A built-in workout's description as it will be done on this surface (and with or without jogs), so a flat-treadmill
+ * or outdoor walker isn't told about inclines and a walking-only plan isn't told about jogs. Same arguments as workoutFocus.
+ */
+export function workoutDesc(w, { surface = activeSurface(), segs = null } = {}) {
+  const wk = typeof w === 'string' ? getWorkout(w) : w;
+  if (!wk) return '';
+  const inc = surface === 'incline', out = surface === 'outdoor';
+  const jog = segs ? hasJog(segs) : !(state.main.profile.walkOnly || state.main.profile.canJog !== 'yes' || restrictedToModerate());
+  switch (wk.id) {
+    case 'hills': return inc ? wk.desc : 'Three-minute power-walk pushes with two-minute easy recoveries. Hard work for your legs and lungs, easy on your joints.';
+    case 'walkjog': return jog ? wk.desc : `Four-minute rounds of a hard ${inc ? 'climb' : 'push'} then power walking. The hard part grows from one to two minutes as the plan moves on.`;
+    case 'steady': return inc ? wk.desc : `Continuous power walking${out ? '; gentle hills on your route are welcome' : ' at a steady, slightly rising pace'}. You should be able to talk in short sentences the whole way.`;
+    case 'mixed': return inc
+      ? (jog ? wk.desc : 'Seven-minute circuits of a steep climb, a short recovery, a power-walk push and a moderate hill walk.')
+      : `Seven-minute circuits of a hard push, a short recovery, ${jog ? 'a jog' : 'a second push'} and a brisk walk.`;
+    case 'pyramid': return inc ? wk.desc : 'The pace steps up to a peak and back down, then a short push to finish.';
+    case 'easy': return inc ? wk.desc : 'An easy walk at a comfortable pace. It adds minutes without adding strain. Use it on lighter weeks or when you feel sore.';
+    case 'steep': return inc ? wk.desc : out
+      ? 'One long, steady power walk. A route with a long hill suits it well: let your effort, not your speed, guide you.'
+      : 'One long, steady walk at your power-walk pace plus a little extra speed, which grows through the plan’s phases.';
+    case 'fourx4': return jog ? wk.desc : `Four-minute hard efforts (effort ${EFFORT.power.rpe} out of 10) at a ${inc ? 'steep' : 'fast'} power walk, each followed by three easy minutes. The starter version has fewer rounds.`;
+    case 'hiit': {
+      const end = inc ? 'climb' : 'power walk';
+      const belt = out ? '' : ' Straddle the belt or hold the rail while the speed changes if that feels safer.';
+      return jog ? `Thirty-second fast runs with ninety-second walking recoveries, then a long steady ${end}.${belt}`
+        : `Thirty-second all-out power-walk bursts with ninety-second easy recoveries, then a long steady ${end}.`;
+    }
+    default: return wk.desc || '';
+  }
+}
+
+/**
+ * A built-in workout's name as it will be done: hill and jog names only when there are hills (incline treadmill, or
+ * real hills outdoors) and jogs in the plan. e.g. a walking-pad user sees "Pace Pyramid", a walking-only user "Power Walk Ladder".
+ */
+export function workoutName(id, { surface = activeSurface() } = {}) {
+  const base = WORKOUTS[id] && WORKOUTS[id].name;
+  if (!base) return '';
+  const p = state.main.profile, inc = surface === 'incline';
+  const jog = !(p.walkOnly || p.canJog !== 'yes' || restrictedToModerate());
+  switch (id) {
+    case 'hills': return inc || surface === 'outdoor' ? base : 'Pace Repeats';
+    case 'walkjog': return jog ? base : 'Power Walk Ladder';
+    case 'steady': return inc ? base : 'Steady Power Walk';
+    case 'mixed': return inc ? base : 'Mixed Pace';
+    case 'pyramid': return inc ? base : 'Pace Pyramid';
+    case 'steep': return inc ? base : 'Long Power Walk';
+    case 'fourx4': return jog ? base : '4×4 Power Walk';
+    case 'hiit': return jog ? base : 'Fast Walk Bursts';
+    default: return base;
+  }
+}
+
+/** A phase's blurb for where they usually walk and whether jogs are in the plan. phase: a PHASES entry or its id. */
+export function phaseBlurbFor(phase, { surface = usualSurface(), walkOnly = !!state.main.profile.walkOnly } = {}) {
+  const ph = typeof phase === 'number' ? PHASES[phase] : phase;
+  if (!ph) return '';
+  const inc = surface === 'incline', jogs = !walkOnly;
+  if (ph.id === 0) return inc ? ph.blurb : 'Build the habit with steady walking and short efforts.';
+  if (ph.id === 1) return inc ? (jogs ? ph.blurb : 'Steeper hills and longer power walks.') : jogs ? 'Faster walking and longer jog intervals.' : 'Faster, longer power-walking efforts.';
+  return inc ? ph.blurb : 'Your fastest and longest efforts.';
+}
+
+/** Examples of vigorous minutes (they count double toward the weekly target) that fit where they usually walk and
+ *  whether jogs are in their plan: "like jogs and steep climbs" … "when you can only say a few words". */
+export function vigorousExamples({ surface = usualSurface() } = {}) {
+  const p = state.main.profile;
+  const jogs = !(p.walkOnly || p.canJog !== 'yes' || restrictedToModerate());
+  if (surface === 'incline') return jogs ? 'like jogs and steep climbs' : 'like steep climbs';
+  return jogs ? 'like jogs' : 'when you can only say a few words';
+}
+
 /* ---------------- custom workouts ---------------- */
 
 export const customs = () => state.main.customs || [];
@@ -159,7 +264,7 @@ export const customs = () => state.main.customs || [];
 /** Resolve any workout id to { id, name, focus, desc, category, kind, intensity, custom, build(L, short) }. */
 export function getWorkout(id) {
   if (id === FREE_WALK_ID) return { id, free: true, category: 'free', kind: 'easy', name: 'Just walk', focus: 'Open-ended walk', intensity: 1, desc: 'Walk for as long as you like. Change your pace as you go; Hillpace keeps time, distance and an estimate of your effort.', build: () => freeWalkSegments() };
-  if (WORKOUTS[id]) return { id, ...WORKOUTS[id] };
+  if (WORKOUTS[id]) return { id, ...WORKOUTS[id], name: workoutName(id) };
   const c = customs().find((x) => x.id === id);
   if (!c) return null;
   const segs = c.segs.map((x) => ({ role: 'work', ...x }));
@@ -302,7 +407,8 @@ export function segmentsFor(id, { level = 0, length = 45, applyAdjust = true, su
   if (!w) return [];
   let segs = w.custom ? w.build() : builtinSegs(w, level, length);
   // Fixed speeds (Steep Steady Walk) only make sense with incline; without it the workout uses the user's paces.
-  if (!w.custom && surface !== 'incline') segs = segs.map((s) => { const x = { ...s }; delete x.speed; return x; });
+  // Built-in labels name climbs; without an incline they become pushes (custom workouts keep the user's own labels).
+  if (!w.custom && surface !== 'incline') segs = segs.map((s) => { const x = { ...s, label: flatLabel(s.label) }; delete x.speed; return x; });
   return personalise(segs, { level, applyAdjust: applyAdjust && !w.custom, surface });
 }
 
@@ -684,10 +790,11 @@ export function quickDraft({ minutes = 30, focus = 'climb', intensity = 'moderat
     if (extra > 0) segs.push(seg('power', extra, Math.min(cap, climb - 2), 'Final climb'));
   }
   segs.push(seg('brisk', Math.ceil(cd / 2), 1, 'Cool-down', 'cool'), seg('walk', Math.floor(cd / 2), 0, 'Cool-down', 'cool'));
-  const names = { climb: 'Hill', intervals: 'Interval', steady: 'Steady', mixed: 'Mixed' };
+  const inc = usesIncline();
+  const names = { climb: inc ? 'Hill' : 'Push', intervals: 'Interval', steady: 'Steady', mixed: 'Mixed' };
   return {
     name: `${names[focus]} ${minutes}`,
     intensity: lvl + 1,
-    segs: segs.filter((s) => s.dur > 0).map((s) => ({ ...s, incline: Math.max(0, Math.min(cap, s.incline)) })),
+    segs: segs.filter((s) => s.dur > 0).map((s) => ({ ...s, label: inc ? s.label : flatLabel(s.label), incline: Math.max(0, Math.min(cap, s.incline)) })),
   };
 }

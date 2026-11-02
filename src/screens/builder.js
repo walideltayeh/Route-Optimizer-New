@@ -8,13 +8,17 @@
 // While there are unsaved changes the model is mirrored to localStorage 'hp.draft', so a reload does not lose work.
 import { state } from '../core/store.js';
 import * as store from '../core/store.js';
-import { MODES, MODE_IDS, INTENSITY, customs, personalise, planStats, speedFor, quickDraft, currentWeek, levelForWeek, restrictedToModerate, mainMode as programMainMode } from '../core/program.js';
+import {
+  MODES, MODE_IDS, INTENSITY, customs, personalise, planStats, speedFor, quickDraft, currentWeek, levelForWeek, restrictedToModerate,
+  mainMode as programMainMode, activeSurface, effortFor,
+} from '../core/program.js';
 import { roundKcal } from '../core/science.js';
 import { esc, clock, fmt1, toSpeed, fromSpeed, speedUnit, speedStr, distStr, distUnit, toElev, elevUnit } from '../core/format.js';
 import { haptic } from '../core/platform.js';
 import { actions } from '../ui/actions.js';
 import { icon, modeIcon, sheet, confirmSheet, toast, segmented, bindSegmented, stepperHtml, closeAllSheets, RM } from '../ui/kit.js';
-import { intervalChart, modeLegend } from '../ui/charts.js';
+import { intervalChart } from '../ui/charts.js';
+import { peakCell, distCell, surfaceChart, surfaceLegend, chartLabel, hardestMode } from './plan.js';
 
 export const DRAFT_KEY = 'hp.draft';
 const WORK = new Set(['power', 'jog', 'run']);
@@ -60,10 +64,18 @@ export function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch
 
 /* ---------------- limits, parsing, formatting ---------------- */
 
+/**
+ * Limits and what to show for today's surface. Incline inputs appear only on an incline day (showInc); on other days
+ * inclines already in a workout are kept (clamped to the treadmill's maximum) so they still apply on incline days.
+ */
 function lim() {
   const t = prof().treadmill;
-  return { maxS: +t.maxSpeed || 20, maxI: t.hasIncline ? +(t.maxIncline ?? 15) : 0, hasIncline: !!t.hasIncline };
+  const surface = activeSurface();
+  const showInc = surface === 'incline';
+  return { maxS: +t.maxSpeed || 20, maxI: t.hasIncline || showInc ? +(t.maxIncline ?? 15) : 0, showInc, surface };
 }
+/** Incline for a new step: what was asked on an incline day, flat otherwise (what you see is what you get). */
+const newInc = (i) => { const L = lim(); return L.showInc ? Math.min(L.maxI, i) : 0; };
 const incTxt = (i) => `${fmt1(i)}%`;
 const clampDur = (d) => Math.max(MIN_STEP, Math.min(MAX_STEP, Math.round(+d || 0)));
 const half = (x) => Math.round((+x || 0) * 2) / 2;
@@ -84,6 +96,7 @@ const numberedIdx = (steps) => { const i = steps.findIndex((s) => WORK.has(s.typ
 const baseLabel = (l) => String(l || '').replace(/\s*\d+\s+of\s+\d+\s*$/i, '').trim();
 /** Why jog/run steps become power-walk pushes for this user right now (core/program personalise), or ''. */
 function noJogNote() {
+  if (prof().walkOnly) return 'You chose walking only, so jog and run steps play as power-walk pushes.';
   if (restrictedToModerate()) return 'Jog and run steps play as power-walk pushes, and inclines stay moderate, until you confirm you have checked with your doctor (Me → Health & safety).';
   if (prof().canJog !== 'yes') return 'Jog and run steps play as steep power-walk pushes until you say you can jog. From the Build phase, Today offers short jogs after two comfortable sessions.';
   return '';
@@ -193,7 +206,8 @@ function stepError(st) {
   if (Number.isNaN(v) || (v != null && v <= 0)) return `Speed must be a number, like ${speedStr(speedFor(st.type))}.`;
   if (v != null && v > L.maxS + 0.005) return `Too fast: your treadmill’s top speed is ${speedStr(L.maxS)} ${speedUnit()}.`;
   if (v != null && v < 1 - 0.005) return `Use at least ${speedStr(1)} ${speedUnit()}.`;
-  if (st.incline > L.maxI + 0.001) return L.hasIncline ? `Too steep: your treadmill’s maximum incline is ${incTxt(L.maxI)}.` : 'Your treadmill has no incline. Set this step to 0%.';
+  // Hidden inclines are never an error: saving clamps them to the treadmill (stepSeg).
+  if (L.showInc && st.incline > L.maxI + 0.001) return `Too steep: your treadmill’s maximum incline is ${incTxt(L.maxI)}.`;
   return '';
 }
 function totalError(items) {
@@ -242,12 +256,11 @@ function setStepperVal(root, id, text) {
 let B = null; // the open builder (one at a time)
 
 function defaultItems() {
-  const L = lim();
-  const c = (i) => Math.min(L.maxI, i);
+  const c = newInc;
   return [
     mkStep('walk', 180, c(1), 'Warm-up'),
     mkStep('brisk', 120, c(2), 'Warm-up'),
-    mkStep('power', 900, c(5), 'Steady climb'),
+    mkStep('power', 900, c(5), lim().showInc ? 'Steady climb' : 'Steady power walk'),
     mkStep('brisk', 120, c(1), 'Cool-down'),
     mkStep('walk', 180, 0, 'Cool-down'),
   ];
@@ -346,7 +359,7 @@ function mount({ id = null, seeded = false, model, baseline }) {
           <button type="button" class="btn btn-ghost" data-act="add-rep">${icon('repeat')}Add repeat block</button>
         </div>
       </section>
-      <p class="body-xs bld-foot">Speeds left blank follow your paces (Me → Paces &amp; units). Steps can’t go faster or steeper than your treadmill allows.</p>
+      <p class="body-xs bld-foot">${esc(footNote())}</p>
     </div>`;
   document.body.appendChild(root);
   document.body.classList.add('immersive');
@@ -355,6 +368,14 @@ function mount({ id = null, seeded = false, model, baseline }) {
   paintList();
   wire();
   setTimeout(() => { try { root.querySelector('#bld-title').focus({ preventScroll: true }); } catch { /* ignore */ } }, 60);
+}
+
+/** The builder's footnote for today's surface. */
+function footNote() {
+  const L = lim();
+  if (L.surface === 'outdoor') return 'Outdoors, the player coaches each step by effort. Paces left blank follow your usual paces (Me → Paces & units) and only feed the estimates of distance and calories.';
+  if (L.surface === 'flat') return `Speeds left blank follow your paces (Me → Paces & units). You’re on a flat surface today, so incline is hidden${L.maxI ? '; any inclines already in a workout are kept for incline days' : ''}.`;
+  return 'Speeds left blank follow your paces (Me → Paces & units). Steps can’t go faster or steeper than your treadmill allows.';
 }
 
 function closeBuilder() {
@@ -409,19 +430,19 @@ function paintSummary() {
   const raw = flatten(B.model.items);
   const segs = previewSegs(raw);
   const st = planStats(segs);
-  const L = lim(), nn = prof().noNumbers;
+  const L = lim(), nn = prof().noNumbers, surf = L.surface;
   const terr = totalError(B.model.items);
-  const cells = [
-    ['Time', `${clock(st.sec)}`],
-    nn ? ['Climb', `${Math.round(toElev(st.elev))}<small>${esc(elevUnit())}</small>`] : ['Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`],
-    ['Distance', `${distStr(st.km)}<small>${esc(distUnit())}</small>`],
-    L.hasIncline ? ['Incline', `${fmt1(st.maxI)}<small>% max</small>`] : ['Top speed', `${speedStr(st.maxS)}<small>${esc(speedUnit())}</small>`],
-  ];
+  const second = nn
+    ? (surf === 'incline' ? ['Climb', `${Math.round(toElev(st.elev))}<small>${esc(elevUnit())}</small>`] : ['Intervals', `${segs.length}`])
+    : ['Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`];
+  const cells = [['Time', `${clock(st.sec)}`], second, distCell(st.km, surf), peakCell(st, segs, surf)];
+  const est = surf === 'outdoor' ? 'Calories and distance are estimates from your weight and paces.'
+    : `Calories are an estimate of active energy from your ${surf === 'incline' ? 'weight, speed and incline' : 'weight and speed'}.`;
   B.root.querySelector('[data-el="sum"]').innerHTML = `
-    <div class="bld-stats">${cells.map(([l, v]) => `<div><span class="stat-label">${l}</span><span class="stat-value">${v}</span></div>`).join('')}</div>
-    ${segs.length ? `<div class="bld-chart">${profileChart(segs, { h: 80, label: 'Workout profile: bars show speed, the line shows incline' })}</div>${modeLegend(segs, MODES)}` : ''}
+    <div class="bld-stats">${cells.map(([l, v], i) => `<div${surf === 'outdoor' && i === 3 ? ' class="bld-eff"' : ''}><span class="stat-label">${l}</span><span class="stat-value">${v}</span></div>`).join('')}</div>
+    ${segs.length ? `<div class="bld-chart">${surfaceChart(segs, surf, { chart: profileChart, h: surf === 'incline' ? 80 : 88, label: chartLabel('Workout', surf) })}</div>${surfaceLegend(segs, surf)}` : ''}
     ${terr ? `<p class="bld-terr" role="alert">${icon('alert')}<span>${esc(terr)}</span></p>` : ''}
-    ${nn ? '' : '<p class="body-xs">Calories are an estimate of active energy from your weight, speed and incline.</p>'}`;
+    ${nn ? (surf === 'outdoor' ? '<p class="body-xs">Distance is an estimate from your paces.</p>' : '') : `<p class="body-xs">${esc(est)}</p>`}`;
   B.root.querySelector('[data-el="sub"]').textContent = `${clock(st.sec)} · ${segs.length} interval${segs.length === 1 ? '' : 's'}`;
   paintEffort(raw);
 }
@@ -442,8 +463,10 @@ function headInner(st, ctx) {
   const v = parseSpeed(st.speed);
   const kmh = v != null && Number.isFinite(v) && v > 0 ? Math.min(L.maxS, v) : speedFor(st.type);
   const title = st.label.trim() || (ctx.inRep && !ctx.numbered ? 'Recover' : MODES[st.type].name);
-  const bits = [ctx.inRep ? MODES[st.type].short : MODES[st.type].name, `${speedStr(kmh)} ${speedUnit()}`];
-  if (L.hasIncline) bits.push(incTxt(Math.min(L.maxI, st.incline)));
+  const bits = [ctx.inRep ? MODES[st.type].short : MODES[st.type].name];
+  if (L.surface === 'outdoor') bits.push(`effort ${effortFor(st.type).rpe} of 10`); // the typical pace only feeds estimates
+  else bits.push(`${speedStr(kmh)} ${speedUnit()}`);
+  if (L.showInc) bits.push(incTxt(Math.min(L.maxI, st.incline)));
   const err = stepError(st);
   return `<span class="bld-ico" aria-hidden="true">${modeIcon(st.type)}</span>
     <span class="bld-main"><span class="bld-t">${esc(title)}</span><span class="bld-s">${esc(bits.join(' · '))}</span></span>
@@ -465,12 +488,13 @@ function editorHtml(st, ctx, pos) {
   return `<div class="bld-ed" id="ed-${k}">
     <div class="bld-modes" role="radiogroup" aria-label="Mode">${MODE_IDS.map((t) => `<button type="button" role="radio" aria-checked="${t === st.type}" class="bld-mode mode-${t}" data-act="mode" data-mode="${t}" data-key="${k}"><span class="bld-mode-ico">${modeIcon(t)}</span><span class="bld-mode-t">${esc(MODES[t].short)}</span></button>`).join('')}</div>
     ${jog ? `<p class="bld-note">${icon('info')}<span>${esc(jog)}</span></p>` : ''}
+    ${L.surface === 'outdoor' ? `<p class="bld-note bld-effort-note">${icon('pulse')}<span><b>${esc(effortFor(st.type).feel)}, ${esc(effortFor(st.type).rpe)} out of 10.</b> ${esc(effortFor(st.type).talk)}. Outdoors this step is coached by how it feels.</span></p>` : ''}
     <div class="bld-rows">
       <div class="bld-row"><span class="bld-row-l">Time</span>${stepperHtml('dur:' + k, clock(st.dur), '', 'Time in minutes and seconds')}</div>
-      <div class="bld-row"><span class="bld-row-l">Incline</span>${L.hasIncline ? stepperHtml('inc:' + k, incTxt(st.incline), '', 'Incline') : '<span class="bld-noinc">Your treadmill has no incline</span>'}</div>
+      ${L.showInc ? `<div class="bld-row"><span class="bld-row-l">Incline</span>${stepperHtml('inc:' + k, incTxt(st.incline), '', 'Incline')}</div>` : ''}
     </div>
-    <div class="bld-grid">
-      <div class="field"><label for="spd-${k}">Speed</label><div class="input-unit"><input id="spd-${k}" class="input" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" data-in="speed" data-key="${k}" value="${esc(st.speed)}" placeholder="${speedStr(speedFor(st.type))}" aria-describedby="spdh-${k}"><span class="unit">${esc(speedUnit())}</span></div><span class="hint" id="spdh-${k}">Leave blank to use your ${esc(MODES[st.type].name.toLowerCase())} pace</span></div>
+    <div class="bld-grid${L.surface === 'outdoor' ? ' one' : ''}">
+      <div class="field"><label for="spd-${k}">${L.surface === 'outdoor' ? 'Typical pace (for estimates)' : 'Speed'}</label><div class="input-unit"><input id="spd-${k}" class="input" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" data-in="speed" data-key="${k}" value="${esc(st.speed)}" placeholder="${speedStr(speedFor(st.type))}" aria-describedby="spdh-${k}"><span class="unit">${esc(speedUnit())}</span></div><span class="hint" id="spdh-${k}">Leave blank to use your ${esc(MODES[st.type].name.toLowerCase())} pace</span></div>
       <div class="field"><label for="lab-${k}">Label</label><input id="lab-${k}" class="input" type="text" maxlength="32" autocomplete="off" enterkeyhint="done" data-in="label" data-key="${k}" value="${esc(st.label)}" placeholder="${esc(ph)}">${ctx.numbered ? '<span class="hint">Numbered each round, like “Climb 2 of 6”</span>' : ''}</div>
     </div>
     <p class="bld-err" data-err="${k}" role="alert">${esc(stepError(st))}</p>
@@ -585,8 +609,8 @@ function addStep() {
   const prev = items[at - 1];
   const prevType = prev ? (prev.k === 'rep' ? prev.steps[0].type : prev.type) : 'walk';
   const st = WORK.has(prevType) && prev && prev.k === 'step'
-    ? mkStep('walk', 120, Math.min(L.maxI, 1), 'Recover')
-    : mkStep('power', 180, Math.min(L.maxI, 5), 'Climb');
+    ? mkStep('walk', 120, newInc(1), 'Recover')
+    : mkStep('power', 180, newInc(5), L.showInc ? 'Climb' : 'Push');
   items.splice(at, 0, st);
   B.open = st.key;
   changed({ list: true });
@@ -596,7 +620,7 @@ function addStep() {
 
 function addRepeat() {
   const L = lim();
-  const it = mkRep(4, [mkStep('power', 120, Math.min(L.maxI, 6), 'Climb'), mkStep('walk', 120, Math.min(L.maxI, 1), 'Recover')]);
+  const it = mkRep(4, [mkStep('power', 120, newInc(6), L.showInc ? 'Climb' : 'Push'), mkStep('walk', 120, newInc(1), 'Recover')]);
   B.model.items.splice(insertIndex(), 0, it);
   B.open = null;
   changed({ list: true });
@@ -831,10 +855,20 @@ const QD_FOCUS = [
   { value: 'climb', label: 'Climb' }, { value: 'intervals', label: 'Intervals' },
   { value: 'steady', label: 'Steady' }, { value: 'mixed', label: 'Mixed' },
 ];
+/** Without an incline, "Climb" drafts power-walk pushes, so it is called that. */
+const qdFocus = (showInc) => QD_FOCUS.map((f) => (f.value === 'climb' && !showInc ? { ...f, label: 'Pushes' } : f));
 const QD_INT = [{ value: 'easy', label: 'Easy' }, { value: 'moderate', label: 'Moderate' }, { value: 'hard', label: 'Hard' }];
 
 function focusHint(focus) {
-  const jog = prof().canJog === 'yes' && !restrictedToModerate();
+  const jog = prof().canJog === 'yes' && !prof().walkOnly && !restrictedToModerate(); // same rule as core quickDraft
+  if (!lim().showInc) {
+    return {
+      climb: 'Three-minute power-walk pushes with two-minute easy recoveries.',
+      intervals: jog ? 'Short jogs with brisk-walk recoveries. The jogs get longer as the intensity goes up.' : 'Short power-walk pushes with brisk-walk recoveries.',
+      steady: 'Five-minute blocks of continuous power walking.',
+      mixed: jog ? 'Seven-minute rounds: a power walk, a short recovery, a jog and a brisk walk.' : 'Seven-minute rounds: a power walk, a short recovery, a push and a brisk walk.',
+    }[focus];
+  }
   return {
     climb: 'Three-minute climbs with two-minute flat recoveries.',
     intervals: jog ? 'Short jogs with brisk-walk recoveries. The jogs get longer as the intensity goes up.' : 'Short, steep power-walk pushes with brisk-walk recoveries.',
@@ -852,16 +886,16 @@ function openQuickDraft() {
     intensity: 'moderate',
     maxInc: L.maxI,
   };
-  const draft = () => quickDraft({ minutes: q.minutes, focus: q.focus, intensity: q.intensity, maxIncline: L.hasIncline ? q.maxInc : null });
+  const draft = () => quickDraft({ minutes: q.minutes, focus: q.focus, intensity: q.intensity, maxIncline: L.showInc ? q.maxInc : null });
   const incHint = () => (q.maxInc >= L.maxI ? 'Your treadmill’s maximum. Lower it to keep the climbs gentler.' : `Climbs stay at or below ${incTxt(q.maxInc)}.`);
   const html = `
-    <p class="body-s qd-lede">Pick a length and focus; we draft it on your phone from your paces and treadmill. Nothing is sent anywhere, and you can change every step afterwards.</p>
+    <p class="body-s qd-lede">Pick a length and focus; we draft it on your phone from your paces and where you walk today. Nothing is sent anywhere, and you can change every step afterwards.</p>
     <div class="field"><span class="label">Length</span>${segmented('qd-min', QD_LEN.map((n) => ({ value: n, label: `${n} min` })), q.minutes, { block: true, label: 'Length' })}</div>
-    <div class="field"><span class="label">Focus</span>${segmented('qd-focus', QD_FOCUS, q.focus, { block: true, label: 'Focus' })}<span class="hint" data-el="fhint">${esc(focusHint(q.focus))}</span></div>
+    <div class="field"><span class="label">Focus</span>${segmented('qd-focus', qdFocus(L.showInc), q.focus, { block: true, label: 'Focus' })}<span class="hint" data-el="fhint">${esc(focusHint(q.focus))}</span></div>
     <div class="field"><span class="label">Intensity</span>${segmented('qd-int', QD_INT, q.intensity, { block: true, label: 'Intensity' })}</div>
-    ${L.hasIncline
+    ${L.showInc
       ? `<div class="field qd-inc"><span class="label">Max incline <span class="faint">(optional)</span></span>${stepperHtml('qd-inc', incTxt(q.maxInc), '', 'Max incline')}<span class="hint" data-el="ihint">${esc(incHint())}</span></div>`
-      : '<p class="body-xs">Your treadmill has no incline, so the draft changes speed only.</p>'}
+      : `<p class="body-xs">${L.surface === 'outdoor' ? 'You’re walking outdoors today, so the draft uses pace changes only and the player coaches each step by effort.' : 'You’re on a flat surface today, so the draft changes speed only.'}</p>`}
     <section class="card qd-prev" data-el="prev" aria-label="Draft preview" aria-live="polite"></section>`;
   const sh = sheet(html, {
     title: 'Quick Draft',
@@ -877,15 +911,17 @@ function openQuickDraft() {
     const nn = p.noNumbers;
     const bits = [`${Math.round(st.sec / 60)} min`];
     if (!nn) bits.push(`≈ ${roundKcal(st.kcal)} kcal`);
-    bits.push(`${distStr(st.km)} ${distUnit()}`);
-    if (L.hasIncline) bits.push(`up to ${incTxt(st.maxI)}`);
+    bits.push(`${L.surface === 'outdoor' ? '≈ ' : ''}${distStr(st.km)} ${distUnit()}`);
+    if (L.showInc) bits.push(`up to ${incTxt(st.maxI)}`);
+    else if (L.surface === 'flat') bits.push(`top ${speedStr(st.maxS)} ${speedUnit()}`);
+    else bits.push(effortFor(hardestMode(segs)).feel.toLowerCase());
     prev.innerHTML = `
       <div class="qd-top"><span class="eyebrow">Preview</span><span class="tag">${esc(INTENSITY[d.intensity])}</span></div>
       <p class="title-m">${esc(d.name)}</p>
       <p class="qd-stats num">${esc(bits.join(' · '))}</p>
-      <div class="qd-chart">${profileChart(segs, { h: 72, label: 'Draft profile: bars show speed, the line shows incline' })}</div>
-      ${modeLegend(segs, MODES)}
-      <p class="body-xs">${segs.length} intervals${nn ? '' : '. Calories are an estimate'}.</p>`;
+      <div class="qd-chart">${surfaceChart(segs, L.surface, { chart: profileChart, h: L.showInc ? 72 : 80, label: chartLabel('Draft', L.surface) })}</div>
+      ${surfaceLegend(segs, L.surface)}
+      <p class="body-xs">${segs.length} intervals${nn ? (L.surface === 'outdoor' ? '. Distance is an estimate' : '') : L.surface === 'outdoor' ? '. Calories and distance are estimates' : '. Calories are an estimate'}.</p>`;
   };
   paint();
   bindSegmented(sh.el, (name, v) => {

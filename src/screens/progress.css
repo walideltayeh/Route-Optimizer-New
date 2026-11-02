@@ -110,6 +110,7 @@
 .pg-srow .row-title { overflow-wrap: anywhere; }
 .pg-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0 2px; }
 .pg-chips .tag { height: 20px; padding: 0 7px; border-radius: 6px; font-size: 11px; }
+.pg-chips .tag svg { width: 12px; height: 12px; }
 .pg-eff { flex: none; display: inline-flex; align-items: baseline; gap: 1px; padding: 3px 7px; border-radius: 9px; background: var(--surface-2); }
 .pg-eff b { font-family: var(--font-display); font-weight: 800; font-size: 15px; line-height: 1; }
 .pg-eff small { font-size: 11px; font-weight: 650; color: var(--ink-3); }
@@ -206,6 +207,7 @@
 .pg-mgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .pg-mgrid .input-unit .input { padding-left: 12px; padding-right: 38px; }
 .pg-mgrid .input-unit .unit { right: 11px; font-size: 14px; }
+.pg-mgrid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .pg-mhint { margin-top: -10px; font-size: 12.5px; color: var(--ink-3); }
 .pg-mest { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 13px; background: var(--surface-2); font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .pg-mest-main { font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--ink); }

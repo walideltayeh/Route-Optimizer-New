@@ -1,5 +1,5 @@
 // End-to-end journeys against dist/hillpace.html (Playwright, Node).
-//   node scripts/build.mjs --dev && node tests/e2e.mjs [--only a,f,c,d,g,e] [--page path/to/hillpace.html] [--headed]
+//   node scripts/build.mjs --dev && node tests/e2e.mjs [--only a,f,c,d,g,h,e] [--page path/to/hillpace.html] [--headed]
 //   Journey a also runs b (the same fresh user starts the workout).
 // Fails (exit 1) on any failed check, page error, console error, or an unregistered cross-screen action.
 // Screenshots for review are written to tests/shots/.
@@ -16,7 +16,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const PAGE = opt('--page', join(ROOT, 'dist/hillpace.html'));
-const ONLY = (opt('--only', 'a,f,c,d,g,e') || '').split(',');
+const ONLY = (opt('--only', 'a,f,c,d,g,h,e') || '').split(',');
 const SHOTS = join(ROOT, 'tests/shots');
 mkdirSync(SHOTS, { recursive: true });
 if (!existsSync(PAGE)) { console.error(`Missing ${PAGE}. Run: node scripts/build.mjs --dev`); process.exit(1); }
@@ -107,7 +107,8 @@ const visibleText = (p) => p.evaluate(() => {
 const onbNext = async (p) => { await W(p, 340); await p.click('.onb-foot [data-act="next"]'); await W(p, 420); };
 const onbStep = (p) => p.evaluate(() => { const h = document.querySelector('.onb-stage .onb-page:last-child h1, .onb-stage h1'); return h ? h.textContent.trim() : ''; });
 
-async function completeOnboarding(p, { days = null, revealShot = 'onb-reveal-light', checkHow = false } = {}) {
+// surface: 'incline' | 'flat' | 'outdoor' (Where will you walk most?); walkOnly: true answers "Walking only" (no jog question).
+async function completeOnboarding(p, { days = null, revealShot = 'onb-reveal-light', checkHow = false, surface = 'incline', walkOnly = false } = {}) {
   must(await visible(p, '.overlay.onb'), 'fresh user sees the onboarding overlay');
   await shot(p, 'onb-welcome-light');
   await onbNext(p); // welcome
@@ -130,13 +131,21 @@ async function completeOnboarding(p, { days = null, revealShot = 'onb-reveal-lig
   await onbNext(p);
   must(await visible(p, '[data-pick="pace"]'), 'pace step shows paces');
   await onbNext(p);
-  await p.click('[data-pick="activity"][data-value="some"]');
-  await p.click('[data-pick="canJog"][data-value="yes"]');
-  await p.click('[data-pick="hard"][data-value="no"]');
-  await onbNext(p);
-  must(await visible(p, '[data-pick="incline"]'), 'treadmill step shows incline question');
+  // Where will you walk most? (before Fitness, so the fitness copy and starting paces match the surface)
+  must(await visible(p, '[data-pick="surface"][data-value="incline"]'), 'where-you-walk step shows the surface choices');
+  check((await p.locator('[data-pick="surface"]').count()) === 3, 'where-you-walk step offers incline, flat and outdoors');
+  check((await p.locator('[data-pick="surface"][aria-checked="true"]').count()) === 0, 'no surface is picked until the user chooses');
+  await p.click(`[data-pick="surface"][data-value="${surface}"]`); await W(p, 250);
   await p.click('[data-pick="sunit"][data-value="kmh"]'); await W(p, 150);
-  await p.click('[data-pick="hands"][data-value="yes"]');
+  if (surface === 'outdoor') check(!(await visible(p, '[data-pick="hands"]')) && !(await visible(p, '#onb-maxSpeed')), 'outdoors asks no treadmill questions');
+  else await p.click('[data-pick="hands"][data-value="yes"]');
+  await onbNext(p);
+  must(await visible(p, '[data-pick="activity"]'), 'fitness step follows where you walk');
+  await p.click('[data-pick="activity"][data-value="some"]');
+  await p.click('[data-pick="hard"][data-value="no"]');
+  await p.click(`[data-pick="walkOnly"][data-value="${walkOnly ? 'yes' : 'no'}"]`); await W(p, 200);
+  if (walkOnly) check(!(await visible(p, '[data-pick="canJog"]')), 'Walking only hides the jogging question');
+  else await p.click('[data-pick="canJog"][data-value="yes"]');
   await onbNext(p);
   // Train on 4 days that include today, so Today has a session to start.
   const iso = await p.evaluate(() => ((new Date().getDay() + 6) % 7) + 1); // the page clock may be faked
@@ -189,14 +198,18 @@ async function startFromSheet(p) {
   await W(p, 400);
   must(await visible(p, '.player [data-el="ready"]'), 'get-ready countdown shows');
 }
-async function runToEndWithSkips(p) {
+// onStart(p): extra checks once the first interval runs (default: a treadmill speed number and incline).
+async function runToEndWithSkips(p, { onStart = null } = {}) {
   // Fake clock: fast-forward most of each interval, then press Skip (so the session is a real, complete one).
   await p.clock.fastForward(6000);
   await W(p, 300);
   must(!(await visible(p, '.player [data-el="ready"]')), 'get-ready countdown finishes');
-  const speed = (await p.textContent('.player [data-el="speed"]')).trim();
-  check(/^\d+(\.\d)?$/.test(speed), `player shows a speed number (${speed})`);
-  check(await visible(p, '.player [data-el="incline"]'), 'player shows incline');
+  if (onStart) await onStart(p);
+  else {
+    const speed = (await p.textContent('.player [data-el="speed"]')).trim();
+    check(/^\d+(\.\d)?$/.test(speed), `player shows a speed number (${speed})`);
+    check(await visible(p, '.player [data-el="incline"]'), 'player shows incline');
+  }
   for (let i = 0; i < 80 && (await p.locator('.player').count()) && !(await visible(p, '.sm-foot, [data-done]')); i++) {
     const t = await p.textContent('.player [data-el="count"]').catch(() => null);
     if (t == null) break;
@@ -515,6 +528,131 @@ await journey('g', 'Achilles user sees the steep-session notice and can cap the 
   check(await visible(q, '.sheet-root .steep-notice'), `the plan session sheet (${slotKey}) shows the steep-session notice`);
   await shot(q, 'g-steep-plan-sheet-light');
   await closeSheets(q);
+});
+
+/* ======================================================================
+   h) where you walk: outdoors + walking only, a flat day, Just walk, Me
+   ====================================================================== */
+await journey('h', 'outdoor walking-only user: effort-coached session, a flat day, Just walk to History, and Me → Where you walk', async (track) => {
+  /* (i) fresh onboarding: Outdoors + Walking only → an effort-coached session saved as outdoor */
+  const p = track(await newPage({ fresh: true, clock: true }));
+  await completeOnboarding(p, { surface: 'outdoor', walkOnly: true, revealShot: 'h-reveal-outdoor-light' });
+  const m = await main(p);
+  check(m.profile.surface === 'outdoor' && m.profile.walkOnly === true, `onboarding saves surface outdoor and walking only (${m.profile.surface}, ${m.profile.walkOnly})`);
+  must(await visible(p, '#screen [data-seg="surface"] button[data-value="outdoor"][aria-pressed="true"]'), 'Today’s Where today control is set to Outdoors');
+  check((await p.locator('#screen [data-seg="surface"] button[aria-pressed="true"]').count()) === 1, 'exactly one surface is selected on Today');
+  check(!/km\/h|% max/.test(await p.textContent('.td-hero')), 'Today’s session card shows no speed or incline targets outdoors');
+  await shot(p, 'h-today-outdoor-light');
+  must(await visible(p, '.td-start'), 'Today shows a Start button');
+  await p.click('.td-start'); await W(p, 500);
+  check(await visible(p, '.pr-sheet [data-seg="surface"] button[data-value="outdoor"][aria-pressed="true"]'), 'the pre-run sheet asks where you are walking, set to Outdoors');
+  check(/Before you head out/.test(await p.textContent('.pr-sheet')), 'the pre-run sheet shows outdoor safety tips');
+  await shot(p, 'h-prerun-outdoor-light');
+  await startFromSheet(p);
+  await runToEndWithSkips(p, {
+    onStart: async (q) => {
+      check(await visible(q, '.player .pl-effort[data-el="panel"]'), 'the player shows the effort panel outdoors');
+      check(!(await q.locator('.player [data-el="speed"], .player [data-el="incline"]').count()), 'the player shows no speed or incline target outdoors');
+      const panel = await q.textContent('.player [data-el="panel"]');
+      check(!/km\/h|mph|%/.test(panel), `no km/h or incline numbers in the player panel (${panel.replace(/\s+/g, ' ').trim()})`);
+      check(/\d–\d/.test(await q.textContent('.player [data-el="rpe"]')) && /out of 10/.test(panel), 'the panel shows effort out of 10');
+      check((await q.textContent('.player [data-el="talk"]')).trim().length > 5, 'the panel shows the talk test');
+      check(!/km\/h/.test(await q.textContent('.player')), 'nothing in the player shows km/h');
+      await shot(q, 'h-player-outdoor-light');
+    },
+  });
+  must(await visible(p, '[data-rpe="6"]'), 'summary opens after the outdoor session');
+  await p.click('[data-rpe="6"]'); await W(p, 300);
+  let ss = await sessions(p);
+  check(ss.length === 1 && ss[0].surface === 'outdoor', `the session is saved with surface outdoor (${ss[0] && ss[0].surface})`);
+  check(ss[0] && ss[0].completed === true && !!ss[0].planSlot, 'the outdoor session is complete and counts toward the plan');
+  check(ss[0] && !(ss[0].splits || []).some((x) => x.type === 'jog' || x.type === 'run'), 'a walking-only session has no jog or run intervals');
+  check(ss[0] && (ss[0].splits || []).every((x) => !x.incline), 'an outdoor session records no incline');
+  await shot(p, 'h-summary-outdoor-light');
+  await p.click('[data-done]'); await W(p, 900);
+
+  /* (iv) Me → Where you walk: three options and the Walking only switch */
+  await go(p, '#me');
+  check(/Where you walk/.test(await visibleText(p)) && /Outdoors · Walking only/.test(await visibleText(p)), 'Me lists Where you walk: Outdoors · Walking only');
+  await go(p, '#me-treadmill');
+  check((await p.locator('#screen [data-choice="surface"]').count()) === 3, 'Where you walk offers three options');
+  check(await visible(p, '#screen [data-choice="surface"][data-value="outdoor"][aria-checked="true"]'), 'Outdoors is the checked option');
+  check(await p.locator('#screen #me-sw-walkonly').count() === 1, 'Where you walk has the Walking only switch');
+  check(await p.isChecked('#screen #me-sw-walkonly'), 'the Walking only switch is on');
+  check(!(await visible(p, '#screen [data-choice="surface"][data-value="flat"][aria-checked="true"]')), 'only one option is checked');
+  await shot(p, 'h-me-where-light');
+  await p.click('#screen label[for="me-sw-walkonly"]'); await W(p, 450);
+  check((await main(p)).profile.walkOnly === false, 'turning the switch off saves walkOnly false');
+  await p.click('#screen label[for="me-sw-walkonly"]'); await W(p, 450);
+  check((await main(p)).profile.walkOnly === true, 'turning it back on saves walkOnly true');
+
+  /* (ii) an outdoor walker on a treadmill today: switch Today to Flat → the pre-run sheet has no incline */
+  const q = track(await newPage({ clock: true, patch: { profile: { surface: 'outdoor', walkOnly: true } } }));
+  must(await visible(q, '#screen [data-seg="surface"] button[data-value="outdoor"][aria-pressed="true"]'), 'fixture user (usually outdoors): Today’s control is set to Outdoors');
+  await q.click('#screen [data-seg="surface"] button[data-value="flat"]'); await W(q, 600);
+  const tm = await main(q);
+  const today = await q.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+  check(tm.todaySurface && tm.todaySurface.surface === 'flat' && tm.todaySurface.d === today, `Flat is saved for today only (${JSON.stringify(tm.todaySurface)})`);
+  check(tm.profile.surface === 'outdoor', 'the usual surface stays Outdoors');
+  check(await visible(q, '#screen [data-seg="surface"] button[data-value="flat"][aria-pressed="true"]'), 'Today now shows Flat');
+  check(/Just for today/i.test(await visibleText(q)), 'Today says the choice is just for today');
+  await shot(q, 'h-today-flat-light');
+  const startSel = (await q.locator('.td-start').count()) ? '.td-start' : '[data-act="easy"]';
+  await q.click(startSel); await W(q, 600);
+  must(await visible(q, '.pr-sheet'), 'pre-run sheet opens on a flat day');
+  check(await visible(q, '.pr-sheet [data-seg="surface"] button[data-value="flat"][aria-pressed="true"]'), 'the pre-run sheet is set to Flat');
+  const pr = await q.evaluate(() => {
+    const sh = document.querySelector('.pr-sheet');
+    const clone = sh.cloneNode(true);
+    clone.querySelectorAll('[data-seg="surface"]').forEach((n) => n.remove()); // the picker itself names "Incline"
+    return { text: clone.innerText, hill: sh.querySelectorAll('.pr-chart svg path').length, ln: sh.querySelectorAll('.legend .ln').length };
+  });
+  check(!/incline|\d%/i.test(pr.text), `the flat pre-run sheet shows no incline (${(pr.text.match(/.{0,30}(incline|\d%).{0,30}/i) || [''])[0]})`);
+  check(/Top speed/.test(pr.text) && /km\/h/.test(pr.text), 'it shows the top speed instead');
+  check(pr.hill === 0 && pr.ln === 0, `its chart has no incline line (paths ${pr.hill}, legend lines ${pr.ln})`);
+  await shot(q, 'h-prerun-flat-light');
+  await closeSheets(q);
+
+  /* (iii) Just walk from Today: open-ended timer, change pace, hold End → saved and in History */
+  must(await visible(q, '#screen [data-act="free"]'), 'Today offers Just walk');
+  await q.click('#screen [data-act="free"]'); await W(q, 600);
+  must(await visible(q, '.pr-sheet .pr-free'), 'Just walk opens its pre-run card');
+  check(/Start walking/.test(await q.textContent('.pr-sheet [data-act="start"]')), 'the button says Start walking');
+  await shot(q, 'h-prerun-free-light');
+  await startFromSheet(q);
+  await q.clock.fastForward(6000); await W(q, 300);
+  must(await visible(q, '.player.pl-free'), 'the Just walk player is showing');
+  check(!(await q.locator('.player [data-el="left"], .player [data-el="count"], .player [data-act="skip"]').count()), 'Just walk has no time left, interval countdown or Skip');
+  const t0 = (await q.textContent('.player [data-el="elapsed"]')).trim();
+  await q.clock.fastForward(90000); await W(q, 300);
+  const t1 = (await q.textContent('.player [data-el="elapsed"]')).trim();
+  check(/^\d+:\d\d$/.test(t1) && t1 !== t0 && /^1:3\d$/.test(t1), `the timer counts up (${t0} → ${t1})`);
+  check(await visible(q, '.player [data-pace="brisk"][aria-pressed="true"]'), 'it starts at a brisk walk');
+  await q.click('.player [data-pace="power"]'); await W(q, 300);
+  check(await visible(q, '.player [data-pace="power"][aria-pressed="true"]'), 'Hard walking is now the chosen pace');
+  check(/Hard walking/.test(await q.textContent('.player [data-pace="power"]')), 'the pace button is labelled Hard walking');
+  await q.clock.fastForward(10 * 60 * 1000); await W(q, 400);
+  const t2 = (await q.textContent('.player [data-el="elapsed"]')).trim();
+  check(await visible(q, '.player.pl-free') && /^1[12]:\d\d$/.test(t2), `it keeps going past the first 10 minutes (${t2})`);
+  await shot(q, 'h-player-free-light');
+  // Hold End for a second (a tap only shows a hint)
+  const box = await q.locator('.player .pl-end').boundingBox();
+  await q.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await q.mouse.down(); await q.clock.fastForward(1300); await W(q, 200); await q.mouse.up();
+  await W(q, 1200);
+  must(await visible(q, '.overlay [data-done]'), 'holding End opens the summary');
+  check(/Walk complete/i.test(await text(q)), 'the summary says Walk complete');
+  await shot(q, 'h-summary-free-light');
+  const fs = (await sessions(q)).find((x) => x.workoutId === 'free');
+  check(!!fs, 'the walk is saved with workoutId free');
+  check(fs && fs.completed === true && fs.completion === 1 && fs.planSlot === null && fs.name === 'Just walk', `it is saved as a completed Just walk outside the plan (${fs && JSON.stringify({ completed: fs.completed, planSlot: fs.planSlot, name: fs.name })})`);
+  check(fs && fs.surface === 'flat', `it records today’s surface (${fs && fs.surface})`);
+  check(fs && fs.durationSec >= 690 && (fs.splits || []).some((x) => x.type === 'power') && (fs.splits || []).some((x) => x.type === 'brisk'), `it logs the brisk and hard-walking parts (${fs && (fs.splits || []).map((x) => `${x.type} ${x.sec}s`).join(', ')})`);
+  await q.click('.overlay [data-done]'); await W(q, 900);
+  check(!(await visible(q, '.overlay')), 'summary closes on Done');
+  await go(q, '#history');
+  check(/Just walk/.test(await visibleText(q)), 'History lists the Just walk');
+  await shot(q, 'h-history-light');
 });
 
 /* ======================================================================

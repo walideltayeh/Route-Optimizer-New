@@ -48,6 +48,8 @@
 .onb-foot .btn-row { flex-wrap: nowrap; }
 .onb-foot .btn-row > .btn { flex: 1 1 0; min-width: 0; padding: 0 14px; }
 .onb-foot .btn-row > .btn-ghost { flex: 0.8 1 0; }
+/* small phones: size both buttons to their labels so "Edit answers" stays on one line */
+@media (max-width: 389px) { .onb-foot .btn-row > .btn, .onb-foot .btn-row > .btn-ghost { flex: 1 1 auto; padding: 0 12px; white-space: nowrap; } }
 .onb-foot .btn-text { min-height: 44px; }
 .onb-fine { font-size: 12.5px; color: var(--ink-3); text-align: center; }
 
@@ -149,6 +151,10 @@
 .onb-paces .legend { font-size: 14px; gap: 6px 16px; }
 .onb-paces .legend b { font-family: var(--font-display); font-weight: 800; color: var(--ink); }
 
+/* ---- where you walk ---- */
+.onb-sub { display: flex; flex-direction: column; gap: 4px; padding-top: 22px; border-top: 1px solid var(--line-soft); }
+.onb-p-treadmill .banner { margin-top: 2px; }
+
 /* ---- schedule ---- */
 .onb-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .onb-days .chip-toggle { min-width: 0; min-height: 48px; padding: 0; font-size: 14px; }
@@ -194,6 +200,15 @@
 .onb-sess-main span { font-size: 13.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .onb-sess-min { align-self: start; padding-top: 1px; font-family: var(--font-display); font-weight: 750; font-size: 15px; color: var(--ink-2); white-space: nowrap; }
 .onb-sess > .chart { grid-column: 2 / 4; }
+
+.onb-train { display: flex; flex-direction: column; }
+.onb-train-row { position: relative; display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; }
+.onb-train-row + .onb-train-row::before { content: ""; position: absolute; top: 0; left: 72px; right: 0; height: 1px; background: var(--line-soft); }
+.onb-train-row .onb-choice-ico { width: 40px; height: 40px; }
+.onb-train-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-top: 1px; }
+.onb-train-main b { font-size: 16px; font-weight: 700; color: var(--ink); }
+.onb-train-main span { font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.onb-train + .onb-note { margin-top: 8px; padding: 0 4px; }
 
 .onb-stats { display: flex; flex-direction: column; gap: 12px; }
 .onb-stats .stat-grid > div { display: flex; flex-direction: column; gap: 2px; }

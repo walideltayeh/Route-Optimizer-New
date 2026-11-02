@@ -5,7 +5,7 @@ import * as store from '../core/store.js';
 import { state } from '../core/store.js';
 import {
   MODES, PHASES, WEEKLY_TARGET, DELOAD_WEEKS, planSlots, slotStatus, phaseForWeek, currentWeek, evaluateAdaptation, applyAdaptation,
-  sessionActivityMin,
+  sessionActivityMin, SURFACES, usualSurface, usesIncline, effortFor, FREE_WALK_ID, vigorousExamples,
 } from '../core/program.js';
 import { roundKcal, KMH_PER_MPH } from '../core/science.js';
 import { newRecords, collectNew } from '../core/achievements.js';
@@ -17,7 +17,7 @@ import { features, healthSaveWorkout, copyText, haptic, shareText as shareViaSys
 import { actions } from '../ui/actions.js';
 import { currentRoute } from '../ui/router.js';
 import { icon, modeIcon, topo, toast, countUp, confetti, debounce, RM } from '../ui/kit.js';
-import { planBegan, slotState, slotSession } from './plan.js';
+import { planBegan, slotState, slotSession, surfaceTag, adaptWords } from './plan.js';
 
 const NB = ' ';
 const isDone = (s) => !!(s && (s.completed || (s.completion || 0) >= 0.7));
@@ -49,7 +49,6 @@ const ADAPT_COPY = {
   step: { title: 'Work intervals are a little steeper', icon: 'climb', cls: 'good' },
   keep: { title: 'Keeping your current level', icon: 'checkCircle', cls: '' },
 };
-const STEP_REASON = 'You chose slightly steeper work intervals after two sessions that felt easy.';
 const KEEP_REASON = 'You kept your current level.';
 
 /** Newly unlocked badges per session, so reopening a fresh summary in this app run shows the same cards. */
@@ -120,7 +119,7 @@ function visibleBadges(list) {
 }
 
 function recordValue(k, s) {
-  if (k === 'distanceKm') return `${fmt2(toDist(s.distanceKm))}${NB}${distUnit()}`;
+  if (k === 'distanceKm') return `${distEstimated(s) ? `≈${NB}` : ''}${fmt2(toDist(s.distanceKm))}${NB}${distUnit()}`;
   if (k === 'elevM') return `${Math.round(toElev(s.elevM)).toLocaleString()}${NB}${elevUnit()}`;
   return `≈${NB}${roundKcal(s.kcal).toLocaleString()}${NB}kcal`;
 }
@@ -132,7 +131,7 @@ function localReason(text) {
 
 /** Plain-text line for copying or sharing (hidden stats are left off; calories are never shared). */
 function shareText(s) {
-  const parts = ['Hillpace', s.name || 'Workout', clock(s.durationSec), `${fmt2(toDist(s.distanceKm))} ${distUnit()}`];
+  const parts = ['Hillpace', s.name || 'Workout', clock(s.durationSec), `${distEstimated(s) ? '≈ ' : ''}${fmt2(toDist(s.distanceKm))} ${distUnit()}`];
   if ((s.elevM || 0) > 0) parts.push(`${Math.round(toElev(s.elevM)).toLocaleString()} ${elevUnit()} climbed`);
   if (s.rpe) parts.push(`effort ${s.rpe}/10`);
   return parts.join(' · ');
@@ -151,6 +150,24 @@ function parseClock(str) {
 
 const timeOfDay = (d) => new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
+/** Where a session was walked ('incline' | 'flat' | 'outdoor'), or null for sessions saved before surfaces existed. */
+const surfaceOf = (s) => (s && SURFACES[s.surface] ? s.surface : null);
+const isOutdoor = (s) => surfaceOf(s) === 'outdoor';
+const isFree = (s) => !!s && s.workoutId === FREE_WALK_ID;
+/** Outdoors Hillpace estimates distance from the walker's paces, until they match it to a watch or phone. */
+const distEstimated = (s) => isOutdoor(s) && !s.consoleEdited;
+/** Minutes of hard effort (power walking or harder), or of brisk-or-harder walking if there was none: [label, min].
+ *  null without interval splits. Outdoors this replaces an average speed that would only echo the usual paces. */
+function effortMinutes(s) {
+  const sp = s.splits || [];
+  if (!sp.length) return null;
+  const min = (types) => Math.round(sp.filter((x) => types.includes(x.type)).reduce((a, x) => a + (x.sec || 0), 0) / 60);
+  const hard = min(['power', 'jog', 'run']);
+  return hard > 0 ? ['Hard effort', hard] : ['Brisk or harder', min(['brisk', 'power', 'jog', 'run'])];
+}
+/** No incline on this session: show average speed instead of climb. Older sessions follow the usual surface. */
+const noIncline = (s) => (surfaceOf(s) ? surfaceOf(s) !== 'incline' : !usesIncline(usualSurface()));
+
 /* ======================================================================
    HTML
    ====================================================================== */
@@ -161,11 +178,16 @@ function statCell(label, valueHtml, unit, key) {
 
 function statsHtml(s) {
   const p = state.main.profile;
+  const approx = distEstimated(s) ? `<span class="sm-approx" aria-hidden="true">≈</span><span class="sr-only">about </span>` : '';
   const cells = [statCell('Time', `<span class="num" data-count="${Math.round(s.durationSec || 0)}" data-fmt="clock">${clock(s.durationSec)}</span>`, '', 'time')];
-  cells.push(statCell('Distance', `<span class="num" data-count="${toDist(s.distanceKm || 0)}" data-dec="2">${fmt2(toDist(s.distanceKm))}</span>`, distUnit(), 'dist'));
-  if (!p.treadmill.hasIncline && !(s.elevM > 0)) {
+  cells.push(statCell('Distance', `${approx}<span class="num" data-count="${toDist(s.distanceKm || 0)}" data-dec="2">${fmt2(toDist(s.distanceKm))}</span>`, distUnit(), 'dist'));
+  const effort = distEstimated(s) ? effortMinutes(s) : null;
+  if (effort) {
+    // Outdoors (not matched to a watch) the speed is only the usual paces averaged: show the effort instead.
+    cells.push(statCell(effort[0], `<span class="num" data-count="${effort[1]}">${effort[1]}</span>`, 'min', 'effort'));
+  } else if (noIncline(s) && !(s.elevM > 0)) {
     const avg = s.durationSec > 0 ? (s.distanceKm || 0) / (s.durationSec / 3600) : 0;
-    cells.push(statCell('Avg speed', `<span class="num" data-count="${toSpeed(avg)}" data-dec="1">${fmt1(toSpeed(avg))}</span>`, speedUnit(), 'speed'));
+    cells.push(statCell('Avg speed', `${approx}<span class="num" data-count="${toSpeed(avg)}" data-dec="1">${fmt1(toSpeed(avg))}</span>`, speedUnit(), 'speed'));
   } else {
     const up = Math.round(toElev(s.elevM || 0));
     cells.push(statCell('Climbed', `<span class="num" data-count="${up}">${up.toLocaleString()}</span>`, elevUnit(), 'elev'));
@@ -185,21 +207,23 @@ function heroHtml(s, pos) {
   const pct = Math.round((s.completion || 0) * 100);
   const manual = s.source === 'manual';
   const complete = s.completed || pct >= 100;
-  const status = manual ? 'Logged workout' : complete ? 'Workout complete' : `Saved as partial · ${pct}%`;
+  const status = manual ? 'Logged workout' : isFree(s) ? 'Walk complete' : complete ? 'Workout complete' : `Saved as partial · ${pct}%`;
   const statusIcon = complete || manual ? 'checkCircle' : 'flag';
   const when = sameDay(s.date, new Date()) ? 'Today' : dateLong(s.date);
   const tags = [];
   if (pos) {
     tags.push(`<span class="tag">Week ${pos.week} of ${pos.weeks} · ${esc(pos.phase.name)}</span>`);
     tags.push(isDone(s) ? `<span class="tag num">${pos.done} of ${pos.total} done</span>` : '<span class="tag">Not counted yet</span>');
-  } else if (!manual) tags.push('<span class="tag">Extra workout</span>');
-  if (s.consoleEdited) tags.push(`<span class="tag">${icon('check')}Matched to treadmill</span>`);
+  } else if (!manual && !isFree(s)) tags.push('<span class="tag">Extra workout</span>');
+  if (surfaceOf(s)) tags.push(surfaceTag(surfaceOf(s)));
+  if (s.consoleEdited) tags.push(`<span class="tag">${icon('check')}${isOutdoor(s) ? 'Matched to your watch or phone' : 'Matched to treadmill'}</span>`);
   const partialNote = !complete && !manual && pos && !isDone(s)
     ? `<p class="sm-note">${icon('info')}<span>Plan sessions count toward your week at 70% or more. This one reached ${pct}%.</span></p>`
     : !complete && !manual && !pos ? `<p class="sm-note">${icon('info')}<span>You ended early. Everything you did is saved.</span></p>` : '';
+  const distNote = distEstimated(s) ? 'Outdoors, distance is estimated from your usual walking paces. ' : '';
   const est = p.noNumbers
-    ? '<p class="sm-est">Activity minutes count jogs and steep climbs double.</p>'
-    : '<p class="sm-est">≈ kcal is an estimate of active energy, not counting what you burn at rest. <button type="button" class="sm-link" data-act="how">How we calculate</button></p>';
+    ? `<p class="sm-est">${distNote}Vigorous minutes, ${esc(vigorousExamples())}, count double toward your activity minutes.</p>`
+    : `<p class="sm-est">${distNote}≈ kcal is an estimate of active energy, not counting what you burn at rest. <button type="button" class="sm-link" data-act="how">How we calculate</button></p>`;
   return `
   <section class="hero-card sm-hero" aria-labelledby="sm-title">
     ${topo({ seed: 7, cx: 0.85, cy: 0.12 })}
@@ -259,7 +283,7 @@ function card(ico, eyebrow, title, desc) {
 function effortHtml(s, c) {
   const sub = c.fresh && s.planSlot
     ? 'Rate the whole session. Your plan uses your last two ratings to set the effort of the sessions ahead.'
-    : 'Rate the whole session, using the talk test.';
+    : isFree(s) ? 'Rate the whole walk, using the talk test.' : 'Rate the whole session, using the talk test.';
   const rows = EFFORT.map((g) => `
     <div class="sm-eff-row${s.rpe && effortOf(s.rpe) === g ? ' on' : ''}">
       <span class="sm-eff-text"><span class="sm-eff-name">${esc(g.name)}</span><span class="sm-eff-talk">${esc(g.talk)}</span></span>
@@ -283,13 +307,14 @@ function effortStatus(s) {
 function adaptHtml(c) {
   const a = c && c.adapt;
   if (!a) return '';
-  const k = ADAPT_COPY[a.kind];
+  const w = adaptWords(); // incline, or a faster pace without one; jogs only when the plan has them
+  const k = a.kind === 'step' ? { ...ADAPT_COPY.step, title: w.stepTitle } : ADAPT_COPY[a.kind];
   let body = '', buttons = '';
   if (a.kind === 'offer') {
-    body = `${localReason(a.reason)} That means 1% more incline on work intervals and ${isMph() ? `0.1${NB}mph` : `0.2${NB}km/h`} more on jogs.`;
+    body = `Your last two sessions felt easy. ${w.ask} That means ${w.change}.`;
     buttons = '<div class="sm-adapt-actions"><button type="button" class="btn btn-sm btn-primary" data-act="adapt-step">Yes, step it up</button><button type="button" class="btn btn-sm" data-act="adapt-keep">Not now</button></div>';
   } else if (a.kind === 'step') {
-    body = `From your next plan session: 1% more incline on work intervals and ${isMph() ? `0.1${NB}mph` : `0.2${NB}km/h`} more on jogs. Keep rating your effort and the plan keeps adjusting.`;
+    body = `From your next plan session: ${w.change}. Keep rating your effort and the plan keeps adjusting.`;
   } else if (a.kind === 'keep') {
     body = 'Your plan stays as it is. We’ll check again after your next two rated plan sessions.';
   } else {
@@ -299,10 +324,11 @@ function adaptHtml(c) {
 }
 
 function notesHtml(s) {
+  const hint = isOutdoor(s) ? 'How did it feel? Where you walked, sore spots, anything for next time.' : 'How did it feel? Sore spots, which treadmill, anything for next time.';
   return `
   <section class="field sm-notes">
     <label for="sm-notes" class="sm-notes-label">Notes</label>
-    <textarea id="sm-notes" class="input" rows="3" maxlength="1000" placeholder="How did it feel? Sore spots, which treadmill, anything for next time.">${esc(s.notes || '')}</textarea>
+    <textarea id="sm-notes" class="input" rows="3" maxlength="1000" placeholder="${esc(hint)}">${esc(s.notes || '')}</textarea>
   </section>`;
 }
 
@@ -318,17 +344,24 @@ function weekHtml(s) {
     <div class="card-row"><h2 class="section-title" id="sm-week-title">${esc(title)}</h2>${tag}</div>
     <p class="sm-week-num"><span class="num">${Math.round(w.minutes)}</span><span>of ${w.target} activity minutes</span></p>
     <div class="pbar" role="img" aria-label="${Math.round(w.minutes)} of ${w.target} activity minutes"><i style="width:${pct.toFixed(1)}%"></i></div>
-    <p class="body-s">${status} Vigorous minutes, like jogs and steep climbs, count double.</p>
+    <p class="body-s">${status} Vigorous minutes, ${esc(vigorousExamples())}, count double.</p>
     ${w.deload ? '<p class="body-xs">Lighter week: a lower total is part of the plan.</p>' : ''}
   </section>`;
 }
 
 function consoleHtml(s, c) {
+  // Outdoors the numbers to match come from a watch or phone app, not a treadmill console (same recompute).
+  const out = isOutdoor(s);
+  const title = out ? 'Match your watch or phone' : 'Match your treadmill';
+  const sub = out ? 'Use the time and distance it recorded' : 'Use the time and distance on your console';
+  const intro = out
+    ? 'Outdoors, Hillpace estimates distance from your usual walking paces. If a watch or phone app tracked this walk, enter its time and distance and we’ll update this workout. Climb and the energy estimate scale with distance.'
+    : 'Treadmill belts often read a little differently. Enter what your console shows and we’ll update this workout. Climb and the energy estimate scale with distance.';
   return `
   <details class="sm-details" data-details="console"${c.open.console ? ' open' : ''}>
-    <summary><span class="sm-sum-text"><span class="title-s">Match your treadmill</span><span class="body-xs">Use the time and distance on your console</span></span>${icon('chevD', 'sm-chev')}</summary>
+    <summary><span class="sm-sum-text"><span class="title-s">${title}</span><span class="body-xs">${sub}</span></span>${icon('chevD', 'sm-chev')}</summary>
     <form class="sm-details-body" data-form="console" novalidate>
-      <p class="body-s">Treadmill belts often read a little differently. Enter what your console shows and we’ll update this workout. Climb and the energy estimate scale with distance.${s.healthUUID ? ' This workout is already in Apple Health, which keeps the numbers it was saved with.' : ''}</p>
+      <p class="body-s">${intro}${s.healthUUID ? ' This workout is already in Apple Health, which keeps the numbers it was saved with.' : ''}</p>
       <div class="sm-console-grid">
         <div class="field"><label for="sm-c-time">Time</label><input id="sm-c-time" class="input num" inputmode="numeric" autocomplete="off" value="${esc(clock(s.durationSec))}" aria-describedby="sm-c-time-hint"><span class="hint" id="sm-c-time-hint">mm:ss</span></div>
         <div class="field"><label for="sm-c-dist">Distance</label><div class="input-unit"><input id="sm-c-dist" class="input num" inputmode="decimal" autocomplete="off" value="${esc(fmt2(toDist(s.distanceKm)))}"><span class="unit">${esc(distUnit())}</span></div></div>
@@ -345,21 +378,36 @@ function consoleHtml(s, c) {
 function splitsHtml(s, c) {
   const sp = (s.splits || []).filter((x) => x.sec > 0).slice().sort((a, b) => a.idx - b.idx);
   if (!sp.length) return '';
+  const free = isFree(s), out = isOutdoor(s), inc = !noIncline(s);
+  // Outdoors the target was an effort, not numbers; without an incline there is no incline column.
+  const cols = out ? ['Effort'] : inc ? [speedUnit(), 'Incline'] : [speedUnit()];
+  const cells = (x) => (out
+    ? `<td class="num">${esc(effortFor(x.type).rpe)}</td>`
+    : `<td class="num">${fmt1(toSpeed(x.speed || 0))}</td>${inc ? `<td class="num">${fmt1(x.incline || 0)}%</td>` : ''}`);
   const rows = sp.map((x) => {
     const m = MODES[x.type] || MODES.walk;
+    // a Just walk stretch is named by the pace the walker picked ("Brisk walk", "Hard walking"), not by the workout's name
+    const name = free ? (x.type === 'power' ? effortFor('power').feel : m.name) : x.label || m.name;
     return `<tr>
-      <th scope="row"><span class="sm-iv mode-${esc(x.type)}"><span class="sm-iv-ico">${modeIcon(x.type)}</span><span class="sm-iv-text"><b>${esc(x.label || m.name)}</b>${x.label && x.label.toLowerCase() !== m.name.toLowerCase() ? `<small>${esc(m.name)}</small>` : ''}</span></span></th>
-      <td class="num">${clock(x.sec)}</td><td class="num">${fmt1(toSpeed(x.speed || 0))}</td><td class="num">${fmt1(x.incline || 0)}%</td></tr>`;
+      <th scope="row"><span class="sm-iv mode-${esc(x.type)}"><span class="sm-iv-ico">${modeIcon(x.type)}</span><span class="sm-iv-text"><b>${esc(name)}</b>${!free && name.toLowerCase() !== m.name.toLowerCase() ? `<small>${esc(m.name)}</small>` : ''}</span></span></th>
+      <td class="num">${clock(x.sec)}</td>${cells(x)}</tr>`;
   }).join('');
+  const n = sp.length;
+  const title = free ? 'Pace breakdown' : 'Interval breakdown';
+  const count = free ? `${n} ${n === 1 ? 'stretch' : 'stretches'}` : `${n} ${n === 1 ? 'interval' : 'intervals'}`;
+  const note = free
+    ? out ? 'Each row is a stretch at one pace, with the effort it should feel like out of 10.' : `Each row is a stretch at one pace, with the speed${inc ? ' and incline' : ''} you set.`
+    : out ? 'Effort is the target for each interval, out of 10. Outdoors, distance is estimated from your usual paces.'
+      : `${inc ? 'Speed and incline are' : 'Speed is'} the target${inc ? 's' : ''} for each interval, including any speed changes you made during the workout.`;
   return `
   <details class="sm-details" data-details="splits"${c.open.splits ? ' open' : ''}>
-    <summary><span class="sm-sum-text"><span class="title-s">Interval breakdown</span><span class="body-xs">${sp.length} ${sp.length === 1 ? 'interval' : 'intervals'}</span></span>${icon('chevD', 'sm-chev')}</summary>
+    <summary><span class="sm-sum-text"><span class="title-s">${title}</span><span class="body-xs">${count}</span></span>${icon('chevD', 'sm-chev')}</summary>
     <div class="sm-details-body sm-table-wrap">
       <table class="sm-table">
-        <thead><tr><th scope="col">Interval</th><th scope="col">Time</th><th scope="col">${esc(speedUnit())}</th><th scope="col">Incline</th></tr></thead>
+        <thead><tr><th scope="col">${free ? 'Pace' : 'Interval'}</th><th scope="col">Time</th>${cols.map((h) => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="body-xs">Speed and incline are the targets for each interval, including any speed changes you made during the workout.</p>
+      <p class="body-xs">${esc(note)}</p>
     </div>
   </details>`;
 }
@@ -371,7 +419,7 @@ function healthHtml(s, c) {
     return `<div class="group sm-health"><button type="button" class="row has-icon" data-act="health-setup"><span class="row-icon">${icon('heart')}</span><span class="row-main"><span class="row-title">Save workouts to Apple Health</span><span class="row-sub">Turn it on in Me</span></span>${icon('chevR', 'chev')}</button></div>`;
   }
   let title, sub, btn = '', ico = 'heart';
-  if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
+  if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : isOutdoor(s) ? 'Saved as a walking workout.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
   else if ((s.durationSec || 0) < 60) { title = 'Not saved to Apple Health'; sub = 'Workouts under a minute aren’t saved.'; }
   else if (c.health === 'saving') { title = 'Saving to Apple Health…'; sub = 'This takes a moment.'; }
   else if (c.health === 'failed') { title = 'Couldn’t save to Apple Health'; sub = 'Check that Hillpace can write workouts in the Health app.'; btn = '<button type="button" class="btn btn-sm" data-act="health-save">Retry</button>'; ico = 'alert'; }
@@ -465,8 +513,9 @@ function runAdaptation(c) {
   const r = evaluateAdaptation();
   c.adapt = null;
   if (r && (r.kind === 'ease' || r.kind === 'hold')) {
-    applyChange(c, r.kind, r.reason);
-    c.adapt = { kind: r.kind, reason: r.reason };
+    const reason = r.kind === 'ease' ? adaptWords().eased : r.reason;
+    applyChange(c, r.kind, reason);
+    c.adapt = { kind: r.kind, reason };
   } else if (r && r.kind === 'offer') {
     c.adapt = { kind: 'offer', reason: r.reason };
   }
@@ -474,7 +523,7 @@ function runAdaptation(c) {
 }
 function answerOffer(c, yes) {
   if (!c.adapt || c.adapt.kind !== 'offer') return;
-  applyChange(c, yes ? 'step' : 'keep', yes ? STEP_REASON : KEEP_REASON);
+  applyChange(c, yes ? 'step' : 'keep', yes ? adaptWords().chose : KEEP_REASON);
   c.adapt = { kind: yes ? 'step' : 'keep' };
   haptic(yes ? 'success' : 'light');
   region(c, 'adapt', adaptHtml(c));
@@ -516,7 +565,7 @@ function applyConsole(c, form) {
   });
   afterNumbersChanged(c);
   haptic('success');
-  toast('Workout updated to match your treadmill');
+  toast(isOutdoor(s) ? 'Workout updated to match your watch or phone' : 'Workout updated to match your treadmill');
 }
 
 function resetConsole(c) {

@@ -2,14 +2,20 @@
 // plus the workout detail sheet. Registers actions.openWorkout(workoutId, {slotKey, level, length}).
 import { state } from '../core/store.js';
 import * as store from '../core/store.js';
-import { MODES, PHASES, WORKOUTS, INTENSITY, getWorkout, customs, segmentsFor, planStats, timeline, lockReason, currentWeek, weekSlots, planSlots, slotStatus, phaseForWeek, speedFor, planStart, sessionDone } from '../core/program.js';
+import {
+  MODES, PHASES, WORKOUTS, INTENSITY, getWorkout, customs, segmentsFor, planStats, timeline, lockReason, currentWeek, weekSlots, planSlots,
+  slotStatus, phaseForWeek, speedFor, planStart, sessionDone, SURFACES, activeSurface, usualSurface, setTodaySurface, effortFor, FREE_WALK_ID,
+  restrictedToModerate, workoutFocus, workoutDesc, phaseBlurbFor,
+} from '../core/program.js';
 import { roundKcal } from '../core/science.js';
-import { esc, clock, fmt1, speedStr, speedUnit, distStr, distUnit, toElev, elevUnit, dateShort, dateLong, DAY_SHORT, isoDay } from '../core/format.js';
+import { esc, clock, fmt1, speedStr, speedUnit, toElev, elevUnit, dateShort, dateLong, DAY_SHORT, isoDay } from '../core/format.js';
 import { actions } from '../ui/actions.js';
 import { icon, modeIcon, sheet, confirmSheet, toast, topo, segmented, bindSegmented } from '../ui/kit.js';
-import { intervalChart, modeLegend } from '../ui/charts.js';
 import { mainMode, curLevel, readDraft, clearDraft, modesIn, profileChart } from './builder.js';
-import { slotState, planBegan } from './plan.js';
+import {
+  slotState, planBegan, peakText, peakIcon, peakCell, distCell, hardestMode, surfaceLegend, chartLabel, surfacePicker, surfaceTag,
+  surfaceChart, surfacePhrase,
+} from './plan.js';
 import { steepNoticeHtml } from './player.js';
 
 const FILTERS = [
@@ -17,6 +23,7 @@ const FILTERS = [
   { value: 'plan', label: 'Plan' },
   { value: 'classic', label: 'Classics' },
   { value: 'easy', label: 'Easy' },
+  { value: 'walk', label: 'Walking' },
   { value: 'mine', label: 'Mine' },
 ];
 let filter = 'all';
@@ -52,30 +59,40 @@ function modeKeys(segs) {
   return `<span class="lib-keys">${modesIn(segs).map((t) => `<span class="mode-${esc(t)}"><i class="mode-dot"></i>${esc(MODES[t].short)}</span>`).join('')}</span>`;
 }
 
-function cardHtml(w, segs, { lock = null, sub = '' } = {}) {
+/** Spoken version of a card's headline number for this surface. */
+function peakSpoken(st, segs, surface) {
+  if (surface === 'incline') return `up to ${inc1(st.maxI)} percent incline`;
+  if (surface === 'flat') return `top speed ${speedStr(st.maxS)} ${speedUnit()}`;
+  return `hardest part: ${effortFor(hardestMode(segs)).feel.toLowerCase()}`;
+}
+
+function cardHtml(w, segs, { lock = null, sub = '', surface = activeSurface() } = {}) {
   const st = planStats(segs);
-  const hasIncline = prof().treadmill.hasIncline;
   const m = mins(st.sec);
-  const peak = hasIncline ? `${inc1(st.maxI)}% max` : `${speedStr(st.maxS)} ${speedUnit()} top`;
-  const label = `${w.name}. ${lock ? 'Locked' : INTENSITY[w.intensity] || ''}. ${sub}. ${m} minutes, ${hasIncline ? `up to ${inc1(st.maxI)} percent incline` : `top speed ${speedStr(st.maxS)} ${speedUnit()}`}.`;
+  const label = `${w.name}. ${lock ? 'Locked' : INTENSITY[w.intensity] || ''}. ${sub}. ${m} minutes, ${peakSpoken(st, segs, surface)}.`;
   return `<button type="button" class="wk-card lib-card pressable${lock ? ' locked' : ''}" data-act="open" data-id="${esc(w.id)}" aria-label="${esc(label)}">
     <span class="wk-top"><span class="wk-name">${esc(w.name)}</span>${lock ? lockTag() : intensityTag(w.intensity)}</span>
     <span class="lib-focus">${esc(sub)}</span>
-    <span class="wk-meta"><span class="lib-meta-i">${icon('clock')}${m} min</span><span class="lib-meta-i">${icon(hasIncline ? 'incline' : 'speed')}${esc(peak)}</span></span>
-    <span class="lib-mini" aria-hidden="true">${intervalChart(segs, { mini: true })}${modeKeys(segs)}</span>
+    <span class="wk-meta"><span class="lib-meta-i">${icon('clock')}${m} min</span><span class="lib-meta-i">${icon(peakIcon(surface))}${esc(peakText(st, segs, surface))}</span></span>
+    <span class="lib-mini" aria-hidden="true">${surfaceChart(segs, surface, { mini: true })}${modeKeys(segs)}</span>
   </button>`;
 }
 
+/** No jog or run in the intervals as this user will do them today (walking-only, no-jog and moderate rules applied). */
+const isWalking = (segs) => segs.length > 0 && !segs.some((s) => s.type === 'jog' || s.type === 'run');
+const builtinSegs = (id) => segmentsFor(id, { level: defaultLevel(id), length: normLen(prof().sessionLength) });
+const customSegs = (id) => segmentsFor(id, { level: curLevel() });
+
 function builtinCard(id) {
   const w = getWorkout(id);
-  const segs = segmentsFor(id, { level: defaultLevel(id), length: normLen(prof().sessionLength) });
-  return cardHtml(w, segs, { lock: lockReason(id), sub: w.focus });
+  const segs = builtinSegs(id);
+  return cardHtml(w, segs, { lock: lockReason(id), sub: workoutFocus(w, { segs }) });
 }
 
 function customCard(c) {
   const w = getWorkout(c.id);
   if (!w) return '';
-  const segs = segmentsFor(c.id, { level: curLevel() });
+  const segs = customSegs(c.id);
   const when = c.updated ? ` · Edited ${dateShort(c.updated)}` : '';
   return cardHtml(w, segs, { sub: `${segs.length} interval${segs.length === 1 ? '' : 's'}${when}` });
 }
@@ -132,10 +149,25 @@ function weekSection() {
     <div class="group lib-week">${slots.map((sl) => slotRow(sl, started, began)).join('')}</div></section>`;
 }
 
+/** "Just walk": the open-ended walk. The one dark hero element on this screen. */
+function freeTile() {
+  const s = activeSurface();
+  const where = s === usualSurface() ? SURFACES[s].name : `${SURFACES[s].name}, today`;
+  return `<button type="button" class="lib-free pressable" data-act="free" aria-label="${esc(`Just walk. An open-ended walk with no intervals and no end time. ${where}. Start`)}">
+    ${topo({ w: 400, h: 200, seed: 7, lines: 14, cx: 0.86, cy: 0.2 })}
+    <span class="lib-free-main">
+      <span class="eyebrow lib-free-eyebrow">Open-ended walk</span>
+      <span class="lib-free-t">Just walk</span>
+      <span class="lib-free-s">No intervals, no end time. Walk at your own pace; we keep the time and distance.</span>
+      <span class="lib-free-where">${icon(SURFACES[s].icon)}${esc(where)}</span>
+    </span>
+    <span class="lib-free-go mode-brisk" aria-hidden="true">${icon('play')}</span>
+  </button>`;
+}
+
 function tilesHtml() {
   return `<div class="lib-tiles">
-    <button type="button" class="lib-tile lib-tile-hero pressable" data-act="quick">
-      ${topo({ w: 320, h: 220, seed: 11, lines: 12, cx: 0.9, cy: 0.1 })}
+    <button type="button" class="lib-tile pressable" data-act="quick">
       <span class="lib-tile-ico">${icon('wand')}</span>
       <span class="lib-tile-t">Quick Draft</span>
       <span class="lib-tile-s">Pick a length and focus; we draft it on your phone</span>
@@ -187,21 +219,38 @@ function draftBanner() {
     <span class="lib-draft-acts"><button type="button" class="btn btn-sm btn-primary" data-act="draft-continue">Continue editing</button><button type="button" class="btn btn-sm btn-text" data-act="draft-discard">Discard</button></span></div></div>`;
 }
 
+/** Workouts with no jogging or running for the current settings, plus the user's own that qualify. */
+function walkingSection() {
+  const p = prof();
+  const ids = Object.keys(WORKOUTS).filter((id) => isWalking(builtinSegs(id)));
+  const mine = customs().filter((c) => isWalking(customSegs(c.id)));
+  const n = ids.length + mine.length;
+  const blurb = p.walkOnly
+    ? 'Walking only is on, so jogs and sprints in any workout become power-walk pushes. Every workout here is walking.'
+    : p.canJog !== 'yes' || restrictedToModerate()
+      ? 'Until you add jogging, jogs and sprints become power-walk pushes, so every workout here is walking.'
+      : 'No jogging or running: every interval is a walk, from easy to power walking.';
+  return `<section class="section">${sectionHead('Walking workouts', `<span class="faint lib-count">${n} workout${n === 1 ? '' : 's'}</span>`, blurb)}
+    <div class="card-grid">${ids.map(builtinCard).join('')}${mine.map(customCard).join('')}</div></section>`;
+}
+
 function bodyHtml() {
   const out = [];
   if (filter === 'all' || filter === 'mine') out.push(draftBanner());
+  if (filter === 'all' || filter === 'walk') out.push(freeTile());
+  if (filter === 'walk') out.push(walkingSection());
   if (filter === 'all') {
     out.push(weekSection());
     out.push(`<section class="section">${sectionHead('Make your own')}${tilesHtml()}</section>`);
     out.push(gridSection('Plan workouts', PLAN_IDS, 'The five sessions your 12-week plan is built from. Each gets steeper and longer from Foundation to Burn.'));
-    out.push(gridSection('Classics', CLASSIC_IDS, 'Well-known treadmill routines, set to your paces and treadmill.'));
+    out.push(gridSection('Classics', CLASSIC_IDS, 'Well-known walking routines, set to your paces and where you walk.'));
     out.push(gridSection('Easy', EASYKIND_IDS, 'Gentle walks for recovery days, lighter weeks and sore legs.'));
     out.push(mineSection({ withTiles: false }));
   } else if (filter === 'plan') {
     out.push(weekSection());
     out.push(gridSection('Plan workouts', PLAN_IDS, 'The five sessions your 12-week plan is built from. Each gets steeper and longer from Foundation to Burn.'));
   } else if (filter === 'classic') {
-    out.push(gridSection('Classics', CLASSIC_IDS, 'Well-known treadmill routines, set to your paces and treadmill.'));
+    out.push(gridSection('Classics', CLASSIC_IDS, 'Well-known walking routines, set to your paces and where you walk.'));
   } else if (filter === 'easy') {
     const ids = Object.keys(WORKOUTS).filter((id) => WORKOUTS[id].intensity === 1);
     const mine = customs().filter((c) => (c.intensity || 2) === 1);
@@ -215,7 +264,28 @@ function bodyHtml() {
 
 /* ---------------- detail sheet ---------------- */
 
+/** Six headline numbers for the detail sheet, by surface. */
+function sheetStats(segs, st, surface, nn) {
+  const work = mins(segs.filter((s) => s.role === 'work').reduce((a, s) => a + s.dur, 0));
+  const time = ['Time', `${mins(st.sec)}<small>min</small>`];
+  const kcal = ['Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`];
+  const dist = distCell(st.km, surface);
+  const count = ['Intervals', `${segs.length}`];
+  const workCell = ['Work', `${work}<small>min</small>`];
+  const top = ['Top speed', `${speedStr(st.maxS)}<small>${esc(speedUnit())}</small>`];
+  if (surface === 'incline') {
+    return [time, nn ? count : kcal, dist, ['Climb', `${Math.round(toElev(st.elev))}<small>${esc(elevUnit())}</small>`], top, ['Max incline', `${inc1(st.maxI)}<small>%</small>`]];
+  }
+  if (surface === 'flat') {
+    const avg = st.sec ? st.km / (st.sec / 3600) : 0;
+    return [time, nn ? count : kcal, dist, top, ['Avg speed', `${speedStr(avg)}<small>${esc(speedUnit())}</small>`], nn ? workCell : count];
+  }
+  const hard = mins(segs.filter((s) => ['power', 'jog', 'run'].includes(s.type)).reduce((a, s) => a + s.dur, 0));
+  return [time, nn ? count : kcal, dist, peakCell(null, segs, 'outdoor'), ['Hard effort', `${hard}<small>min</small>`], nn ? workCell : count];
+}
+
 function openWorkout(id, opts = {}) {
+  if (id === FREE_WALK_ID) { actions.startWorkout({ workoutId: FREE_WALK_ID }); return null; } // open-ended: nothing to preview
   const w = getWorkout(id);
   if (!w) { toast('That workout isn’t available any more'); return; }
   const p = prof();
@@ -223,10 +293,11 @@ function openWorkout(id, opts = {}) {
   const S = {
     level: clampLevel(opts.level ?? (slot ? slot.level : defaultLevel(id))),
     length: normLen(opts.length ?? (slot ? slot.length : p.sessionLength)),
+    surface: activeSurface(), // preview any surface; starting from here makes it today's
     showAll: false,
   };
   const lock = w.custom ? null : lockReason(id);
-  const segsNow = () => (w.custom ? segmentsFor(id, { level: curLevel() }) : segmentsFor(id, { level: S.level, length: S.length }));
+  const segsNow = () => (w.custom ? segmentsFor(id, { level: curLevel(), surface: S.surface }) : segmentsFor(id, { level: S.level, length: S.length, surface: S.surface }));
 
   const footer = () => {
     const segs = segsNow();
@@ -241,50 +312,60 @@ function openWorkout(id, opts = {}) {
     const segs = segsNow();
     const st = planStats(segs);
     const nn = p.noNumbers;
-    const hasIncline = p.treadmill.hasIncline;
+    const surf = S.surface;
     let context = '';
     if (slot) context = `${state.main.plan.startDate ? `${dateLong(slot.date)} · ` : ''}Week ${slot.week}, ${phaseForWeek(slot.week).name}${slot.deload ? ' · lighter week' : ''}`;
     else if (w.custom) context = 'My workout';
-    else context = w.category === 'classic' ? `Classic · ${w.focus}` : w.kind === 'easy' ? `Easy · ${w.focus}` : `Plan workout · ${w.focus}`;
-    const stats = [
-      ['Time', `${mins(st.sec)}<small>min</small>`],
-      nn ? ['Intervals', `${segs.length}`] : ['Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`],
-      ['Distance', `${distStr(st.km)}<small>${esc(distUnit())}</small>`],
-      ['Climb', `${Math.round(toElev(st.elev))}<small>${esc(elevUnit())}</small>`],
-      ['Top speed', `${speedStr(st.maxS)}<small>${esc(speedUnit())}</small>`],
-      hasIncline ? ['Max incline', `${inc1(st.maxI)}<small>%</small>`] : ['Intervals', `${segs.length}`],
-    ];
+    else { const fc = workoutFocus(w, { surface: surf, segs }); context = w.category === 'classic' ? `Classic · ${fc}` : w.kind === 'easy' ? `Easy · ${fc}` : `Plan workout · ${fc}`; }
+    const stats = sheetStats(segs, st, surf, nn);
     const tl = timeline(segs);
     const LIMIT = 8;
-    const rows = (S.showAll || tl.length <= LIMIT + 2 ? tl : tl.slice(0, LIMIT)).map((s) => `<tr class="mode-${esc(s.type)}">
+    // Columns by surface: speed and incline, speed only, or (outdoors) effort out of 10 with the talk test.
+    const subOf = (s) => (surf === 'outdoor' ? effortFor(s.type).talk : sameAsMode(s) ? '' : MODES[s.type].name);
+    const cols = (s) => (surf === 'outdoor'
+      ? `<td class="num lib-t-n">${esc(effortFor(s.type).rpe)}<small>/10</small></td>`
+      : `<td class="num lib-t-n">${speedStr(speedFor(s))}</td>${surf === 'incline' ? `<td class="num lib-t-n">${inc1(s.incline)}<small>%</small></td>` : ''}`);
+    const heads = surf === 'outdoor' ? '<th scope="col" class="lib-t-n">Effort</th>'
+      : `<th scope="col" class="lib-t-n">${esc(speedUnit())}</th>${surf === 'incline' ? '<th scope="col" class="lib-t-n">Incline</th>' : ''}`;
+    const rows = (S.showAll || tl.length <= LIMIT + 2 ? tl : tl.slice(0, LIMIT)).map((s) => {
+      const sub = subOf(s);
+      return `<tr class="mode-${esc(s.type)}">
         <td class="num lib-t-time">${clock(s.start)}<span class="faint"> to ${clock(s.end)}</span></td>
-        <td><span class="lib-t-iv"><span class="lib-t-ico">${modeIcon(s.type)}</span><span class="lib-t-lab"><b>${esc(s.label || MODES[s.type].name)}</b>${sameAsMode(s) ? '' : `<small>${esc(MODES[s.type].name)}</small>`}</span></span></td>
-        <td class="num lib-t-n">${speedStr(speedFor(s))}</td>
-        <td class="num lib-t-n">${inc1(s.incline)}<small>%</small></td></tr>`).join('');
+        <td><span class="lib-t-iv"><span class="lib-t-ico">${modeIcon(s.type)}</span><span class="lib-t-lab"><b>${esc(s.label || MODES[s.type].name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span></span></td>
+        ${cols(s)}</tr>`;
+    }).join('');
+    const active = activeSurface();
+    const whereHint = surf !== active
+      ? `Preview. Starting from here sets today to ${surfacePhrase(surf)}.`
+      : SURFACES[surf].blurb;
+    const est = surf === 'outdoor'
+      ? 'Calories and distance are estimates from your weight and usual paces.'
+      : `Calories are an estimate of active energy from your ${surf === 'incline' ? 'weight, speed and incline' : 'weight and speed'}.`;
     const more = !S.showAll && tl.length > LIMIT + 2 ? `<button type="button" class="btn btn-text lib-more" data-act="all">Show all ${tl.length} intervals${icon('chevD')}</button>` : '';
     const lvlHint = !w.custom ? (() => {
       const cur = curLevel();
       const ph = PHASES[S.level];
       if (S.level === 0 && starterFirst(id)) return 'Starter version, the easiest setting. Start here the first time you do this workout.';
-      return `${esc(ph.blurb)}${S.level !== cur ? ` Your plan is in ${esc(PHASES[cur].name)} this week.` : ''}`;
+      return `${esc(phaseBlurbFor(ph, { surface: surf }))}${S.level !== cur ? ` Your plan is in ${esc(PHASES[cur].name)} this week.` : ''}`;
     })() : '';
     return `
       <p class="eyebrow lib-context">${esc(context)}</p>
-      <p class="prose lib-desc">${esc(w.custom ? customDesc(id, segs) : w.desc)}</p>
-      <div class="row-gap lib-tags">${intensityTag(w.intensity)}${lock ? lockTag() : ''}${w.custom ? '' : `<span class="tag">${S.length} min version</span>`}</div>
+      <p class="prose lib-desc">${esc(w.custom ? customDesc(id, segs) : workoutDesc(w, { surface: surf, segs }))}</p>
+      <div class="row-gap lib-tags">${intensityTag(w.intensity)}${lock ? lockTag() : ''}${w.custom ? '' : `<span class="tag">${S.length} min version</span>`}${surfaceTag(surf)}</div>
       ${lock ? `<div class="banner warn lib-lockb"><span class="banner-icon">${icon('lock')}</span><div class="banner-body"><b>Not available yet</b>${esc(lock)}</div></div>` : steepNoticeHtml(segs)}
+      <div class="lib-ctl"><span class="label">Where</span>${surfacePicker('surf', surf, { label: 'Where you walk' })}<span class="hint">${esc(whereHint)}</span></div>
       ${w.custom ? '' : `<div class="lib-ctl"><span class="label" id="lib-len-l">Length</span>${segmented('len', (LENGTHS.includes(S.length) ? LENGTHS : [...LENGTHS, S.length].sort((a, b) => a - b)).map((n) => ({ value: n, label: `${n} min` })), S.length, { block: true, label: 'Length' })}</div>
       <div class="lib-ctl"><span class="label">Phase</span>${segmented('lvl', PHASES.map((ph) => ({ value: ph.id, label: ph.name })), S.level, { block: true, label: 'Phase' })}<span class="hint">${lvlHint}</span></div>`}
       <div class="card lib-prof">
         <div class="lib-stats">${stats.map(([l, v]) => `<div><span class="stat-label">${l}</span><span class="stat-value">${v}</span></div>`).join('')}</div>
-        <div class="lib-chart">${profileChart(segs, { h: 96, label: `${w.name} profile: bars show speed, the line shows incline` })}</div>
-        ${modeLegend(segs, MODES)}
-        ${nn ? '' : `<p class="body-xs lib-est">Calories are an estimate of active energy from your weight, speed and incline. <button type="button" class="lib-link" data-act="how">How we calculate</button></p>`}
+        <div class="lib-chart">${surfaceChart(segs, surf, { chart: profileChart, h: surf === 'incline' ? 96 : 104, label: chartLabel(w.name, surf) })}</div>
+        ${surfaceLegend(segs, surf)}
+        ${nn ? (surf === 'outdoor' ? '<p class="body-xs lib-est">Distance is an estimate from your usual paces.</p>' : '') : `<p class="body-xs lib-est">${esc(est)} <button type="button" class="lib-link" data-act="how">How we calculate</button></p>`}
       </div>
       <section class="stack-s">
         <h3 class="title-s">Intervals <span class="faint num">${tl.length}</span></h3>
         <div class="group lib-table-wrap"><table class="lib-table">
-          <thead><tr><th scope="col">Time</th><th scope="col">Interval</th><th scope="col" class="lib-t-n">${esc(speedUnit())}</th><th scope="col" class="lib-t-n">Incline</th></tr></thead>
+          <thead><tr><th scope="col">Time</th><th scope="col">Interval</th>${heads}</tr></thead>
           <tbody>${rows}</tbody></table>${more}</div>
       </section>
       ${w.custom ? `<div class="group">
@@ -304,6 +385,7 @@ function openWorkout(id, opts = {}) {
   bindSegmented(sh.el, (name, v) => {
     if (name === 'len') S.length = normLen(v);
     else if (name === 'lvl') S.level = clampLevel(v);
+    else if (name === 'surf' && SURFACES[v]) S.surface = v;
     else return;
     repaint();
   });
@@ -316,6 +398,7 @@ function openWorkout(id, opts = {}) {
     if (act === 'start') {
       if (lock) return;
       sh.close();
+      if (S.surface !== activeSurface()) store.update((m) => setTodaySurface(m, S.surface)); // the player reads today's surface
       actions.startWorkout({ workoutId: id, level: w.custom ? curLevel() : S.level, length: w.custom ? null : S.length, slotKey: slot ? slot.key : null });
       return;
     }
@@ -384,9 +467,13 @@ export default {
   render(root, param) {
     if (param && FILTERS.some((f) => f.value === param)) filter = param;
     root.classList.add('lib');
+    const surf = activeSurface();
+    const lede = surf === 'incline' ? 'Every workout is set to your paces and your treadmill’s limits.'
+      : surf === 'flat' ? 'Every workout is set to your paces. On a flat surface, climbs become faster walking.'
+        : 'Every workout is set to your paces. Outdoors, each interval is coached by how hard it should feel.';
     root.innerHTML = `
       <header class="screen-head">
-        <div class="head-text"><p class="eyebrow">${Object.keys(WORKOUTS).length + customs().length} workouts</p><h1 class="title-xl">Workouts</h1><p class="body-s">Every workout is set to your paces and your treadmill’s limits.</p></div>
+        <div class="head-text"><p class="eyebrow">${Object.keys(WORKOUTS).length + customs().length} workouts</p><h1 class="title-xl">Workouts</h1><p class="body-s">${esc(lede)}${surf !== usualSurface() ? ' Numbers are for today’s choice.' : ''}</p></div>
         <div class="head-actions"><button type="button" class="icon-btn" data-act="new" aria-label="New workout">${icon('plus')}</button></div>
       </header>
       <div class="lib-filter" data-el="filter">${segmented('lib-filter', FILTERS, filter, { block: true, label: 'Show workouts' })}</div>
@@ -416,6 +503,7 @@ export default {
         if (slot) openWorkout(slot.workoutId, { slotKey: slot.key, level: slot.level, length: slot.length });
         return;
       }
+      if (act === 'free') { actions.startWorkout({ workoutId: FREE_WALK_ID }); return; }
       if (act === 'quick') { actions.openQuickDraft(); return; }
       if (act === 'new') { actions.openBuilder({}); return; }
       if (act === 'draft-continue') { actions.openBuilder({ restore: true }); return; }

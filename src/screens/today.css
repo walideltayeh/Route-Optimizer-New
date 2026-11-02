@@ -47,6 +47,13 @@
 .td-dot { color: var(--hero-ink-2); padding: 0 2px; }
 .td-est { font-size: 12.5px; color: var(--hero-ink-2); }
 
+/* where today (surface picker) */
+.td-where { display: flex; flex-direction: column; gap: 7px; }
+.td-where-l { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--hero-ink-2); }
+.td-where .seg { padding: 3px; border-radius: 13px; }
+.td-where .seg button { min-height: 40px; font-size: 14.5px; border-radius: 10px; }
+.td-where-note { font-size: 13px; line-height: 1.4; color: var(--hero-ink-2); }
+
 /* rest-day / getting-started / finished variants */
 .td-rest { gap: 12px; }
 .td-rest-title { font-size: 26px; overflow-wrap: anywhere; }
@@ -56,6 +63,10 @@
 .td-rest-actions .btn { min-height: 46px; }
 .td-hero .btn-primary { background: var(--hero-ink); color: var(--hero-bg); }
 .td-block2 { align-self: stretch; }
+.td-rest .td-where { margin-top: 4px; }
+.td-rest-actions .td-free-btn { align-self: stretch; }
+.td-easy-link { margin-left: 0; padding: 0; align-self: flex-start; }
+.td-rest-actions .td-est { line-height: 1.4; }
 .td-next {
   display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; margin-top: 8px;
   padding: 14px 14px 12px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hero-line);
@@ -70,6 +81,17 @@
 
 .td-eyebrow { display: inline-flex; align-items: center; gap: 6px; }
 .td-eyebrow-ico { width: 15px; height: 15px; color: var(--m-walk); }
+
+/* ---- just walk (under today's session) ---- */
+.td-free { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; margin-top: -8px; box-shadow: inset 0 0 0 1px var(--line-soft); transition: transform .12s var(--ease); }
+.td-free:active { transform: scale(.985); background: var(--surface-2); }
+.td-free-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--surface-2); color: var(--ink); }
+.td-free-icon svg { width: 22px; height: 22px; }
+.td-free-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.td-free-title { font-family: var(--font-display); font-stretch: 105%; font-weight: 800; font-size: 17px; line-height: 1.2; }
+.td-free-main .body-xs { line-height: 1.35; }
+.td-free-go { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--mode); color: var(--mode-on); }
+.td-free-go svg { width: 18px; height: 18px; margin-left: 2px; }
 
 /* ---- this week ---- */
 .td-week { gap: 12px; }

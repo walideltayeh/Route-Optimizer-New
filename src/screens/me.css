@@ -89,6 +89,14 @@ label.row.me-sw:active { background: var(--surface-2); }
 .row.me-segrow.me-stack .row-main { flex: none; }
 .row.me-segrow .seg button { min-height: 38px; }
 
+/* choice cards (Where you walk) */
+.me-choices { gap: 10px; }
+.me-choice-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink); flex: none; transition: background .15s, color .15s; }
+.me-choice-ico svg { width: 22px; height: 22px; }
+.choice.me-choice[aria-checked="true"] .me-choice-ico { background: var(--ink); color: var(--ink-inv); }
+.choice.me-choice:active { transform: scale(.99); }
+.me-sec > .choices + .group-note { padding-top: 10px; }
+
 /* checkmark (radio) rows */
 .row.me-radio .me-check { width: 22px; height: 22px; flex: none; color: var(--ink); visibility: hidden; }
 .row.me-radio .me-check svg { width: 22px; height: 22px; stroke-width: 2.4; }
@@ -183,6 +191,13 @@ label.row.me-sw:active { background: var(--surface-2); }
   .me-hero .stat-grid.me-stats > div { padding: 0 8px; border-left: 1px solid var(--line-soft); }
   .me-hero .stat-grid.me-stats > div:first-child { padding-left: 0; border-left: 0; }
   .me-hero .stat-grid.me-stats .stat-value { font-size: 21px; }
+}
+/* small phones: the paces rows (title, effort and a talk-test line) put the stepper on its own line, so "Power walk"
+   and "Effort 6–7 of 10" don't break into a narrow column beside it */
+@media (max-width: 389px) {
+  .row.me-step.me-wrap { row-gap: 8px; }
+  .row.me-step.me-wrap .stepper { flex: 1 1 100%; width: auto; }
+  .row.me-step.me-wrap.has-icon .stepper { margin-left: 42px; }
 }
 @media (max-width: 360px) {
   .row.me-step { flex-wrap: wrap; row-gap: 8px; }

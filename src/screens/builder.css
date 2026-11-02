@@ -27,7 +27,8 @@
 
 /* ---- live summary ---- */
 .bld-sum { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--radius-l); }
-.bld-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* columns sized to their numbers (spread across the row), so "≈105 kcal" never runs over the next divider */
+.bld-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; }
 .bld-stats > div { padding: 0 8px; border-left: 1px solid var(--line-soft); min-width: 0; }
 .bld-stats > div:first-child { padding-left: 0; border-left: 0; }
 .bld-stats .stat-label { font-size: 10.5px; letter-spacing: .07em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -36,6 +37,20 @@
 .bld-terr { display: flex; gap: 8px; align-items: flex-start; color: var(--danger); font-weight: 650; font-size: 14px; line-height: 1.4; }
 .bld-terr svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
 .bld-effort .hint { line-height: 1.4; }
+.bld-stats .bld-eff .stat-value { font-size: 17px; }
+.bld-stats .bld-eff .stat-value small { font-size: 11px; }
+/* small phones: a little smaller, so four numbers fit on one row */
+@media (max-width: 389px) {
+  .bld-stats > div { padding: 0 6px; }
+  .bld-stats .stat-value, .bld-stats .bld-eff .stat-value { font-size: 18px; }
+  .bld-stats .stat-value small { font-size: 11px; }
+}
+/* very narrow screens: two rows of two */
+@media (max-width: 340px) {
+  .bld-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
+  .bld-stats > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+}
+.bld-effort-note b { color: var(--ink); font-weight: 700; }
 
 /* ---- step list ---- */
 .bld-steps { display: flex; flex-direction: column; gap: 10px; }
@@ -73,6 +88,7 @@
 .bld-row .stepper .val { font-size: 20px; font-stretch: 88%; white-space: nowrap; }
 .bld-row .bld-noinc { min-height: 50px; text-align: right; }
 .bld-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; align-items: start; }
+.bld-grid.one { grid-template-columns: minmax(0, 1fr); }
 .bld-grid .input-unit .input { padding-right: 52px; }
 .bld-grid .hint { line-height: 1.35; }
 .bld-noinc { display: flex; align-items: center; min-height: 52px; font-size: 14px; color: var(--ink-3); }

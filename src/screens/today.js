@@ -4,7 +4,7 @@ import * as store from '../core/store.js';
 import { state } from '../core/store.js';
 import {
   MODES, WEEKLY_TARGET, DELOAD_WEEKS, planSlots, currentWeek, phaseForWeek, planStart, levelForWeek, evaluateAdaptation,
-  applyAdaptation, sessionActivityMin, deloadLength, jogOfferDue,
+  applyAdaptation, sessionActivityMin, deloadLength, jogOfferDue, SURFACES, usualSurface, activeSurface, setTodaySurface, FREE_WALK_ID, vigorousExamples,
 } from '../core/program.js';
 import { roundKcal, PACES, trendSlope, ewmaTrend, paceCap } from '../core/science.js';
 import {
@@ -13,11 +13,12 @@ import {
 } from '../core/format.js';
 import { actions } from '../ui/actions.js';
 import { icon, modeIcon, topo, segmented, bindSegmented, toast } from '../ui/kit.js';
-import { intervalChart, modeLegend, weekHills, planMeter, gauge, animateGauges } from '../ui/charts.js';
+import { weekHills, planMeter, gauge, animateGauges } from '../ui/charts.js';
 import { routeDef } from '../ui/router.js';
 import { haptic } from '../core/platform.js';
 import {
   has, mainMode, minLabel, startClock, planBegan, slotState, slotSession, nextPlanSlot, slotInfo, workSummary, restartPlan, restartWhen,
+  distCell, peakCell, surfaceLegend, chartLabel, estimateNote, surfacePicker, surfacePhrase, surfaceChart, adaptWords,
 } from './plan.js';
 
 const NB = ' ';
@@ -35,6 +36,7 @@ const LESSONS = [
   ['sleep', 'Sleep and recovery'],
   ['safety', 'Treadmill safety'],
   ['habit', 'Building the habit'],
+  ['outdoor', 'Walking outdoors'],
 ];
 
 let gaugesAnimated = false;
@@ -97,6 +99,12 @@ const ADAPT_COPY = {
   offer: { title: 'Ready for steeper climbs?', icon: 'climb', cls: 'good' },
   step: { title: 'Work intervals are a little steeper', icon: 'climb', cls: 'good' },
 };
+/** Without an incline the same step-up means a slightly faster pace on work intervals (core personalise). */
+const ADAPT_FLAT = {
+  offer: { title: 'Ready for a little more pace?', icon: 'stride', cls: 'good' },
+  step: { title: 'Work intervals are a little faster', icon: 'stride', cls: 'good' },
+};
+const adaptCopy = (kind) => (usualSurface() !== 'incline' && ADAPT_FLAT[kind]) || ADAPT_COPY[kind];
 
 function adaptationHtml() {
   const pending = evaluateAdaptation();
@@ -105,20 +113,21 @@ function adaptationHtml() {
     if (!adaptBusy) {
       adaptBusy = true;
       setTimeout(() => {
-        try { if (evaluateAdaptation()) store.update((m) => applyAdaptation(m.plan, pending.kind, pending.reason)); } finally { adaptBusy = false; }
+        try { if (evaluateAdaptation()) store.update((m) => applyAdaptation(m.plan, pending.kind, pending.kind === 'ease' ? adaptWords().eased : pending.reason)); } finally { adaptBusy = false; }
       }, 0);
     }
-    const c = ADAPT_COPY[pending.kind];
-    return banner(c, pending.reason, `<button type="button" class="btn btn-sm" data-act="adapt-ack">Got it</button>`);
+    const c = adaptCopy(pending.kind);
+    return banner(c, pending.kind === 'ease' ? adaptWords().eased : pending.reason, `<button type="button" class="btn btn-sm" data-act="adapt-ack">Got it</button>`);
   }
   if (pending && pending.kind === 'offer') {
-    return banner(ADAPT_COPY.offer, `${pending.reason} That means 1% more incline on work intervals and ${isMph() ? `0.1${NB}mph` : `0.2${NB}km/h`} more on jogs.`,
+    const w = adaptWords();
+    return banner(adaptCopy('offer'), `Your last two sessions felt easy. ${w.ask} That means ${w.change}.`,
       `<button type="button" class="btn btn-sm btn-primary" data-act="adapt-step">Step it up</button><button type="button" class="btn btn-sm" data-act="adapt-keep">Keep as is</button>`);
   }
   const log = state.main.plan.adaptLog || [];
   const last = log[log.length - 1];
   if (last && !last.ack && ADAPT_COPY[last.kind] && last.kind !== 'offer' && Date.now() - new Date(last.date).getTime() < 7 * DAY_MS) {
-    return banner(ADAPT_COPY[last.kind], last.reason, `<button type="button" class="btn btn-sm" data-act="adapt-ack">Got it</button>`);
+    return banner(adaptCopy(last.kind), last.reason, `<button type="button" class="btn btn-sm" data-act="adapt-ack">Got it</button>`);
   }
   if (jogOfferDue()) {
     // Spec 3.7: jogging comes in during Build, after two comfortable sessions, and only when the user says yes.
@@ -141,22 +150,39 @@ function ackLast(m) {
 
 function statCell(label, value) { return `<div><span class="stat-label">${label}</span><span class="stat-value">${value}</span></div>`; }
 
-function heroStats(st) {
+/** Time, ≈ kcal, distance and the surface's headline: max incline, top speed, or (outdoors) the hardest effort. */
+function heroStats(st, segs, surface) {
   const p = state.main.profile;
-  const climb = statCell('Climb', `${Math.round(toElev(st.elev))}<small>${elevUnit()}</small>`);
   const cells = [statCell('Time', `${Math.round(st.sec / 60)}<small>min</small>`)];
   if (!p.noNumbers) cells.push(statCell('Active', `≈${roundKcal(st.kcal)}<small>kcal</small>`));
-  cells.push(statCell('Distance', `${fmt1(toDist(st.km))}<small>${distUnit()}</small>`));
-  if (p.treadmill.hasIncline) {
-    if (p.noNumbers) cells.push(climb);
-    cells.push(statCell('Incline', `${fmt1(st.maxI).replace(/\.0$/, '')}<small>% max</small>`));
-  } else cells.push(statCell('Top speed', `${fmt1(toSpeed(st.maxS))}<small>${speedUnit()}</small>`));
+  cells.push(statCell(...distCell(st.km, surface)));
+  if (surface === 'incline' && p.noNumbers) cells.push(statCell('Climb', `${Math.round(toElev(st.elev))}<small>${elevUnit()}</small>`));
+  const [pl, pv] = peakCell(st, segs, surface);
+  cells.push(statCell(pl, pv));
   return `<div class="stat-grid td-stats" style="--td-cols:${cells.length}">${cells.join('')}</div>`;
+}
+
+/**
+ * "Where today": incline treadmill, flat treadmill or walking pad, or outdoors. A choice other than the usual one
+ * lasts for today only (core setTodaySurface); the card's numbers and chart follow it straight away.
+ */
+function whereHtml(surface) {
+  const usual = usualSurface();
+  const notes = [];
+  if (surface !== usual) notes.push(`Just for today: back to ${surfacePhrase(usual)} tomorrow.`);
+  if (surface === 'outdoor') notes.push('Coached by effort, so speeds and distance are estimates.');
+  else if (surface === 'flat' && surface !== usual) notes.push('Climbs become faster walking.');
+  return `<div class="td-where">
+    <span class="td-where-l" aria-hidden="true">Where today</span>
+    ${surfacePicker('surface', surface, { label: 'Where you walk today' })}
+    ${notes.length ? `<p class="td-where-note">${esc(notes.join(' '))}</p>` : ''}
+  </div>`;
 }
 
 function sessionHero(slot, status, today) {
   const p = state.main.profile;
-  const { segs, st, w, mode } = slotInfo(slot);
+  const surface = activeSurface(today); // the hero is always about doing it today
+  const { segs, st, w, mode } = slotInfo(slot, surface);
   const lenOf = (x) => (slot.deload ? deloadLength(x) : x); // lighter weeks run every length about 25% shorter
   const busyLen = lenOf(p.busyLength || 30), regLen = lenOf(p.sessionLength || 45);
   const busy = !!(state.main.plan.busy && state.main.plan.busy[slot.key]);
@@ -165,7 +191,7 @@ function sessionHero(slot, status, today) {
   else if (status === 'upcoming') eyebrow = `Up next · ${cap(relDay(slot.date, today))}`;
   const sub = [`Week ${slot.week}`, slot.deload ? 'Lighter week' : phaseForWeek(slot.week).name];
   if (slot.moved && status === 'today') sub.push('Moved to today');
-  const meta = workSummary(segs, w);
+  const meta = workSummary(segs, w, surface);
   const showBusy = busyLen < regLen;
   const detailsBtn = has('openWorkout')
     ? `<button type="button" class="td-link" data-act="details">Details</button><span class="td-dot" aria-hidden="true">·</span><button type="button" class="td-link" data-act="options">${status === 'missed' ? 'Swap or move' : 'Move, swap or skip'}</button>`
@@ -179,9 +205,10 @@ function sessionHero(slot, status, today) {
     </div>
     <h2 class="title-l td-wname" id="td-hero-title">${esc(w.name)}</h2>
     <p class="td-sub">${esc(sub.join(' · '))}${meta ? ` · ${esc(meta)}` : ''}</p>
-    ${heroStats(st)}
-    <div class="td-chart">${intervalChart(segs, { h: 104, label: `${w.name} profile: bars show speed, the line shows incline` })}</div>
-    ${modeLegend(segs, MODES)}
+    ${whereHtml(surface)}
+    ${heroStats(st, segs, surface)}
+    <div class="td-chart">${surfaceChart(segs, surface, { h: surface === 'incline' ? 104 : 112, label: chartLabel(w.name, surface) })}</div>
+    ${surfaceLegend(segs, surface)}
     <div class="td-actions${showBusy ? '' : ' solo'}">
       ${showBusy ? segmented('busy', [{ value: 'regular', label: `${regLen} min` }, { value: 'busy', label: `${busyLen} min` }], busy ? 'busy' : 'regular', { label: 'Session length. Pick the shorter one on a busy day.' }) : ''}
       <button type="button" class="btn btn-mode btn-lg mode-${mode} td-start" data-act="start" data-slot="${esc(slot.key)}">${icon('play')}<span>Start · <span class="num">${startClock(st.sec)}</span></span></button>
@@ -189,15 +216,25 @@ function sessionHero(slot, status, today) {
     ${showBusy && busy ? `<p class="td-busy-note">${icon('timer')}Busy-day version: shorter warm-up and fewer intervals. It still counts toward your week.</p>` : ''}
     <div class="td-hero-foot">
       <div class="td-links">${detailsBtn}${status === 'missed' ? `<span class="td-dot" aria-hidden="true">·</span><button type="button" class="td-link" data-act="skip-missed">Skip it</button>` : ''}</div>
-      <span class="td-est">${p.noNumbers ? 'Distance is an estimate' : 'Calories are estimates'}</span>
+      <span class="td-est">${esc(estimateNote(surface))}</span>
     </div>
   </section>`;
+}
+
+/** Secondary "Just walk" entry under today's session: an open-ended walk with no intervals. */
+function freeCard() {
+  return `<button type="button" class="card tight td-free" data-act="free">
+    <span class="td-free-icon">${icon('stride')}</span>
+    <span class="td-free-main"><span class="td-free-title">Just walk</span><span class="body-xs">No intervals. Walk for as long as you like; we keep the time and distance.</span></span>
+    <span class="td-free-go mode-brisk" aria-hidden="true">${icon('play')}</span>
+  </button>`;
 }
 
 /** Compact preview of a slot, used inside the rest-day card. */
 function nextPreview(slot, today, label) {
   const p = state.main.profile;
-  const { segs, st, w, mode } = slotInfo(slot);
+  const info = slotInfo(slot);
+  const { segs, st, w, mode } = info;
   const meta = [minLabel(st.sec / 60)];
   if (!p.noNumbers) meta.push(`≈${roundKcal(st.kcal)}${NB}kcal (estimate)`);
   if (slot.deload) meta.push('Lighter week');
@@ -205,17 +242,18 @@ function nextPreview(slot, today, label) {
     <span class="td-next-top"><span class="eyebrow">${esc(label)}</span><span class="mode-chip mode-${mode}">${modeIcon(mode)}${esc(MODES[mode].short)}</span></span>
     <span class="td-next-name">${esc(w.name)}</span>
     <span class="td-next-meta">${meta.map(esc).join(' · ')}</span>
-    <span class="td-next-chart">${intervalChart(segs, { mini: true, h: 40, label: `${w.name} profile` })}</span>
+    <span class="td-next-chart">${surfaceChart(segs, info.surface, { mini: true, h: 40, label: `${w.name} profile` })}</span>
   </button>`;
 }
 
 function restHero(next, today, { firstTime, skippedToday, doneSess }) {
   const p = state.main.profile;
+  const surface = activeSurface(today);
   let eyebrow = 'Rest day', title = 'Recovery is part of the plan.';
-  let copy = 'Your muscles adapt between sessions. A walk outside or some gentle stretching is plenty today.';
-  let btn = 'Do an easy walk anyway';
+  let copy = 'Your muscles adapt between sessions. A relaxed walk or some gentle stretching is plenty today.';
+  let easy = 'Or a guided easy walk';
   if (doneSess) {
-    const meta = [minLabel((doneSess.durationSec || 0) / 60), `${fmt1(toDist(doneSess.distanceKm || 0))}${NB}${distUnit()}`];
+    const meta = [minLabel((doneSess.durationSec || 0) / 60), `${doneSess.surface === 'outdoor' ? '≈' : ''}${fmt1(toDist(doneSess.distanceKm || 0))}${NB}${distUnit()}`];
     if (!p.noNumbers) meta.push(`≈${roundKcal(doneSess.kcal)}${NB}kcal (estimate)`);
     eyebrow = 'Done for today';
     title = `${doneSess.name || 'Workout'}: done.`;
@@ -223,19 +261,25 @@ function restHero(next, today, { firstTime, skippedToday, doneSess }) {
   } else if (firstTime && next) {
     eyebrow = 'Getting started';
     title = `Your first session is ${relDay(next.date, today)}.`;
-    copy = 'A good day to set up your treadmill and get to know its controls. An easy walk is a gentle first step.';
-    btn = 'Try an easy walk today';
+    copy = usualSurface() === 'outdoor'
+      ? 'A good day to find a route you like, mostly flat to start. A short, easy walk is a gentle first step.'
+      : 'A good day to set up your treadmill and get to know its controls. A short, easy walk is a gentle first step.';
+    easy = 'Or try a guided easy walk';
   } else if (skippedToday) {
     eyebrow = 'Day off';
     title = 'Today’s session is skipped.';
-    copy = 'Rest well. The plan carries on with your next session.';
+    copy = 'Rest well. The plan carries on with your next session. A relaxed walk is still fine if you feel like moving.';
   }
   const label = next ? `${firstTime ? 'First session' : 'Up next'} · ${cap(relDay(next.date, today))}` : '';
+  const easyLen = p.busyLength || 30;
+  // Rest days: "Just walk" is the main suggestion, with where you walk today right above it.
   const actionsHtml = doneSess
     ? (has('openSummary') ? `<div class="td-rest-actions"><button type="button" class="btn" data-act="summary" data-id="${esc(doneSess.id)}">${icon('checkCircle')}View summary</button></div>` : '')
-    : `<div class="td-rest-actions">
-      <button type="button" class="btn td-easy" data-act="easy">${icon('stride')}${esc(btn)}</button>
-      <span class="td-est">An extra walk counts toward your weekly minutes, not your plan.</span>
+    : `${whereHtml(surface)}
+    <div class="td-rest-actions">
+      <button type="button" class="btn btn-mode mode-brisk btn-lg td-free-btn" data-act="free">${icon('play')}Just walk</button>
+      <button type="button" class="td-link td-easy-link" data-act="easy">${esc(easy)} · ${easyLen}${NB}min</button>
+      <span class="td-est">Just walk has no intervals and no end time. An extra walk counts toward your weekly minutes, not your plan.</span>
     </div>`;
   return `
   <section class="hero-card td-hero td-rest" aria-labelledby="td-hero-title">
@@ -253,17 +297,26 @@ function finishedHero(slots) {
   const weeks = plan.weeks || 12;
   const doneSlots = slots.filter((s) => slotSession(s));
   const start = planStart();
-  const climbed = state.sessions.filter((s) => new Date(s.date) >= start).reduce((a, s) => a + (s.elevM || 0), 0);
+  const since = state.sessions.filter((s) => new Date(s.date) >= start);
+  const climbed = since.reduce((a, s) => a + (s.elevM || 0), 0);
+  // Without an incline (or before any climbing) the block is summed up as distance walked.
+  const byClimb = usualSurface() === 'incline' && climbed > 0;
+  const walked = since.reduce((a, s) => a + (s.distanceKm || 0), 0);
+  const total = byClimb
+    ? `climbed <b class="num">${Math.round(toElev(climbed)).toLocaleString()}${NB}${elevUnit()}</b>`
+    : `walked <b class="num">${Math.round(toDist(walked)).toLocaleString()}${NB}${distUnit()}</b>`;
   const block = plan.block || 1;
   return `
   <section class="hero-card td-hero td-rest" aria-labelledby="td-hero-title">
     ${topo({ seed: 8 })}
     <p class="eyebrow td-eyebrow">${block > 1 ? `Block ${block} complete` : 'Plan complete'}</p>
-    <h2 class="title-l td-rest-title" id="td-hero-title">${weeks} weeks, done. Well climbed.</h2>
-    <p class="td-rest-copy">You finished <b class="num">${doneSlots.length}</b> of ${slots.length} plan sessions and climbed <b class="num">${Math.round(toElev(climbed)).toLocaleString()}${NB}${elevUnit()}</b>. Block ${block + 1} runs the ${weeks} weeks again and keeps the adjustments your effort ratings made.</p>
+    <h2 class="title-l td-rest-title" id="td-hero-title">${weeks} weeks, done. ${byClimb ? 'Well climbed.' : 'Well walked.'}</h2>
+    <p class="td-rest-copy">You finished <b class="num">${doneSlots.length}</b> of ${slots.length} plan sessions and ${total}. Block ${block + 1} runs the ${weeks} weeks again and keeps the adjustments your effort ratings made.</p>
     <div class="td-rest-actions">
       <button type="button" class="btn btn-primary btn-lg td-block2" data-act="block2">Start block ${block + 1}</button>
-      <button type="button" class="btn td-easy" data-act="easy">${icon('stride')}Do an easy walk</button>
+      <button type="button" class="btn td-easy" data-act="free">${icon('stride')}Just walk</button>
+      <button type="button" class="td-link td-easy-link" data-act="easy">Or a guided easy walk · ${state.main.profile.busyLength || 30}${NB}min</button>
+      <span class="td-est">Just walk is open-ended: no intervals, no end time.</span>
     </div>
   </section>`;
 }
@@ -336,7 +389,7 @@ function summitHtml(wk, weekStart, done, total) {
       ${gauge(minutes, target, { sub: `of ${target} activity minutes`, label: 'Activity minutes this week' })}
       <div class="td-summit-text">
         <p class="td-summit-status">${left ? `<b class="num">${left}</b> minutes to the top` : '<b>Summit reached</b> this week'}</p>
-        <p class="body-s">Vigorous minutes, like jogs and steep climbs, count double. The WHO suggests 150 to 300 a week.</p>
+        <p class="body-s">Vigorous minutes, ${esc(vigorousExamples())}, count double. The WHO suggests 150 to 300 a week.</p>
         ${deload ? '<p class="body-xs">Lighter week: a lower total is part of the plan.</p>' : ''}
       </div>
     </div>
@@ -472,6 +525,15 @@ function lessonHtml() {
 
 /* ---------------- render ---------------- */
 
+/** Save today's surface (a just-for-today choice, or back to the usual one) and say what it changes. */
+function chooseSurface(id) {
+  if (!SURFACES[id] || id === activeSurface()) return;
+  const usual = usualSurface();
+  store.update((m) => setTodaySurface(m, id));
+  if (id === usual) toast(`Back to your usual: ${SURFACES[id].name.toLowerCase()}`);
+  else toast(`${SURFACES[id].short} today. ${SURFACES[id].blurb}`, { ms: 3200 });
+}
+
 function render(root, _param, ctx = {}) {
   const today = new Date();
   const plan = state.main.plan, p = state.main.profile;
@@ -489,11 +551,11 @@ function render(root, _param, ctx = {}) {
 
   const doneSess = doneToday ? slotSession(doneToday) : null;
 
-  let hero;
+  let hero, free = '';
   if (finished) hero = finishedHero(slots);
-  else if (next && nextStatus === 'today') hero = sessionHero(next, nextStatus, today);
-  else if (next && nextStatus === 'missed' && !doneSess) hero = sessionHero(next, nextStatus, today);
-  else if (doneSess) hero = restHero(slots.find((s) => slotState(s, today, began) === 'upcoming') || null, today, { doneSess });
+  else if (next && nextStatus === 'today') { hero = sessionHero(next, nextStatus, today); free = freeCard(); }
+  else if (next && nextStatus === 'missed' && !doneSess) { hero = sessionHero(next, nextStatus, today); free = freeCard(); }
+  else if (doneSess) { hero = restHero(slots.find((s) => slotState(s, today, began) === 'upcoming') || null, today, { doneSess }); free = freeCard(); }
   else hero = restHero(next, today, { firstTime, skippedToday });
 
   // Week strip: this week, or the first real week when this one is entirely before the plan began.
@@ -508,6 +570,7 @@ function render(root, _param, ctx = {}) {
     ${headerHtml(today, wk, weeks, slots, began)}
     ${adaptationHtml()}
     ${hero}
+    ${free}
     <section class="section td-week" aria-labelledby="td-week-title">
       <div class="section-head">
         <h2 class="section-title" id="td-week-title">${stripTitle}</h2>
@@ -523,6 +586,7 @@ function render(root, _param, ctx = {}) {
   if (!ctx.refresh && !gaugesAnimated) { gaugesAnimated = true; animateGauges(root); }
 
   bindSegmented(root, (name, value) => {
+    if (name === 'surface') { chooseSurface(value); return; }
     if (name !== 'busy' || !next) return;
     const key = next.key, on = value === 'busy';
     store.update((m) => { m.plan.busy = { ...(m.plan.busy || {}) }; if (on) m.plan.busy[key] = true; else delete m.plan.busy[key]; });
@@ -549,6 +613,7 @@ function render(root, _param, ctx = {}) {
         if (next) { const key = next.key; store.update((m) => { m.plan.skipped = { ...(m.plan.skipped || {}), [key]: true }; }); haptic('light'); toast('Skipped. Your plan carries on.'); }
         break;
       case 'easy': actions.startWorkout({ workoutId: 'easy', level: lvl, length: p.busyLength || 30 }); break;
+      case 'free': actions.startWorkout({ workoutId: FREE_WALK_ID }); break;
       case 'summary': actions.openSummary(b.dataset.id, { fresh: false }); break;
       case 'log-weight': actions.logWeight(); break;
       case 'lesson': actions.openLesson(b.dataset.id); break;
@@ -565,8 +630,9 @@ function render(root, _param, ctx = {}) {
       case 'adapt-step': {
         const pending = evaluateAdaptation();
         if (!pending || pending.kind !== 'offer') break;
-        store.update((m) => { applyAdaptation(m.plan, 'step', 'You chose slightly steeper work intervals after two sessions that felt easy.'); ackLast(m); });
-        haptic('success'); toast('Done. Work intervals are now 1% steeper.');
+        const incline = usualSurface() === 'incline';
+        store.update((m) => { applyAdaptation(m.plan, 'step', incline ? 'You chose slightly steeper work intervals after two sessions that felt easy.' : 'You chose a slightly faster pace on work intervals after two sessions that felt easy.'); ackLast(m); });
+        haptic('success'); toast(incline ? 'Done. Work intervals are now 1% steeper.' : 'Done. Work intervals are now a little faster.');
         break;
       }
       case 'adapt-keep':
