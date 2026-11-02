@@ -42,7 +42,7 @@ scripts/        build, screenshot and fixture scripts
 
 1. Replace the placeholders listed in `IOS_BUILD.md` §9: bundle ID (`com.example.hillpace`), support email (`package.json` → `config.supportEmail`), your name, and the hosted page URLs.
 2. Check the name "Hillpace" is free (App Store, USPTO, EUIPO), then create the App Store Connect record the same day (`APP_STORE.md` §0).
-3. Build on a Mac with Xcode, and run the device checklist in `IOS_BUILD.md` §6. The Swift code and iOS-only features (Apple Health, lock-screen notifications, voice cues with music, haptics) could not be compiled or run in the build container.
+3. Install it on a real iPhone (from Xcode, or through TestFlight using the cloud workflow) and run the device checklist in `IOS_BUILD.md` §6. The project compiles on GitHub's macOS runners (Xcode 26.6), but iOS-only features (Apple Health, lock-screen notifications, voice cues with music, haptics) can only be checked on a device.
 4. Run TestFlight for at least a week of real sessions before submitting.
 
 Calories are estimates from published equations (ACSM), and the app says so wherever they appear. The app is not a medical device.

@@ -26,7 +26,7 @@ Last updated 1 November 2026. Stack: Capacitor 8.6.0 (Swift Package Manager), iO
 
 **Not done, because it needs a Mac, Xcode or your Apple account:**
 
-- Compiling. There is no Swift compiler in the container, so **the Swift files have never been built**. They are written against the Capacitor 8.6 and iOS 17 SDK APIs; expect at most small fixes on the first build (section 10 lists the likely ones).
+- Running on a real iPhone. The project **does compile**: GitHub Actions builds it on every push (first green build on 2 November 2026 with Xcode 26.6 and the iOS 26.5 SDK, including `HealthBridgePlugin.swift` and `MainViewController.swift`, with no warnings). That is a Simulator build without signing, so device-only behaviour (Apple Health, notifications, voice with music, haptics) is still untested.
 - Signing (your Team), registering the bundle ID and its capabilities, device testing, archiving and uploading.
 
 ---
