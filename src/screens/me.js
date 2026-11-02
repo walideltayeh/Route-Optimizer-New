@@ -34,6 +34,13 @@ const VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.
 // The fallback is a placeholder that must not ship in a release build.
 // eslint-disable-next-line no-undef
 const SUPPORT_EMAIL = typeof __SUPPORT_EMAIL__ !== 'undefined' && __SUPPORT_EMAIL__ ? String(__SUPPORT_EMAIL__) : 'support@hillpace.app';
+// eslint-disable-next-line no-undef
+const SUPPORT_URL = typeof __SUPPORT_URL__ !== 'undefined' && __SUPPORT_URL__ ? String(__SUPPORT_URL__) : '';
+// While the email is still the placeholder, point people at the support link instead of an address nobody reads.
+const USE_LINK = SUPPORT_EMAIL === 'support@hillpace.app' && !!SUPPORT_URL;
+const contactHtml = () => (USE_LINK
+  ? `<a class="me-inline" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">Report a problem or ask a question</a>`
+  : `<span class="me-select-text">${esc(SUPPORT_EMAIL)}</span>`);
 const MAX_IMPORT_BYTES = 10 * 1024 * 1024; // a backup with years of workouts is well under 5 MB
 const POLICY_DATE = '1 November 2026';
 const HOST_THEME = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : null;
@@ -1180,7 +1187,7 @@ function privacyPage() {
     <h3>Changes</h3>
     <p>If this policy changes, we’ll update this page and the date at the top.</p>
     <h3>Contact</h3>
-    <p>Questions about privacy: <span class="me-select-text">${esc(SUPPORT_EMAIL)}</span></p>
+    <p>Questions about privacy: ${contactHtml()}</p>
   </article>
   <button type="button" class="btn btn-ghost btn-block" data-act="go-data">${icon('download')}Back up or erase your data</button>`;
 }
@@ -1201,7 +1208,7 @@ function termsPage() {
     <h3>Changes</h3>
     <p>We may update the app and these terms. If the terms change, we’ll update this page and the date at the top.</p>
     <h3>Contact</h3>
-    <p><span class="me-select-text">${esc(SUPPORT_EMAIL)}</span></p>
+    <p>${contactHtml()}</p>
   </article>
   <button type="button" class="btn btn-ghost btn-block" data-act="go-safety">${icon('shield')}Health & safety</button>`;
 }
@@ -1215,6 +1222,15 @@ function supportPage() {
     ['How do I change my plan or training days?', `<p>Tap Edit plan answers on the Me tab to change your goal, schedule, treadmill or readiness answers. Your plan updates from the current week.</p>`],
   ];
   if (isNative && legal.support) faq = legal.support.faq; // the same answers as the published support page
+  if (USE_LINK) return `<section class="card me-contact">
+      <p class="eyebrow">Get help</p>
+      <p class="body-s">Report a problem or ask a question on the Hillpace support page. A real person reads every message.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary me-btn" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">${icon('external')}Open support page</a>
+      </div>
+      <p class="body-xs">Please mention your app version: Hillpace ${esc(VERSION)} (${platform}).</p>
+    </section>
+    <section class="me-sec"><h2 class="group-title">Common questions</h2><div class="group me-faq ${isNative && legal.support ? 'me-legal' : ''}">${faq.map(([q, a]) => `<details><summary><span>${esc(q)}</span>${icon('chevD')}</summary><div class="me-faq-body">${a}</div></details>`).join('')}</div></section>`;
   return `<section class="card me-contact">
       <p class="eyebrow">Email support</p>
       <p class="me-email" id="me-email">${esc(SUPPORT_EMAIL)}</p>

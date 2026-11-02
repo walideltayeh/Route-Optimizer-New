@@ -5,7 +5,8 @@
   "description": "Hillpace: incline treadmill interval coach for iPhone (Capacitor 8).",
   "type": "module",
   "config": {
-    "supportEmail": "support@hillpace.app"
+    "supportEmail": "support@hillpace.app",
+    "supportUrl": "https://github.com/walideltayeh/Route-Optimizer-New/issues"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

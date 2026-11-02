@@ -16,6 +16,9 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 // In-app support address (Me → Support): package.json "config.supportEmail".
 const PLACEHOLDER_EMAIL = 'support@hillpace.app';
 const supportEmail = String((pkg.config && pkg.config.supportEmail) || PLACEHOLDER_EMAIL).trim();
+// Used in place of the email while the email is still the placeholder (package.json "config.supportUrl").
+const supportUrl = String((pkg.config && pkg.config.supportUrl) || '').trim();
+if (supportUrl && !/^https:\/\/[^\s"'<>]+$/.test(supportUrl)) { console.error(`package.json config.supportUrl must be an https URL: ${supportUrl}`); process.exit(1); }
 if (!/^[^\s@"'<>]+@[^\s@"'<>]+\.[^\s@"'<>]+$/.test(supportEmail)) { console.error(`package.json config.supportEmail is not an email address: ${supportEmail}`); process.exit(1); }
 if (!dev && supportEmail === PLACEHOLDER_EMAIL) {
   console.warn(`\n  WARNING: the in-app support address is still the placeholder ${PLACEHOLDER_EMAIL}.\n  Set package.json "config.supportEmail" before an App Store build (APP_STORE.md section 10).\n`);
@@ -25,7 +28,7 @@ const r = await build({
   entryPoints: [join(root, 'src/main.js')],
   bundle: true, format: 'iife', write: false, minify: !dev, sourcemap: false,
   target: ['safari15', 'chrome100'], legalComments: 'none',
-  define: { __APP_VERSION__: JSON.stringify(pkg.version || '1.0.0'), __SUPPORT_EMAIL__: JSON.stringify(supportEmail) },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version || '1.0.0'), __SUPPORT_EMAIL__: JSON.stringify(supportEmail), __SUPPORT_URL__: JSON.stringify(supportUrl) },
 });
 const js = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 
