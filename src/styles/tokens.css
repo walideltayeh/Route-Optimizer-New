@@ -1,0 +1,105 @@
+/* Hillpace design tokens.
+   Concept: topographic relief. Interval modes are colored like elevation on a map: valley teal → ridge amber → summit coral.
+   Mode colors are DATA ONLY (charts, chips, player panel, Start button of a workout). Actions and selection use ink.
+   Type: Archivo (variable width axis) for display + numerals, Hanken Grotesk for interface text. */
+:root {
+  --font-display: "Archivo", "SF Pro Display", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+
+  --bg: #EEF1EF;          /* cool mist */
+  --surface: #FFFFFF;
+  --surface-2: #E4E9E6;
+  --surface-3: #D9E0DC;
+  --seg-on: #FFFFFF;
+  --line: #D3DBD7;
+  --line-soft: rgba(13, 26, 28, .08);
+  --line-field: #84928D;  /* text-field outline: ≥ 3:1 on --surface (WCAG 1.4.11) */
+  --ink: #0D1A1C;
+  --ink-2: #44535A;
+  --ink-3: #5F6F72;       /* ≥ 4.5:1 on --bg and --surface */
+  --ink-inv: #FFFFFF;
+  --focus: #1F6FEB;
+
+  --hero-bg: #0F1E21;     /* stays dark in both themes */
+  --hero-line: rgba(234, 242, 239, .10);
+  --hero-ink: #EAF2EF;
+  --hero-ink-2: #A7B7B4;
+  --topo: rgba(13, 26, 28, .055);
+  --topo-strong: rgba(13, 26, 28, .10);
+  --hero-topo: rgba(234, 242, 239, .06);
+  --hero-topo-strong: rgba(234, 242, 239, .11);
+
+  /* mode fills (charts, chips, panels) and text-safe variants */
+  --m-walk: #2FB894;  --m-walk-ink: #0B7A5F;  --m-walk-on: #052A20;
+  --m-brisk: #7DBE5A; --m-brisk-ink: #3F7A1F; --m-brisk-on: #142A07;
+  --m-power: #FFAE33; --m-power-ink: #975600; --m-power-on: #1C1305;
+  --m-jog: #F5492F;   --m-jog-ink: #B8302A;   --m-jog-on: #2A0806;  /* darker than brisk so the two stay apart with red-green colour blindness */
+  --m-run: #D9487A;   --m-run-ink: #A3244F;   --m-run-on: #2A0614;
+
+  --good: #0B7A5F;
+  --warn: #975600;
+  --danger: #C22D27;
+  --danger-fill: #FDE7E5;
+
+  --radius-s: 10px;
+  --radius: 16px;
+  --radius-l: 24px;
+  --shadow-1: 0 1px 2px rgba(13, 26, 28, .06), 0 6px 18px rgba(13, 26, 28, .06);
+  --shadow-2: 0 12px 40px rgba(13, 26, 28, .18);
+
+  /* Type scale. 1pt of type = 1px at the default text size and follows the iOS text-size setting (Dynamic Type):
+     base.css sets the root font to -apple-system-body on iPhone (17px at the default size). Write font sizes as
+     calc(N * var(--pt)); cap single-line UI labels and big display type with min(…, Kpx). Range 85%–200%. */
+  --pt: clamp(0.85px, 1rem / 17, 2px);
+
+  --tabbar-h: calc(58px + 1.45 * (min(calc(10.5 * var(--pt)), 13px) - 10.5px)); /* grows with the tab labels */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1012; --surface: #131B1E; --surface-2: #1A2427; --surface-3: #222F33; --seg-on: #34464B;
+    --line: #243236; --line-soft: rgba(236, 242, 240, .07); --line-field: #5E6F73;
+    --ink: #ECF2F0; --ink-2: #A9B6B4; --ink-3: #8A9A9A; --ink-inv: #0A1012; --focus: #6EA8FF;
+    --hero-bg: #142427; --hero-line: rgba(234, 242, 239, .12);
+    --topo: rgba(236, 242, 240, .045); --topo-strong: rgba(236, 242, 240, .085);
+    --m-walk: #3CCFA8;  --m-walk-ink: #5EDDBB;
+    --m-brisk: #93D06E; --m-brisk-ink: #A8DD86;
+    --m-power: #FFB443; --m-power-ink: #FFC56E;
+    --m-jog: #F5573E;   --m-jog-ink: #FF928A;
+    --m-run: #F0679A;   --m-run-ink: #F68BB2;
+    --good: #5EDDBB; --warn: #FFC56E; --danger: #FF8B80; --danger-fill: #3A1715;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    --shadow-2: 0 16px 48px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1012; --surface: #131B1E; --surface-2: #1A2427; --surface-3: #222F33; --seg-on: #34464B;
+  --line: #243236; --line-soft: rgba(236, 242, 240, .07); --line-field: #5E6F73;
+  --ink: #ECF2F0; --ink-2: #A9B6B4; --ink-3: #8A9A9A; --ink-inv: #0A1012; --focus: #6EA8FF;
+  --hero-bg: #142427; --hero-line: rgba(234, 242, 239, .12);
+  --topo: rgba(236, 242, 240, .045); --topo-strong: rgba(236, 242, 240, .085);
+  --m-walk: #3CCFA8;  --m-walk-ink: #5EDDBB;
+  --m-brisk: #93D06E; --m-brisk-ink: #A8DD86;
+  --m-power: #FFB443; --m-power-ink: #FFC56E;
+  --m-jog: #F5573E;   --m-jog-ink: #FF928A;
+  --m-run: #F0679A;   --m-run-ink: #F68BB2;
+  --good: #5EDDBB; --warn: #FFC56E; --danger: #FF8B80; --danger-fill: #3A1715;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  --shadow-2: 0 16px 48px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+/* Mode scoping: put class="mode-<id>" on any element to get --mode, --mode-ink, --mode-on for that interval mode. */
+.mode-walk { --mode: var(--m-walk); --mode-ink: var(--m-walk-ink); --mode-on: var(--m-walk-on); }
+.mode-brisk { --mode: var(--m-brisk); --mode-ink: var(--m-brisk-ink); --mode-on: var(--m-brisk-on); }
+.mode-power { --mode: var(--m-power); --mode-ink: var(--m-power-ink); --mode-on: var(--m-power-on); }
+.mode-jog { --mode: var(--m-jog); --mode-ink: var(--m-jog-ink); --mode-on: var(--m-jog-on); }
+.mode-run { --mode: var(--m-run); --mode-ink: var(--m-run-ink); --mode-on: var(--m-run-on); }

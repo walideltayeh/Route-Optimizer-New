@@ -1,0 +1,23 @@
+{
+  "appId": "com.example.hillpace",
+  "appName": "Hillpace",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "allowsLinkPreview": false,
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 400,
+      "showSpinner": false
+    },
+    "LocalNotifications": {
+      "presentationOptions": []
+    },
+    "StatusBar": {
+      "style": "DEFAULT"
+    }
+  }
+}

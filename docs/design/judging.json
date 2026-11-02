@@ -1,0 +1,186 @@
+{
+ "scores": [
+  {
+   "judge": "store-editor",
+   "scores": [
+    {
+     "direction": "a-precision",
+     "overall": 7.5,
+     "player": 8.5,
+     "today": 8,
+     "onboarding": 8,
+     "light": 8,
+     "dark": 8,
+     "originality": 5,
+     "notes": "All 6 PNGs are present. This is the most native-feeling and disciplined of the three: inset grouped sections, one accent, and nothing clipped or overlapping. Player: speed and incline at 140px in condensed Saira, right-aligned on a pure white or pure black stage, are the most legible numbers in any direction. The \u25b21.2 / \u25b26.0 change-from-last-interval cue and the console-style '8.0 %' are smart touches. The main player weakness is that the mode is only shown by a small swatch, the label and the interval bar. From 70 cm you cannot tell Walk from Power walk by colour, and countdown, speed and incline are all the same size, so nothing stands out. Today: the 12-segment plan meter with FOUNDATION/BUILD/BURN labels and DAY 17/84 is the clearest plan indicator of the three. The interval chart is busy because the black incline step-line runs right over the amber bars, and the weight ruler's ticks are fussy. Onboarding is strong: ruler picker, kg/lb toggle, SUGGESTED pace, a projection timeline with pins, and an honest note that the deficit is about 300 kcal from sessions and the rest from food, which App Review will like. In dark mode the periwinkle CTA looks a little washed out, but the OLED-black player is excellent. Originality is the problem: cobalt on cool grey reads like a fintech or utility template, and the measuring-scale idea is too subtle to carry a brand. Screenshots would look professional but people would forget them."
+    },
+    {
+     "direction": "b-athletic",
+     "overall": 8,
+     "player": 8.5,
+     "today": 7,
+     "onboarding": 8,
+     "light": 8.5,
+     "dark": 8.5,
+     "originality": 9,
+     "notes": "All 6 PNGs are present. This direction has the most identity and is the only one an editor would remember. The topo-contour and hill idea fits an incline-walking app and copies nobody. Archivo Expanded headlines plus condensed numbers make a confident, sporty voice. Player: the panel tinted in the mode colour is the best glanceable cue of the three, so you know you're in Power walk from the corner of your eye. 6.2 and 8% at 126px with a 112px countdown read easily. The timeline keeps mode colour and shows incline as segment height. Labelled Back/Skip controls help. The dark amber-tinted player is the single most screenshot-worthy frame in the whole set. Problems: contour lines run behind the numbers inside the dark panel and behind the countdown, which adds noise exactly where legibility matters. Incline is a whole number labelled 'grade' when it should be '8.0 %'. The '3:00' next to 'Climb 3 of 7' has no label and repeats '1:13 of 3:00 done'. Today: the hero card, the chart split into two bands (incline outline above, speed bars below, the cleanest chart of the three), the week drawn as hills and the downhill weight trail are all inventive. But the plan indicator is tiny bars that look like the cellular-signal icon right above it, with no phase labels. '45 m / 30 m' reads as metres. The week hills show no durations. The red dot on the avatar is noise. In dark mode the hero card almost merges into the basalt background. Amber does too many jobs: it is the Power walk colour and also the CTA, current week and current onboarding step. Onboarding: the shaded 'to lose' area on the ruler and a projected date on every pace card are excellent. The rising 'stair' progress bar looks misaligned rather than deliberate, and the projection chart is a flat line."
+    },
+    {
+     "direction": "c-calm",
+     "overall": 6.5,
+     "player": 7.5,
+     "today": 8.5,
+     "onboarding": 7.5,
+     "light": 7.5,
+     "dark": 6.5,
+     "originality": 4,
+     "notes": "All 6 PNGs are present. This is the friendliest and most plain-spoken direction. Today is the easiest to scan: a phase chip, durations and 'Rest' under each day, a clear '+ Log weight' action, an 'Ahead of pace' status and a simple Start/Now/Goal bar. The copy is the best of the three ('7.5 kg to go, about 8% of your weight. A realistic goal...'). The onboarding projection chart, with the chosen pace bold and the other two faded plus a 12-week band and a dashed goal line, explains the trade-off better than A or B. Player: the full-width mode panel gives a good peripheral cue and Nunito's heavy rounded figures are very readable. However, speed and incline at 104px are the smallest of the three and are dominated by the 120px countdown, which turns the brief's hierarchy upside down. The bright amber panel is unchanged in dark mode and glares. Weak points: the Today chart is squat and the incline line overlaps the bars, like A. The goal is a static field with no picker. The onboarding progress bar doesn't separate done steps from the current one. Originality is the lowest: green accent plus rounded sans is the generic wellness look. The mint CTA on slate in dark mode is close to the 'dark with a lone green' clich\u00e9, as its designer admitted. Rounded numbers on black also drift toward Apple Fitness's typographic feel. Pleasant, but the screenshots would not stand out in Health & Fitness."
+    }
+   ],
+   "winner": "b-athletic",
+   "graft": [
+    "From A: the labelled 12-segment plan meter (FOUNDATION / BUILD / BURN groups, current week marked, 'DAY 17 / 84'), replacing B's signal-bar-like climbing ticks",
+    "From A: change-from-last-interval chips on the player (\u25b21.2 km/h, \u25b26.0 %, or \u25bc on recovery), so the user knows which treadmill button to press and how far",
+    "From A: incline shown to one decimal with a '%' unit ('8.0 %'), as treadmill consoles show it; drop 'grade'",
+    "From A: 30-second tick marks on the interval progress bar",
+    "From A: the kg/lb unit toggle in the onboarding header and the 'STEP 3 OF 7' eyebrow wording",
+    "From A: the honest deficit footnote ('About 550 kcal/day: roughly 300 from treadmill sessions, the rest from food'), which reads well to App Review under the health-claims guidelines",
+    "From A: iOS inset grouped sections with hairline dividers for secondary screens (Library, History, Settings, Profile), so the topo texture stays a hero accent and doesn't become wallpaper everywhere",
+    "From A: odometer-style digit roll on interval change and a crossfade fallback under Reduce Motion",
+    "From C: plain-language status copy on Today: visible '+ Log weight' action, 'Ahead of pace / On pace / Behind' line, '1 of 4 done'",
+    "From C: duration or 'Rest' labels under each day of the week strip (put them under B's hills)",
+    "From C: the three-pace comparison projection chart (selected pace bold, the other two faded, 12-week plan band, dashed goal line), replacing B's flat single line",
+    "From C: the reassurance line under the weight tiles ('7.5 kg to go, about 8% of your weight: a realistic goal')",
+    "From C: a plain-language label above the countdown ('Climb ends in') instead of the small caps text to its right"
+   ],
+   "fixes": [
+    "Stop amber doing double duty. Amber means Power walk, so it should not also mark the current plan week, the current onboarding step and the general CTA glow. Use ink or inverse for progress and selection states, give each mode its own icon plus text label so colour-blind users are covered, and colour Start by mode only if that rule holds everywhere (a Jog day gets a coral Start). Otherwise make Start ink.",
+    "Clean the player's data zone. Remove the contour texture from inside the speed/incline panel and from behind the countdown, keeping it only in the margins and header. Show incline as '8.0 %' and add \u25b2/\u25bc change chips. Delete the unlabelled '3:00' next to 'Climb 3 of 7'. Tone down the amber glow on the dark-mode Pause button. Check that 6.2 and 8.0 keep at least 7:1 contrast on both the solid light panel and the translucent dark panel.",
+    "Fix Today clarity. Replace the tiny climbing bars with a labelled Foundation/Build/Burn 12-segment meter. Change '45 m / 30 m' to '45 min / 30 min', because 'm' reads as metres in a distance app. Add durations or 'Rest' under each week hill. Remove the red notification dot on the avatar (and the orange dot on the sound button unless it means something defined). Make the 45-minute card still fit above the tab bar at larger Dynamic Type sizes.",
+    "Lift the dark-mode Today hero card off the basalt background (#142326 on #0A1012 almost disappears) with a hairline border at about 8% white or a lighter surface step. Check that the wide Archivo Expanded greeting and titles truncate or wrap cleanly with long names, long workout names and larger Dynamic Type. Today 'Good morning, Sam' already fills the width.",
+    "Fix onboarding. Flatten the rising 'stair' progress bar or make the rise obvious, because it currently looks like a rendering bug. Replace the flat projection line with the three-pace comparison chart. Add the kg/lb toggle and the deficit-split footnote. Mark kcal as estimates and offer Apple Health sync, so App Review sees honest, non-medical health claims and a 0.75 kg/week pace with a safety note."
+   ]
+  },
+  {
+   "judge": "target-user",
+   "scores": [
+    {
+     "direction": "a-precision",
+     "overall": 7.5,
+     "player": 8,
+     "today": 8.5,
+     "onboarding": 8,
+     "light": 8.5,
+     "dark": 8.5,
+     "originality": 6,
+     "notes": "All 6 PNGs present. Player: speed, incline and countdown are the biggest and highest-contrast numbers of the three directions, and the change markers (up 1.2, up 6.0) tell me which buttons to press. But there are three equally huge numbers stacked on top of each other, so in a 1-second glance nothing says which one matters. The incline shows as '8.0' with a small '%', which could pass for a jog speed. The only mode signal is a small amber square and the interval bar, so I would miss an interval change unless I heard the voice cue. Today is very clear and tidy (readout strip, chart, Start button showing 45:00, labelled Foundation/Build/Burn meter, Day 17/84), but it feels clinical, with no encouragement anywhere. Onboarding is honest and good: a ruler picker, a timeline with pins, and the '550 kcal/day: about 300 from sessions, the rest from food' line builds trust. Light and dark are both crisp. It reads as a well-made generic iOS app with a cobalt accent. It looks professional but is forgettable, and the measuring-scale motif is too subtle to give it an identity."
+    },
+    {
+     "direction": "b-athletic",
+     "overall": 8.5,
+     "player": 8.5,
+     "today": 8,
+     "onboarding": 8.5,
+     "light": 8.5,
+     "dark": 8.5,
+     "originality": 9,
+     "notes": "All 6 PNGs present. Player (light): the solid amber panel with heavy condensed 6.2 and 8% is the best combination of 'what to set' and 'what mode am I in', and I can see the colour from the corner of my eye. The timeline uses height for incline, which is clever. The countdown is big. Player (dark): the panel is only a translucent amber outline, so the peripheral colour cue is much weaker, and topo contour lines run right behind the numbers and add noise. 'grade' under the % repeats itself, and the small '1:13 of 3:00 done' text can't be read at distance. Today: the dark hero card with 'Today's climb', the 45/30 toggle sitting right next to a big amber Start button, and the '-2.4 kg' downhill trail are the most motivating set of the three. Two parts are cryptic: the tiny climbing-bar plan indicator, and the week hills, where a red dotted hill reads like a warning and the states need learning. The red dot on the avatar adds anxiety for no reason. Onboarding: dates on each pace card show the result straight away, the ruler shading shows the kilos to lose, and 'You can change your goal and pace anytime' reassures. But the stair-step progress bar looks like a misaligned rendering bug, the pace icons look like phone signal bars, and the projection chart is flat and vague. It has the strongest and most original identity: the topo/hill idea ties directly to incline walking. This is the only one that looks like it could be featured."
+    },
+    {
+     "direction": "c-calm",
+     "overall": 8,
+     "player": 9,
+     "today": 9,
+     "onboarding": 8.5,
+     "light": 9,
+     "dark": 7.5,
+     "originality": 5.5,
+     "notes": "All 6 PNGs present. Player: the solid mode-coloured panel at the top keeps the same fill in light and dark, so I can always tell the mode from the corner of my eye. 'Climb ends in' plus a 120px countdown is the plainest and most glanceable way to show time left. The next-up row ('Walk \u00b7 5.0 km/h \u00b7 2%', 2:00) is clear. Speed and incline at 104px are smaller than A's but heavy enough. The hierarchy is the best of the three: what to set first, then how long. Today is the most reassuring screen: 'Ahead of pace' with a check, an explicit '+ Log weight', a progress bar marked Start / Now / Goal, and a week strip that writes 'Rest' and '30 min' under each day, so I always know what comes next. Onboarding is warm and trustworthy ('7.5 kg to go, about 8% of your weight. A realistic goal...'), and the projection chart shows the other paces as faded lines. It has no ruler picker, and there is dead space above Continue. Light theme is lovely. Dark: a mint-green CTA on dark slate edges towards the 'lone green accent on near-black' clich\u00e9, as the designer admits. Overall it looks like a generic green, rounded wellness app (Nunito plus a fern accent), so it has the least identity and the weakest case for being featured."
+    }
+   ],
+   "winner": "b-athletic",
+   "graft": [
+    "From C: a solid, opaque mode-colour panel for speed and incline that keeps the same fill in light and dark themes (dark text on amber, blue or rose), so the colour change at each interval can be seen from the corner of the eye in dark mode too.",
+    "From C: the plain-language countdown label 'Climb ends in' / 'Walk ends in' above the timer, replacing the 'LEFT IN CLIMB 1:13 of 3:00 done' block, which can't be read at distance.",
+    "From C: the weight card's 'Ahead of pace' status line and an explicit '+ Log weight' action, placed next to B's -2.4 kg downhill trail.",
+    "From C: the week strip's explicit per-day text ('Today', '45 min', 'Rest', done check) under B's hills, so the hill states don't need to be learned.",
+    "From C: the onboarding reassurance line ('7.5 kg to go, about 8% of your weight. A realistic goal that makes a real difference.') and faded comparison lines for the other paces in the projection chart.",
+    "From A: change-from-last-interval markers on the player (up 1.2 km/h, up 6%) next to speed and incline, so I know which treadmill buttons to press and by how much.",
+    "From A: the interval progress bar with 30-second tick marks.",
+    "From A: a labelled 12-segment plan meter with FOUNDATION / BUILD / BURN captions and 'Day 17 / 84', instead of B's unlabelled climbing bars.",
+    "From A: the onboarding kcal explanation ('About 550 kcal/day: roughly 300 from treadmill sessions, the rest from food') and the kg/lb toggle in the header.",
+    "From A: the session duration printed on the Start button ('Start workout \u00b7 45:00') so the 45/30 choice is confirmed where I tap.",
+    "From A: the odometer digit roll on interval change and the countdown pulse in the last 3 seconds, with a crossfade when Reduce Motion is on."
+   ],
+   "fixes": [
+    "Player dark theme: make the speed/incline panel a solid mode colour (or at least 85% opaque) with dark numerals, and mask the topo contour lines out of the panel and out from behind the countdown. Keep contours only in the margins. Today the dark player's mode cue is weak and the lines add noise behind the most important digits.",
+    "Player hierarchy and labels: remove the redundant 'grade' under '8%' (the header already says INCLINE) and use that space for a change marker (up 6%). Remove or greatly enlarge the '1:13 of 3:00 done' line and add 'Climb ends in'. Fix the timing data so elapsed time, the timeline and the countdown agree: at 18:20 with this structure, 1:40 is left, not 1:47.",
+    "Today week strip: under each hill, print the day's state and duration in plain text (Done 45 min / Today 45 min / Jog 30 min / Rest). Don't use red dotted hills for planned jog days, because they read as errors or warnings. Use the mode colour as an outline with a neutral dash, and keep coral for jog content only.",
+    "Today header: replace the cryptic climbing-bar plan indicator with a labelled 12-step meter (Foundation / Build / Burn, Week 3 of 12, Day 17/84), and remove the red notification dot on the avatar unless it means something specific and actionable.",
+    "Onboarding polish: flatten the stair-step progress bar or make the rise obviously deliberate, because it currently looks like a misaligned rendering bug. Replace the signal-strength icons on the pace cards with a plain effort label. Redraw the projection chart with a dashed goal line, the other paces as faded lines, and month ticks that line up with the plan bands. Add the 'realistic goal' reassurance line and the 550 kcal split, and close the gap above Continue."
+   ]
+  },
+  {
+   "judge": "design-craft",
+   "scores": [
+    {
+     "direction": "a-precision",
+     "overall": 8,
+     "player": 8,
+     "today": 8,
+     "onboarding": 8.5,
+     "light": 8.5,
+     "dark": 7.5,
+     "originality": 6.5,
+     "notes": "All 6 PNGs present. This is the most professional and systematic of the three. The type pairing is disciplined: Instrument Sans for UI and Saira semi-condensed tabular numerals, with a plain zero and no jitter. It has a real single-accent system: cobalt means action, and mode colours are used only for data. The measuring-scale motif (plan meter, weight ruler, goal picker, projection pins) gives it identity without gimmicks. Onboarding is the best of the three: an inline 0.1 kg ruler, a kg/lb toggle, a projection timeline with three pins and a kcal-deficit explanation. The player has the biggest numerals (about 140px, right-aligned in a console grid with change-since-last-interval deltas), and the true-black stage in dark is excellent for OLED in a gym. Weaknesses: (1) The player has almost no peripheral mode signal. Power walk shows only as a small tag, the interval bar and the timeline, so you cannot tell the mode from the colour mass at 70 cm. (2) Speed, incline and countdown are three identical giant rows with no hierarchy. (3) On the Today chart the stepped incline line sits on top of the speed bars, so they read as outlined boxes. (4) The dark accent fill #7F95FF looks lavender and soft, losing the 'console cobalt' identity and drifting toward the purple-blue clich\u00e9. (5) The ink-3 text colour is about 2.95:1 on the page and 3.4:1 on white, and about 3.65:1 in dark. (6) It is a little 'well-made generic iOS'. (7) The toggle reads '45 min | 30' (no unit on 30), and duration appears three times (toggle, readout cell, Start 45:00)."
+    },
+    {
+     "direction": "b-athletic",
+     "overall": 7.5,
+     "player": 8.5,
+     "today": 7,
+     "onboarding": 7.5,
+     "light": 7.5,
+     "dark": 8.5,
+     "originality": 8.5,
+     "notes": "All 6 PNGs present. This is the most original and memorable direction. Topo contours, the week drawn as hills (done, today, planned, rest), the downhill weight trail with a flag, and a player timeline where segment height = incline are real ideas, not decoration. The best player atmosphere is in dark: a stage tinted by mode (warm black for Power walk), a translucent amber panel with a border, cream numerals and an amber pause button. Archivo condensed 800 numerals (about 126px) in a mode panel give a strong peripheral cue. The Today chart splits incline (outline on top) from speed (bars below), which reads more clearly than A or C. The pace cards each show their projected date. Weaknesses: (1) Amber does triple duty as the Power walk mode, the current week/step marker and the Start CTA, and the pause button changes colour with the mode. There is no stable accent, so meaning blurs. (2) Topo lines plus a warm orange CTA sit close to outdoor/Strava/AllTrails visual language, which is a branding risk the brief forbids. It is also an odd metaphor for an indoor treadmill. (3) Archivo Expanded 800 headlines and the always-dark hero card make light mode heavy and loud. In dark, the hero card barely separates from the page. (4) The 'stair' onboarding progress bar reads as misaligned, not intentional. The projection chart is nearly flat (no y-scaling), and '92.0' crowds the FOUNDATION band label. (5) The week hills need learning, and dashed coloured hills are noisy. The 12-bar plan glyph is tiny and cryptic. (6) Contour lines behind the player numerals add noise at distance. '8%' plus a 'grade' label is redundant. ink-3 is about 3.3:1."
+    },
+    {
+     "direction": "c-calm",
+     "overall": 7,
+     "player": 8,
+     "today": 8.5,
+     "onboarding": 8,
+     "light": 8,
+     "dark": 6.5,
+     "originality": 5,
+     "notes": "All 6 PNGs present. This has the clearest, most scannable Today screen. The phase chip and plan dots, one raised session card, a week strip with date numbers and explicit per-day text (30 min / Rest / Today), and a weight section with '+ Log weight', 'Ahead of pace' and Start/Now/Goal endpoints mean nothing needs decoding. Its semantic thinking is good: mode colours go cool to hot (blue, amber, rose), so green is reserved for progress. The player leads with a full-width mode-colour 'set your treadmill' panel (chip, Climb 3 of 7, speed, incline). That is the most glanceable mode cue of all three. The countdown uses the plain-language label 'Climb ends in'. The onboarding projection chart is the most informative: a bold selected line, faded alternative paces, a shaded 12-week band and a dashed goal line. It also has a reassurance line about the goal being realistic. Weaknesses: (1) The look is the most generic: green accent, rounded Nunito and white cards read as 'yet another wellness app', and Nunito at 900 weight feels slightly soft and cheap for an App Store feature. (2) In dark, mint on blue-slate approaches the 'near-black plus lone green' clich\u00e9, as the designer admits. (3) The bright amber player panel is identical in dark, so it glares in a dim gym. (4) Speed and incline at 104px are smaller than the 120px countdown. (5) It has the same incline-line-over-bars overlap on the Today chart as A. (6) It has no direct goal picker, only a pencil icon."
+    }
+   ],
+   "winner": "a-precision",
+   "graft": [
+    "From C: give the player a full-width mode-colour 'set your treadmill' panel holding the mode chip, 'Climb 3 of 7', speed and incline. This lets the interval change register out of the corner of the eye. Keep A's Saira numerals and size inside it.",
+    "From B: in dark, tint the player stage by mode (warm black for Power walk, cool black for Walk) and render the panel as a translucent mode fill with a mode-coloured border, not a bright slab. Use C's solid fill in light only.",
+    "From B: on the Today screen, use the two-band interval chart, with incline as an outline or area on top and speed bars in mode colours below. Nothing should overlap.",
+    "From B: on the player timeline, make segment height = incline and colour = mode, with past segments solid, future segments dimmed and a playhead. It shows the shape of the remaining climbs at a glance.",
+    "From B: put a secondary readout under the countdown ('1:13 of 3:00 done') instead of A's 'of 4:00', so the progress bar has a numeric twin.",
+    "From C: use the plain-language countdown label 'Climb ends in' / 'Walk ends in' instead of the INTERVAL eyebrow.",
+    "From B and C: label the transport controls (Back / Skip) under the icon buttons, for clarity mid-stride.",
+    "From C: in the week strip, show date numbers plus explicit text under each day (45 min / Rest / Today). Done days should use a subdued accent check, not heavy black discs.",
+    "From C: on the weight card, use a '+ Log weight' text action instead of A's unlabelled '+' circle, plus an 'Ahead of pace' / 'Behind pace' status line.",
+    "From B: show each onboarding pace card's projected goal date (31 May / 15 Feb / 11 Jan) on the card itself.",
+    "From B: shade the 'kg to lose' range on A's onboarding goal ruler, between the goal needle and the current weight.",
+    "From C: add the onboarding reassurance line under current/goal ('7.5 kg to go, about 8% of your weight, a realistic goal'). In A's projection, add faded lines for the alternative paces and a shaded 12-week-plan band.",
+    "From B: use the downhill weight trail with a goal flag as the hero chart on the Progress tab (not Today), recoloured to A's tokens.",
+    "From B and C: pair every mode with a small mode icon (flat line for Walk, incline triangle for Power walk, chevrons for Jog) in chips, the next-up row and the timeline legend, so mode is never colour-only."
+   ],
+   "fixes": [
+    "Player hierarchy and mode signal: wrap SPEED and INCLINE in a mode-coloured panel (light: solid mode fill with ink numerals at 7:1 or better; dark: about 9% mode-tint fill, a 28% mode border and a mode-tinted stage). Then separate the countdown into its own band, sized one step smaller (for example targets 140px, countdown 112px) with its progress bar directly under it. Today the three identical 140px rows compete, and Power walk is visible only as a 16px swatch.",
+    "Today chart: stop drawing the stepped incline line over the speed bars (they currently read as outlined boxes). Give incline its own top band (a 1.5px line plus a 10% area fill with the 8% reference line) and speed bars below on a shared time axis. Add a tiny speed scale (5 / 6 / 7 km/h) so bar heights mean something.",
+    "Contrast tokens: ink-3 #858C94 measures about 2.95:1 on page #EEF0F2 and about 3.4:1 on white. Dark #69707A is about 3.65:1 on #131518. Darken light ink-3 to about #6A7179 and lift dark ink-3 to about #858C95 so that phase labels (BUILD/BURN), axis ticks, 'DAY 17/84', ruler end labels and inactive tab labels reach 4.5:1. Then re-check the 0.1 kg tick fade on the goal picker so the 81/88 end labels stay readable.",
+    "Dark accent: periwinkle #7F95FF as a filled Start/Continue button reads lavender and soft, and edges toward the purple-blue clich\u00e9. Use a saturated cobalt fill in dark (about #3D5BFF with white text, about 5:1) and keep #7F95FF only for text, strokes, the needle and the active tab. Make done-day markers a subdued accent or ink-2, so today is the strongest mark in the week strip rather than the solid white/black done discs.",
+    "Copy and data polish: (1) label the toggle '45 min | 30 min'. (2) Replace the redundant Duration readout cell with something new ('7 climbs' or 'avg 5.6 km/h'). (3) Turn the unlabelled '+' into '+ Log weight' and add a pace status line. (4) Make the player numbers agree with each other: at 18:20 with climb 3 ending at 20:00 the countdown must read 1:40, or else move the playhead. Elapsed, LEFT 26:40, the countdown, the interval bar fill and the timeline playhead must all describe the same moment before App Store screenshots are cut."
+   ]
+  }
+ ]
+}

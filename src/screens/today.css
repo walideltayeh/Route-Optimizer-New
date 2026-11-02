@@ -1,0 +1,139 @@
+/* Today tab. Tokens only. */
+
+/* ---- header ---- */
+.td-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.td-head-text { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.td-greet { font-size: 29px; overflow-wrap: anywhere; }
+.td-greet:focus { outline: none; } /* focused by the shell for VoiceOver, not an interactive element */
+.td-meter { display: flex; flex-direction: column; gap: 10px; margin-top: -8px; }
+.td-meter-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15px; color: var(--ink-2); }
+.td-meter-label b { color: var(--ink); font-weight: 750; }
+.td-meter-label .faint { font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+/* ---- adaptation banner ---- */
+.td-adapt-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.td-adapt-actions .btn { min-height: 40px; }
+
+/* ---- hero ---- */
+.td-hero { display: flex; flex-direction: column; gap: 14px; }
+.td-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 26px; }
+.td-eyebrow { color: var(--hero-ink-2); min-width: 0; }
+.td-hero-top .mode-chip, .td-next-top .mode-chip { flex: none; }
+.td-wname { font-size: 30px; overflow-wrap: anywhere; margin-top: -6px; }
+.td-sub { font-size: 14px; color: var(--hero-ink-2); margin-top: -8px; }
+.td-stats { padding-top: 14px; border-top: 1px solid var(--hero-line); justify-content: space-between; }
+.td-stats .stat-label { font-size: 11px; letter-spacing: .07em; }
+.td-stats .stat-value { font-size: 21px; }
+.td-stats .stat-value small { font-size: 11.5px; margin-left: 1px; }
+.td-stats > div { padding: 0 8px 0 9px; }
+.td-stats > div:first-child { padding-left: 0; }
+.td-stats > div:last-child { padding-right: 0; }
+/* charts.js puts the last tick ("45 min") on top of the one before it; hide that one */
+.td-chart .chart-ticks span:nth-last-child(2):not(:first-child) { display: none; }
+.td-chart { margin-top: 2px; }
+.td-hero .chart-ticks { color: var(--hero-ink-2); }
+.td-hero .legend { color: var(--hero-ink-2); margin-top: -4px; }
+.td-actions { display: flex; gap: 10px; align-items: stretch; margin-top: 2px; }
+.td-actions .seg { flex: none; padding: 4px; border-radius: 16px; }
+.td-actions .seg button { padding: 0 12px; border-radius: 12px; min-height: 48px; font-size: 15px; }
+.td-actions .td-start { flex: 1; min-width: 0; padding: 0 14px; font-size: 17px; white-space: nowrap; }
+.td-actions.solo .td-start { width: 100%; }
+.td-busy-note { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: var(--hero-ink-2); margin-top: -4px; }
+.td-busy-note svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.td-hero-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; margin: -6px 0 -6px; }
+.td-links { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.td-link { min-height: 44px; padding: 0 6px; margin-left: -6px; font-weight: 650; font-size: 14.5px; color: var(--hero-ink); text-decoration: underline; text-decoration-color: var(--hero-line); text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.td-link + .td-dot + .td-link, .td-dot + .td-link { margin-left: 0; }
+.td-dot { color: var(--hero-ink-2); padding: 0 2px; }
+.td-est { font-size: 12.5px; color: var(--hero-ink-2); }
+
+/* rest-day / getting-started / finished variants */
+.td-rest { gap: 12px; }
+.td-rest-title { font-size: 26px; overflow-wrap: anywhere; }
+.td-rest-copy { font-size: 15px; color: var(--hero-ink-2); line-height: 1.5; max-width: 40ch; }
+.td-rest-copy b { color: var(--hero-ink); }
+.td-rest-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; }
+.td-rest-actions .btn { min-height: 46px; }
+.td-hero .btn-primary { background: var(--hero-ink); color: var(--hero-bg); }
+.td-block2 { align-self: stretch; }
+.td-next {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; margin-top: 8px;
+  padding: 14px 14px 12px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hero-line);
+  transition: transform .12s var(--ease);
+}
+.td-next:active { transform: scale(.985); }
+.td-next-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.td-next-top .eyebrow { color: var(--hero-ink-2); }
+.td-next-name { font-family: var(--font-display); font-stretch: 108%; font-weight: 800; font-size: 19px; line-height: 1.15; color: var(--hero-ink); overflow-wrap: anywhere; }
+.td-next-meta { font-size: 13.5px; color: var(--hero-ink-2); }
+.td-next-chart { display: block; margin-top: 6px; }
+
+.td-eyebrow { display: inline-flex; align-items: center; gap: 6px; }
+.td-eyebrow-ico { width: 15px; height: 15px; color: var(--m-walk); }
+
+/* ---- this week ---- */
+.td-week { gap: 12px; }
+.td-count { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.td-count b { color: var(--ink); font-weight: 750; }
+.td-week .week-hills .day { min-height: 44px; }
+.td-week .week-hills .dlab { white-space: normal; text-align: center; line-height: 1.2; min-height: 2.4em; }
+.td-week .week-hills .day.missed .dlab { color: var(--ink-2); }
+.td-plan-link { align-self: flex-start; margin-top: -2px; min-height: 44px; }
+
+/* ---- weekly summit ---- */
+.td-summit { display: flex; flex-direction: column; gap: 10px; }
+.td-summit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.td-summit-body { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.td-summit .gauge { width: 72%; max-width: 230px; margin-bottom: 8px; }
+.td-summit-text { align-self: stretch; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.td-summit-status { font-size: 15.5px; color: var(--ink-2); }
+.td-summit-status b { color: var(--ink); font-weight: 750; }
+
+/* ---- weight ---- */
+.td-weight { display: flex; flex-direction: column; gap: 10px; }
+.td-w-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -8px 0 -6px; }
+.td-w-title { margin: 0; }
+.td-w-title a { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; text-decoration: none; color: inherit; }
+.td-w-title svg { width: 14px; height: 14px; }
+.td-log { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 2px 0 8px; font-weight: 700; font-size: 15px; color: var(--ink); }
+.td-log svg { width: 18px; height: 18px; }
+.td-w-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.td-w-nums { min-width: 0; }
+.td-w-big { display: flex; align-items: baseline; gap: 4px; }
+.td-w-big .display-num { font-size: 52px; }
+.td-w-big small { font-family: var(--font-display); font-weight: 750; font-size: 18px; color: var(--ink-2); }
+.td-w-sub { font-size: 14.5px; color: var(--ink-2); margin-top: 6px; }
+.td-w-sub b { color: var(--ink); font-weight: 700; }
+.td-trail { width: 46%; max-width: 172px; height: auto; flex: none; overflow: visible; }
+.td-trail .chart-axis { font-weight: 650; }
+.td-trail .td-trail-pct { fill: var(--ink); font-weight: 800; }
+.td-w-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.td-w-hidden { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--ink-2); }
+.td-w-hidden svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--ink-3); }
+
+/* ---- lesson ---- */
+.td-lesson { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; }
+button.td-lesson:active { background: var(--surface-2); }
+.td-lesson-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--surface-2); color: var(--ink); }
+.td-lesson-icon svg { width: 21px; height: 21px; }
+.td-lesson-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.td-lesson-title { font-family: var(--font-display); font-stretch: 105%; font-weight: 750; font-size: 17px; line-height: 1.2; }
+.td-lesson .chev { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+.td-lesson.locked { opacity: .8; }
+
+@media (max-width: 384px) {
+  .td-actions { flex-direction: column; }
+  .td-actions .seg { display: flex; width: 100%; }
+}
+
+/* Hero stats: one row of auto-width cells (inline --td-cols) down to 341 px, two columns below that. */
+.stat-grid.td-stats { grid-template-columns: repeat(var(--td-cols, 4), auto); }
+@media (max-width: 380px) {
+  /* the shared stat-grid rule drops every odd divider for its 2-column layout; this row is still one line here */
+  .stat-grid.td-stats { row-gap: 0; }
+  .stat-grid.td-stats > div:nth-child(odd):not(:first-child) { padding-left: 9px; border-left: 1px solid var(--line-soft); }
+}
+@media (max-width: 340px) {
+  .stat-grid.td-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  .stat-grid.td-stats > div:nth-child(odd):not(:first-child) { padding-left: 0; border-left: 0; }
+}

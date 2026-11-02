@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EEF1EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A1012" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Get help with Hillpace, the incline treadmill coach for iPhone: contact support and answers to common questions.">
+<title>Support · Hillpace</title>
+<style>
+/* Self-contained page: no external requests. Fonts load from ./fonts/ when present (inside the app), otherwise system fonts. */
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url(fonts/Archivo-latin.woff2) format('woff2'); }
+@font-face { font-family: 'Hanken Grotesk'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/HankenGrotesk-latin.woff2) format('woff2'); }
+:root {
+  --bg: #EEF1EF; --surface: #FFFFFF; --surface-2: #E4E9E6; --line: #D3DBD7;
+  --ink: #0D1A1C; --ink-2: #44535A; --ink-3: #5F6F72; --link-line: #0B7A5F; --focus: #1F6FEB;
+  --hero-bg: #0F1E21; --hero-ink: #EAF2EF; --hero-ink-2: #A7B7B4; --hero-line: rgba(234, 242, 239, .10); --hero-topo: rgba(234, 242, 239, .07);
+  --good: #3CCFA8;
+  --font-display: "Archivo", "SF Pro Display", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0A1012; --surface: #131B1E; --surface-2: #1A2427; --line: #243236;
+    --ink: #ECF2F0; --ink-2: #A9B6B4; --ink-3: #8A9A9A; --link-line: #5EDDBB; --focus: #6EA8FF;
+    --hero-bg: #142427; --hero-line: rgba(234, 242, 239, .12);
+    color-scheme: dark;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-text); font-size: 17px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--link-line); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 3px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 20px) max(20px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 48px) max(20px, env(safe-area-inset-left, 0px)); }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 19px; letter-spacing: -.01em; }
+.brand svg { width: 34px; height: 34px; border-radius: 9px; flex: none; box-shadow: 0 0 0 1px var(--line); }
+.app-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; font-size: 15px; text-decoration: none; color: var(--ink); }
+.app-back svg { width: 18px; height: 18px; }
+header.page { margin: 28px 0 22px; }
+.eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+h1 { font-family: var(--font-display); font-stretch: 112%; font-weight: 820; font-size: clamp(30px, 7vw, 40px); line-height: 1.05; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+.dates { margin: 12px 0 0; color: var(--ink-3); font-size: 15px; }
+.hero { position: relative; overflow: hidden; border-radius: 24px; background: var(--hero-bg); color: var(--hero-ink); padding: 24px 22px 22px; margin: 0 0 32px; border: 1px solid var(--hero-line); }
+.hero .topo { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--hero-topo); pointer-events: none; }
+.hero h2 { position: relative; font-family: var(--font-display); font-stretch: 108%; font-weight: 780; font-size: 21px; margin: 0 0 14px; color: var(--hero-ink); }
+.hero ul { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.hero li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; color: var(--hero-ink); font-size: 16px; line-height: 1.45; }
+.hero li svg { width: 22px; height: 22px; color: var(--good); margin-top: 1px; }
+.hero li span b { font-weight: 700; }
+main h2 { font-family: var(--font-display); font-stretch: 106%; font-weight: 760; font-size: 22px; line-height: 1.2; margin: 40px 0 10px; scroll-margin-top: 24px; }
+main h3 { font-family: var(--font-display); font-weight: 720; font-size: 17.5px; margin: 24px 0 6px; }
+main p, main li { color: var(--ink-2); }
+main p { margin: 0 0 14px; max-width: 64ch; }
+main strong { color: var(--ink); font-weight: 650; }
+main ul { margin: 0 0 16px; padding-left: 1.25em; max-width: 64ch; }
+main li + li { margin-top: 6px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 4px 18px; margin: 0 0 16px; }
+.card dl { margin: 0; }
+.card .row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 4px 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.card .row:first-child { border-top: 0; }
+.card dt { font-weight: 650; color: var(--ink); }
+.card dd { margin: 0; color: var(--ink-2); }
+.toc { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin: 0 0 8px; }
+.toc p { margin: 0 0 8px; font-weight: 700; color: var(--ink); font-size: 15px; }
+.toc ol { margin: 0; padding-left: 1.3em; columns: 2; column-gap: 24px; font-size: 15.5px; }
+.toc li { break-inside: avoid; margin: 0 0 4px; color: var(--ink-2); }
+.toc a { text-decoration-thickness: 1px; }
+.path { font-weight: 650; color: var(--ink); }
+footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.contact { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin: 0 0 12px; }
+.contact .mail { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 17px; text-decoration: none; justify-self: start; }
+.contact .mail svg { width: 20px; height: 20px; }
+.contact .contact-h { margin: 0; }
+.contact p { margin: 0; color: var(--ink-2); max-width: 60ch; }
+.contact ul { margin: 0; padding-left: 1.25em; color: var(--ink-2); }
+.faq { display: grid; gap: 10px; margin: 0 0 8px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.faq summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr 22px; gap: 12px; align-items: center; min-height: 56px; padding: 14px 18px; font-family: var(--font-display); font-stretch: 104%; font-weight: 720; font-size: 17px; line-height: 1.3; color: var(--ink); }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary svg { width: 22px; height: 22px; color: var(--ink-3); transition: transform .2s ease; }
+.faq details[open] summary svg { transform: rotate(180deg); }
+.faq .answer { padding: 0 18px 16px; }
+.faq .answer p:last-child, .faq .answer ul:last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .faq summary svg { transition: none; } }
+@media (max-width: 520px) {
+  .toc ol { columns: 1; }
+  .card .row { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: #fff; color: #000; }
+  .hero { background: #fff; color: #000; border: 1px solid #999; }
+  .hero h2, .hero li { color: #000; }
+  .app-back, .hero .topo { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="brand" href="./support.html" aria-label="Hillpace support home">
+      <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <defs><linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC566"/><stop offset="1" stop-color="#FFA126"/></linearGradient></defs>
+        <rect width="64" height="64" fill="#0F1E21"/>
+        <rect y="52" width="64" height="12" fill="#0A1513"/>
+        <path d="M5 52.5C17 51 23 23 32 23s15 28 27 29.5Z" fill="url(#hill)"/>
+        <path d="M32 23V11.5" stroke="#F2F6F4" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M33 11.2 41 14l-8 2.8Z" fill="#F2F6F4"/>
+        <path d="M5 52.5h54" stroke="#3CCFA8" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span>Hillpace</span>
+    </a>
+    <a class="app-back" href="index.html#me" hidden data-app-back>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>
+      Back to Hillpace
+    </a>
+  </div>
+
+  <header class="page">
+    <p class="eyebrow">Hillpace for iPhone</p>
+    <h1>Support</h1>
+    <p class="dates">Last updated: 1 November 2026</p>
+  </header>
+
+  <main>
+    <section class="contact" aria-labelledby="contact-h">
+      <h2 id="contact-h" class="contact-h">Contact us</h2>
+      <p>Found a problem, or have an idea? Email us and a real person will reply. Hillpace is made by [Your name].</p>
+      <a class="mail" href="mailto:support@hillpace.app?subject=Hillpace%20support">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m3.8 7 8.2 6 8.2-6"/></svg>
+        support@hillpace.app
+      </a>
+      <p>To help us fix things quickly, please include:</p>
+      <ul>
+        <li>your iPhone model and iOS version (<span class="path">Settings → General → About</span>)</li>
+        <li>the Hillpace version (at the bottom of the <span class="path">Me</span> tab)</li>
+        <li>what you were doing and what you expected to happen</li>
+      </ul>
+      <p>Please don’t send health details you would rather keep private. We never need them to help you.</p>
+    </section>
+
+    <h2 id="faq">Common questions</h2>
+    <div class="faq">
+      <details id="account">
+        <summary><span>Do I need an account?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>No. There is nothing to sign up for. Hillpace keeps everything on your iPhone, so you can start training as soon as you finish the short setup.</p>
+        </div>
+      </details>
+      <details id="cost">
+        <summary><span>Does Hillpace cost anything?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Hillpace is free to download and use, with no ads, no subscriptions and no in-app purchases.</p>
+        </div>
+      </details>
+      <details id="locked">
+        <summary><span>Why do the voice cues stop when my screen locks?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>iPhone pauses apps when the screen locks, so <strong>voice cues need the screen on</strong>. Hillpace keeps your screen awake during a workout, so leave the phone unlocked on the treadmill console.</p>
+          <p>As a safety net, allow lock-screen cues when Hillpace offers them before a workout. If the phone does lock, each interval change then arrives as a notification with a vibration, and with a sound when the Ring/Silent switch is set to ring. If you missed the prompt, turn notifications on in <span class="path">Settings → Notifications → Hillpace</span>. If you use a Focus, allow Hillpace or time-sensitive notifications in that Focus.</p>
+        </div>
+      </details>
+      <details id="quiet">
+        <summary><span>I can’t hear the voice cues</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <ul>
+            <li>Check that voice cues are on in <span class="path">Me → Voice &amp; cues</span>.</li>
+            <li>Turn the volume up with the side buttons while a workout is running.</li>
+            <li>If you use Bluetooth headphones, make sure they are connected before you start.</li>
+            <li>Beeps and the on-screen countdown keep guiding you even with voice cues off.</li>
+          </ul>
+        </div>
+      </details>
+      <details id="calories">
+        <summary><span>How accurate are the calorie numbers?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>They are <strong>estimates</strong>. Hillpace uses the American College of Sports Medicine walking and running equations with your weight, speed and incline, and shows net active energy (the energy above what you would use at rest). Real energy use varies from person to person, so the figures can differ substantially from your actual burn and from treadmill or watch readings.</p>
+          <p>The full method is in <span class="path">Me → How we calculate</span>. If you would rather not see calorie or weight numbers at all, you can train without them.</p>
+        </div>
+      </details>
+      <details id="console">
+        <summary><span>My treadmill shows a different distance</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Treadmill belts are often calibrated a little differently. After a workout, open <span class="path">Match your treadmill</span> on the summary and enter the time and distance from your console. Hillpace updates that workout, and its climb and energy estimate scale with it.</p>
+        </div>
+      </details>
+      <details id="incline">
+        <summary><span>My treadmill has no incline, or a low maximum. Can I still use Hillpace?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Yes. During setup you tell Hillpace your treadmill’s maximum speed and incline, and every workout stays within them. On a treadmill without incline, climbs become faster walking intervals instead. You can change these limits in <span class="path">Me → Treadmill</span>.</p>
+        </div>
+      </details>
+      <details id="health">
+        <summary><span>How do I connect Apple Health, and what does it save?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Go to <span class="path">Me → Apple Health</span> and tap <span class="path">Connect Apple Health</span>. Hillpace can save each finished workout as an indoor walking or running workout (time, estimated distance, estimated active energy and climb) and the weights you log. It reads body weight from other apps and scales to keep your trend up to date.</p>
+          <p>If you also record the session on Apple Watch, turn on the Apple Watch option in <span class="path">Me → Apple Health</span>. Hillpace then saves the workout without energy and distance, so nothing is counted twice.</p>
+          <p>To change what Hillpace may read or write, open <span class="path">Settings → Health → Data Access &amp; Devices → Hillpace</span>.</p>
+        </div>
+      </details>
+      <details id="reminders">
+        <summary><span>How do training reminders work?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Turn them on in <span class="path">Me → Reminders</span> and pick a time. Hillpace reminds you on your training days. Reminders are created on your iPhone and work without an internet connection.</p>
+        </div>
+      </details>
+      <details id="missed">
+        <summary><span>I missed a session. What happens to my plan?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Nothing breaks. Open the session in the Plan tab to move it to today, skip it, or switch to the shorter busy-day version. Your effort ratings after each workout let Hillpace hold steady, ease off or offer a step up the following week.</p>
+        </div>
+      </details>
+      <details id="backup">
+        <summary><span>How do I back up my data or move to a new iPhone?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>Your data lives only on your iPhone, so keep a backup. In <span class="path">Me → Back up &amp; restore</span>, tap <span class="path">Export backup</span> and save the file to Files, iCloud Drive or a computer. On a new iPhone, install Hillpace and tap <span class="path">Restore from a backup</span> on the first screen, then choose that file.</p>
+          <p>A normal iCloud or computer backup of your iPhone usually includes Hillpace too.</p>
+        </div>
+      </details>
+      <details id="erase">
+        <summary><span>How do I delete my data?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>In <span class="path">Me → Back up &amp; restore</span>, choose <span class="path">Erase all data</span>. Deleting the app also removes its data from your iPhone. Anything already saved to Apple Health stays there until you delete it in the Health app.</p>
+        </div>
+      </details>
+      <details id="medical">
+        <summary><span>Is Hillpace a medical device?</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg></summary>
+        <div class="answer">
+          <p>No. Hillpace is a fitness coach, not a medical device, and it does not diagnose or treat any condition. Talk to your doctor before starting a new exercise plan, especially if you answered yes to any setup health question.</p>
+          <p>Stop exercising and seek help if you feel chest pain or pressure, unusual breathlessness, dizziness, palpitations or nausea. The run screen has an <span class="path">I feel unwell</span> button on the pause screen, and the stop signs are always in <span class="path">Me → Health &amp; safety</span>.</p>
+        </div>
+      </details>
+    </div>
+
+    <h2 id="privacy">Privacy</h2>
+    <p>Hillpace has no account, no analytics and no ads, and your data stays on your iPhone. Read the full <a href="./privacy.html">Privacy Policy</a>.</p>
+  </main>
+
+  <footer>
+    <span>© 2026 [Your name]. Hillpace.</span>
+    <nav aria-label="Legal"><a href="./support.html" aria-current="page">Support</a><a href="./privacy.html">Privacy Policy</a></nav>
+  </footer>
+</div>
+<script>
+  // Inside the Hillpace app (Capacitor serves pages from capacitor://localhost), show a way back to the app.
+  (function () {
+    var inApp = location.protocol === 'capacitor:' || !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if (!inApp) return;
+    var b = document.querySelector('[data-app-back]');
+    if (!b) return;
+    b.hidden = false;
+    b.addEventListener('click', function (e) {
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0 && history.length > 1) { e.preventDefault(); history.back(); }
+    });
+  })();
+</script>
+</body>
+</html>

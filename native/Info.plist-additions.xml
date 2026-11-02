@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hillpace: keys to merge into ios/App/App/Info.plist (node native/wire-ios.mjs does this for you).
+  Also required, applied by the script as edits rather than additions:
+    - UISupportedInterfaceOrientations: portrait only (UIInterfaceOrientationPortrait)
+    - remove UISupportedInterfaceOrientations~ipad (iPhone-only app)
+    - remove UISceneStoryboardFile from the scene configuration (SceneDelegate builds the window in code)
+  Deliberately absent:
+    - UIBackgroundModes (no background audio, location or processing in v1; App Review 2.5.4)
+    - NSPhotoLibraryAddUsageDescription (the app never saves images; exports are JSON files)
+  Both Health strings are mandatory: without them the app crashes when it asks for Health access.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Hillpace</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Hillpace reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Hillpace saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

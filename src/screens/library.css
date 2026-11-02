@@ -1,0 +1,117 @@
+/* Workouts tab + workout detail sheet (src/screens/library.js). Tokens only. */
+
+/* ---- filter: sticks under the status bar while the list scrolls ---- */
+.lib-filter {
+  position: sticky; top: var(--sticky-top, var(--safe-top)); z-index: 12;
+  margin: -8px calc(-1 * var(--gutter-r)) -8px calc(-1 * var(--gutter-l));
+  padding: 8px var(--gutter-r) 8px var(--gutter-l);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
+}
+.lib-filter .seg button { padding: 0 6px; }
+.lib .screen-head .body-s { max-width: 34ch; }
+.lib .screen-head h1[tabindex="-1"]:focus { outline: none; }
+.lib .section-link { text-decoration: none; }
+.lib-body { display: flex; flex-direction: column; gap: 30px; }
+.lib-blurb { margin-top: -4px; max-width: 52ch; }
+.lib-count { font-size: 14px; white-space: nowrap; }
+
+/* ---- this week's plan ---- */
+.lib-week .row { min-height: 60px; }
+.lib-week .row + .row::before { left: 68px; }
+.lib-day { width: 40px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.05; }
+.lib-day span { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.lib-day b { font-family: var(--font-display); font-weight: 750; font-size: 18px; min-width: 30px; height: 26px; display: grid; place-items: center; border-radius: 8px; }
+.lib-day.is-today span { color: var(--ink); }
+.lib-day-only b { font-size: 15px; text-transform: uppercase; letter-spacing: .03em; }
+.lib-day.is-today b { background: var(--ink); color: var(--ink-inv); }
+.lib-slot.done .row-title, .lib-slot.skipped .row-title, .lib-slot.missed .row-title { color: var(--ink-2); }
+.lib-slot .tag { flex: none; }
+.lib-today { background: var(--ink); color: var(--ink-inv); }
+
+/* ---- make-your-own tiles ---- */
+.lib-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lib-tile {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  min-height: 156px; padding: 16px; border-radius: var(--radius-l);
+  background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+.lib-tile-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink); margin-bottom: auto; flex: none; }
+.lib-tile-ico svg { width: 22px; height: 22px; }
+.lib-tile-t { font-family: var(--font-display); font-stretch: 108%; font-weight: 800; font-size: 18px; line-height: 1.15; margin-top: 16px; }
+.lib-tile-s { font-size: 13.5px; line-height: 1.35; color: var(--ink-3); }
+.lib-tile-hero { background: var(--hero-bg); color: var(--hero-ink); box-shadow: inset 0 0 0 1px var(--hero-line); }
+.lib-tile-hero .topo-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; color: var(--hero-topo); }
+.lib-tile-hero .topo-bg .strong { color: var(--hero-topo-strong); }
+.lib-tile-hero .lib-tile-ico { background: color-mix(in srgb, var(--hero-ink) 12%, transparent); color: var(--hero-ink); }
+.lib-tile-hero .lib-tile-s { color: var(--hero-ink-2); }
+
+/* ---- workout cards ---- */
+.lib-card { gap: 8px; box-shadow: inset 0 0 0 1px var(--line-soft); transition: transform .12s var(--ease); }
+.lib-card .wk-top { align-items: flex-start; }
+.lib-card .wk-name { min-width: 0; }
+.lib-card .wk-top .tag { flex: none; margin-top: 1px; }
+.lib-focus { font-size: 14px; line-height: 1.35; color: var(--ink-2); margin-top: -4px; }
+.lib-card .wk-meta { margin-top: -2px; }
+.lib-mini { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+.lib-card .wk-meta { align-items: center; }
+.lib-meta-i { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-2); font-weight: 600; }
+.lib-meta-i svg { width: 15px; height: 15px; color: var(--ink-3); }
+.lib-keys { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-2); }
+.lib-keys span { display: inline-flex; align-items: center; gap: 5px; }
+.lib-keys .mode-dot { width: 8px; height: 8px; border-radius: 2px; }
+/* locked cards keep readable text; only the chart fades */
+.lib .wk-card.locked { opacity: 1; }
+.lib .wk-card.locked .lib-mini .chart { opacity: .4; filter: saturate(.3); }
+.lib-lock { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink-2); }
+
+/* ---- empty state & draft banner ---- */
+.lib-empty { padding: 28px 20px 22px; }
+.lib-empty .empty-art { margin-bottom: 2px; }
+.lib-empty-acts { width: 100%; margin-top: 8px; }
+.lib-empty-acts .btn { flex: 1 1 130px; padding: 0 10px; white-space: nowrap; font-size: 15.5px; gap: 6px; }
+.lib-empty .title-m { color: var(--ink); }
+.lib-draft .banner-icon { background: var(--surface-2); }
+.lib-draft-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.lib-draft-acts .btn-text { min-height: 36px; }
+
+/* ---- detail sheet ---- */
+.lib-sheet .sheet-foot .btn { padding: 0 14px; }
+.lib-sheet .sheet-foot .lib-start { flex: 1.9; }
+.lib-context { margin-bottom: -8px; }
+.lib-tags { gap: 8px; }
+.lib-ctl { display: flex; flex-direction: column; gap: 6px; }
+.lib-ctl .label { font-size: 13px; font-weight: 650; color: var(--ink-2); }
+.lib-ctl .hint { font-size: 13px; line-height: 1.4; color: var(--ink-3); }
+.lib-prof { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+.lib-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 14px; }
+.lib-stats > div { padding: 0 10px; border-left: 1px solid var(--line-soft); min-width: 0; }
+.lib-stats > div:nth-child(3n+1) { padding-left: 0; border-left: 0; }
+.lib-stats .stat-value { font-size: 21px; }
+.lib-chart { margin-top: 2px; }
+.lib-est { margin-top: -2px; line-height: 1.45; }
+.lib-link { color: var(--ink); font-weight: 650; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; padding: 4px 0; }
+
+/* interval table */
+.lib-table-wrap { padding: 2px 0 0; }
+.lib-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.lib-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 10px 6px 8px; white-space: nowrap; }
+.lib-table td { padding: 9px 6px; border-top: 1px solid var(--line-soft); vertical-align: middle; }
+.lib-table th:first-child, .lib-table td:first-child { padding-left: 16px; }
+.lib-table th:last-child, .lib-table td:last-child { padding-right: 16px; }
+.lib-t-time { white-space: nowrap; font-weight: 700; font-size: 13.5px; line-height: 1.25; width: 1%; }
+.lib-t-time .faint { display: block; font-weight: 500; font-size: 12.5px; }
+.lib-table .lib-t-n { text-align: right; white-space: nowrap; font-weight: 700; width: 1%; }
+.lib-t-n small { font-size: 11.5px; font-weight: 600; color: var(--ink-3); margin-left: 1px; }
+.lib-t-iv { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.lib-t-ico { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; background: var(--mode); color: var(--mode-on); flex: none; }
+.lib-t-ico svg { width: 15px; height: 15px; }
+.lib-t-lab { display: flex; flex-direction: column; min-width: 0; line-height: 1.22; }
+.lib-t-lab b { font-weight: 650; font-size: 14px; overflow-wrap: anywhere; }
+.lib-t-lab small { font-size: 12px; color: var(--ink-3); }
+.lib-more { width: 100%; justify-content: center; border-top: 1px solid var(--line-soft); border-radius: 0; min-height: 46px; gap: 4px; }
+.lib-more svg { width: 16px; height: 16px; }
+
+/* The shared .sheet-body is a flex column; without this, overflow:hidden children (.group) shrink and get clipped. */
+.lib-sheet .sheet-body > * { flex-shrink: 0; }

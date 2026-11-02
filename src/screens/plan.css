@@ -1,0 +1,99 @@
+/* Plan tab and the plan session sheet. Tokens only. */
+.pn-title:focus { outline: none; } /* focused by the shell for VoiceOver, not an interactive element */
+
+/* ---- phase timeline ---- */
+.pn-phases { padding: 18px 18px 6px; }
+.pn-tl { list-style: none; margin: 0; padding: 0; }
+.pn-ph { position: relative; display: flex; gap: 14px; padding-bottom: 16px; }
+.pn-ph:not(:last-child)::before { content: ""; position: absolute; left: 11px; top: 26px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--line); }
+.pn-ph.done:not(:last-child)::before { background: var(--ink-2); }
+.pn-dot { width: 24px; height: 24px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--surface); box-shadow: inset 0 0 0 2px var(--line); margin-top: -1px; }
+.pn-dot svg { width: 14px; height: 14px; }
+.pn-ph.done .pn-dot { background: var(--ink-2); color: var(--surface); box-shadow: none; }
+.pn-ph.current .pn-dot { background: var(--surface); box-shadow: inset 0 0 0 7px var(--ink); }
+.pn-ph-text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pn-ph-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.pn-ph-weeks { font-size: 13.5px; font-weight: 600; color: var(--ink-3); }
+.pn-ph.next .title-s { color: var(--ink-2); }
+.pn-now { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 7px; background: var(--ink); color: var(--ink-inv); font-size: 11.5px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; align-self: center; }
+
+/* ---- weeks ---- */
+.pn-total { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.pn-weeks { display: flex; flex-direction: column; gap: 8px; }
+.pn-week { background: var(--surface); border-radius: var(--radius); overflow: hidden; }
+.pn-week.current { box-shadow: inset 0 0 0 2px var(--ink); }
+.pn-week-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px 10px 16px; text-align: left; }
+.pn-week-head:active { background: var(--surface-2); }
+.pn-wk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pn-wk-title { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-stretch: 105%; font-weight: 800; font-size: 17px; }
+.pn-wk-title .tag { height: 22px; }
+.pn-wk-dates { font-size: 13.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pn-wk-prog { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--font-display); font-weight: 800; font-size: 16px; color: var(--ink); flex: none; }
+.pn-wk-prog small { font-family: var(--font-text); font-size: 12px; font-weight: 650; color: var(--danger); }
+.pn-chev { width: 20px; height: 20px; color: var(--ink-3); flex: none; transition: transform .2s var(--ease); }
+.pn-week.open .pn-chev { transform: rotate(180deg); }
+.pn-week-body { padding: 0 0 6px; }
+
+.pn-sess { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px 10px 16px; min-height: 64px; }
+.pn-sess::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--line-soft); }
+.pn-sess:active { background: var(--surface-2); }
+.pn-day { width: 40px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 0; }
+.pn-day span { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+.pn-day b { font-family: var(--font-display); font-weight: 800; font-size: 19px; line-height: 1.1; }
+.pn-sess.today .pn-day b { background: var(--ink); color: var(--ink-inv); border-radius: 8px; padding: 0 6px; }
+.pn-sess-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pn-sess-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pn-sess-name { font-weight: 700; font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pn-sess-meta { font-size: 13px; color: var(--ink-3); }
+.pn-mini { display: block; margin-top: 3px; }
+.pn-sess .chev { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+.pn-st { display: inline-flex; align-items: center; gap: 3px; flex: none; font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.pn-st svg { width: 14px; height: 14px; }
+.pn-st.done { color: var(--good); }
+.pn-st.today { color: var(--ink); }
+.pn-st.missed { color: var(--danger); }
+.pn-st.skipped, .pn-st.prestart { color: var(--ink-3); }
+.pn-sess.skipped .pn-sess-name { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.pn-sess.prestart .pn-sess-name { color: var(--ink-3); }
+.pn-sess.skipped .pn-mini, .pn-sess.prestart .pn-mini, .pn-sess.missed .pn-mini { opacity: .45; }
+.pn-sess.done .pn-mini { opacity: .8; }
+.pn-foot-note { padding: 0 4px; }
+
+/* ---- settings ---- */
+.pn-settings { gap: 14px; }
+.pn-days { padding: 12px 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pn-day-chips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.pn-day-chips .chip-toggle { min-width: 0; padding: 0; min-height: 44px; font-size: 14px; }
+.pn-days-note { font-size: 13.5px; color: var(--ink-3); padding: 0 6px; }
+.pn-days-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 0 2px; }
+.pn-days-actions .btn { min-height: 44px; }
+.pn-set-row { flex-wrap: wrap; row-gap: 8px; }
+.pn-set-row .row-main { min-width: 140px; }
+.pn-set-row .seg button { padding: 0 11px; min-height: 38px; font-size: 14px; }
+
+/* ---- session sheet ---- */
+.pn-sh-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pn-sh-status { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; color: var(--ink-2); }
+.pn-sh-status svg { width: 19px; height: 19px; flex: none; }
+.pn-sh-status.done { color: var(--good); }
+.pn-sh-status.missed { color: var(--danger); }
+.pn-sh-status.today { color: var(--ink); }
+.pn-sh-card { display: flex; flex-direction: column; gap: 12px; }
+.pn-stats { justify-content: space-between; }
+.pn-stats .stat-label { font-size: 11px; letter-spacing: .07em; }
+.pn-stats .stat-value { font-size: 21px; }
+.pn-stats .stat-value small { font-size: 11.5px; margin-left: 1px; }
+.pn-stats > div { padding: 0 8px 0 9px; }
+.pn-stats > div:first-child { padding-left: 0; }
+.pn-stats > div:last-child { padding-right: 0; }
+.pn-sh-status:focus { outline: none; } /* receives focus when the sheet opens so VoiceOver reads the status */
+/* charts.js draws the last tick on top of the one before it; hide that one */
+.pn-sh-chart .chart-ticks span:nth-last-child(2):not(:first-child) { display: none; }
+.pn-sh-rpe b { color: var(--ink); }
+.pn-busy-row { cursor: pointer; }
+.pn-busy-row .row-icon { width: 30px; height: 30px; }
+.pn-swap { gap: 8px; }
+.pn-swap-item { align-items: flex-start; }
+.pn-swap-item .radio { margin-top: 2px; }
+.pn-swap-item .tag { height: 20px; margin-left: 4px; vertical-align: 2px; }
+.pn-swap-chart { display: block; margin-top: 8px; }

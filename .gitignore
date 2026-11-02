@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build output (recreate with: node scripts/build.mjs && npx cap sync ios)
+dist/
+www/
+
+# test artifacts
+tests/shots/
+test-results/
+playwright-report/
+
+# Xcode / macOS
+.DS_Store
+*.xcuserstate
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+
+# local secrets (App Store Connect API keys, signing)
+*.p8
+*.p12
+*.mobileprovision
+.env
