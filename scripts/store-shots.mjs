@@ -45,7 +45,7 @@ for (const size of SIZES) {
     const t = new Date(); t.setHours(7, 40, 0, 0); // a morning session
     await ctx.clock.install({ time: t });
     const p = await ctx.newPage();
-    await p.addInitScript(({ fx }) => { if (!sessionStorage.getItem('seeded')) { localStorage.clear(); localStorage.setItem('hp.main.v1', JSON.stringify(fx.main)); localStorage.setItem('hp.sessions.v1', JSON.stringify(fx.sessions)); sessionStorage.setItem('seeded', '1'); } }, { fx: storeFx });
+    await p.addInitScript(({ fx }) => { if (!sessionStorage.getItem('seeded')) { localStorage.clear(); localStorage.setItem('hp.main.v1', JSON.stringify(fx.main)); localStorage.setItem('hp.sessions.v1', JSON.stringify(fx.sessions)); sessionStorage.setItem('seeded', '1'); sessionStorage.setItem('wc.entered', '1'); } }, { fx: storeFx });
     await p.goto('file://' + page + '#' + s.hash);
     await p.waitForTimeout(1400);
     if (s.js) { await p.evaluate(s.js); await p.waitForTimeout(900); }

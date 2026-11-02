@@ -16,7 +16,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const PAGE = opt('--page', join(ROOT, 'dist/walking-companion.html'));
-const ONLY = (opt('--only', 'a,f,c,d,g,h,e') || '').split(',');
+const ONLY = (opt('--only', 'a,f,c,d,g,h,l,e') || '').split(',');
 const SHOTS = join(ROOT, 'tests/shots');
 mkdirSync(SHOTS, { recursive: true });
 if (!existsSync(PAGE)) { console.error(`Missing ${PAGE}. Run: node scripts/build.mjs --dev`); process.exit(1); }
@@ -39,7 +39,8 @@ function must(cond, msg) { if (!check(cond, msg)) throw new Abort(msg); }
 const browser = await chromium.launch({ headless: !args.includes('--headed') });
 
 // patch: {key: {...}} merged into the fixture's main.<key> before the app loads (e.g. { readiness: { achilles: true } }).
-async function newPage({ fresh = false, theme = 'light', locale = 'en-GB', clock = false, at = null, patch = null } = {}) {
+// landing: true shows the landing (sign-in) page as a new browser tab would; by default the tab has already signed in.
+async function newPage({ fresh = false, theme = 'light', locale = 'en-GB', clock = false, at = null, patch = null, landing = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, colorScheme: theme, locale });
   const page = await ctx.newPage();
   page.errors = [];
@@ -51,16 +52,17 @@ async function newPage({ fresh = false, theme = 'light', locale = 'en-GB', clock
   });
   // A fixed morning start keeps a 45-minute fast-forwarded workout on the same calendar day.
   if (clock || at) { const t = at ? new Date(at) : new Date(); t.setHours(9, 0, 0, 0); await page.clock.install({ time: t }); }
-  await page.addInitScript(({ fx, fresh, patch }) => {
+  await page.addInitScript(({ fx, fresh, patch, landing }) => {
     if (sessionStorage.getItem('seeded')) return;
     localStorage.clear();
+    if (!landing) sessionStorage.setItem('wc.entered', '1');
     if (!fresh) {
       const d = JSON.parse(fx);
       for (const [k, v] of Object.entries(patch || {})) d.main[k] = { ...(d.main[k] || {}), ...v };
       localStorage.setItem('hp.main.v1', JSON.stringify(d.main)); localStorage.setItem('hp.sessions.v1', JSON.stringify(d.sessions));
     }
     sessionStorage.setItem('seeded', '1');
-  }, { fx: FIXTURE, fresh, patch });
+  }, { fx: FIXTURE, fresh, patch, landing });
   await page.goto('file://' + PAGE + '#today');
   await page.waitForTimeout(700);
   return page;
@@ -653,6 +655,65 @@ await journey('h', 'outdoor walking-only user: effort-coached session, a flat da
   await go(q, '#history');
   check(/Just walk/.test(await visibleText(q)), 'History lists the Just walk');
   await shot(q, 'h-history-light');
+});
+
+/* ======================================================================
+   l) landing (sign-in) page, Me → Account → Sign out
+   ====================================================================== */
+await journey('l', 'landing page for new and returning people; Me → Account → Sign out returns to it', async (track) => {
+  // New person: the landing page replaces onboarding's welcome step.
+  const n = track(await newPage({ fresh: true, landing: true }));
+  must(await visible(n, '.overlay.landing'), 'a new tab opens on the landing page');
+  check(await visible(n, '.ld-canvas'), 'landing shows the walker animation canvas');
+  check(/Walking\s*Companion/.test(await n.textContent('.ld-word')), 'landing shows the Walking Companion wordmark');
+  await n.waitForSelector('.ld-card [data-ld="go"]');
+  check(/Get started/.test(await n.textContent('.ld-card [data-ld="go"]')), 'new person sees Get started');
+  check(await visible(n, '.ld-card [data-ld="restore"]'), 'new person can restore from a backup');
+  await n.waitForTimeout(1500);
+  await shot(n, 'l-landing-new');
+  await n.click('.ld-card [data-ld="go"]');
+  await W(n, 900);
+  check(!(await visible(n, '.overlay.landing')), 'landing closes on Get started');
+  must(await visible(n, '[data-pick="goal"][data-value="lose"]'), 'setup starts at the goal question (no second welcome)');
+  check(await n.evaluate(() => sessionStorage.getItem('wc.entered') === '1'), 'tab remembers it has signed in');
+
+  // Returning person.
+  const p = track(await newPage({ landing: true }));
+  must(await visible(p, '.overlay.landing'), 'returning person sees the landing page in a new tab');
+  await p.waitForSelector('.ld-card [data-ld="go"]');
+  check(/Welcome back/.test(await p.textContent('.ld-kicker')), 'returning person is welcomed back');
+  check(/Continue as Sam/.test(await p.textContent('.ld-card [data-ld="go"]')), 'button says Continue as Sam');
+  check(!(await visible(p, '.ld-card [data-ld="restore"]')), 'no restore link for a returning person');
+  await p.waitForTimeout(1500);
+  await shot(p, 'l-landing-returning');
+  await p.click('.ld-card [data-ld="go"]');
+  await W(p, 900);
+  check(!(await visible(p, '.overlay')), 'Continue goes straight to the app');
+  check(await visible(p, '.td-start, [data-act="easy"]'), 'Today is showing');
+  await p.reload(); await W(p, 900);
+  check(!(await visible(p, '.overlay.landing')), 'reloading the same tab does not ask again');
+
+  // Me → Account → Sign out.
+  await go(p, '#me');
+  must(await visible(p, '#screen [data-act="sign-out"]'), 'Me shows a Sign out row');
+  check(/\bAccount\b/i.test(await text(p)), 'Me has an Account section');
+  await p.waitForFunction(() => { const r = document.querySelector('[data-live="account"] .row-title'); return r && !/Checking/.test(r.textContent); });
+  check(/This browser/.test(await p.textContent('[data-live="account"] .row-title')), 'Account row says where the data lives');
+  await shot(p, 'l-me-account');
+  await p.click('#screen [data-act="sign-out"]'); await W(p, 450);
+  must(await visible(p, '.sheet-root [data-yes]'), 'Sign out asks to confirm');
+  check(/Sign out\?/.test(await p.textContent('.sheet-root')), 'confirm sheet is titled Sign out?');
+  await p.click('.sheet-root [data-yes]'); await W(p, 900);
+  must(await visible(p, '.overlay.landing'), 'signing out returns to the landing page');
+  await p.waitForSelector('.ld-card [data-ld="go"]');
+  check(/signed out/i.test(await p.textContent('.ld-kicker')), 'landing says you’re signed out');
+  check(await p.evaluate(() => sessionStorage.getItem('wc.entered') !== '1'), 'tab forgets the sign-in');
+  await shot(p, 'l-landing-signedout');
+  await p.click('.ld-card [data-ld="go"]'); await W(p, 900);
+  check(!(await visible(p, '.overlay.landing')), 'signing back in closes the landing page');
+  check((await main(p)).onboarded === true && (await sessions(p)).length > 0, 'signing out keeps the plan and history');
+  await go(p, '#me');
+  check(await visible(p, '#screen [data-act="sign-out"]'), 'Me renders again after signing back in');
 });
 
 /* ======================================================================

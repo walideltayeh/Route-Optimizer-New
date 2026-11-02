@@ -18,7 +18,7 @@ for (const theme of ['light', 'dark']) {
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errors.push(`[${theme}] pageerror: ${e.message}`));
   p.on('console', (m) => { if (m.type() === 'error') errors.push(`[${theme}] console: ${m.text()}`); });
-  await p.addInitScript(({ fx, fresh }) => { if (!sessionStorage.getItem('seeded')) { localStorage.clear(); if (!fresh) { const d = JSON.parse(fx); localStorage.setItem('hp.main.v1', JSON.stringify(d.main)); localStorage.setItem('hp.sessions.v1', JSON.stringify(d.sessions)); } sessionStorage.setItem('seeded', '1'); } }, { fx, fresh });
+  await p.addInitScript(({ fx, fresh }) => { if (!sessionStorage.getItem('seeded')) { localStorage.clear(); if (!fresh) { const d = JSON.parse(fx); localStorage.setItem('hp.main.v1', JSON.stringify(d.main)); localStorage.setItem('hp.sessions.v1', JSON.stringify(d.sessions)); } sessionStorage.setItem('seeded', '1'); sessionStorage.setItem('wc.entered', '1'); } }, { fx, fresh });
   await p.goto('file://' + page + '#' + hash);
   await p.waitForTimeout(wait);
   if (js) { await p.evaluate(js); await p.waitForTimeout(wait); }

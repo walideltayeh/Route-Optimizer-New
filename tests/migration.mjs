@@ -10,6 +10,7 @@ p.on('pageerror', (e) => errors.push(e.message));
 p.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await p.addInitScript(() => {
   localStorage.clear();
+  sessionStorage.setItem('wc.entered', '1');
   const docs = new Map();
   const old = { profile: { units: 'kmh', paces: { walk: 5, brisk: 6.2, jog: 8 }, startWeight: 92, goalLoss: 7.5, voice: true, beeps: true, customs: [] }, weights: [{ d: '2026-10-20', kg: 92 }, { d: '2026-10-28', kg: 91.1 }] };
   docs.set('data/users/u1/profile', old);

@@ -26,6 +26,7 @@ import { actions } from '../ui/actions.js';
 import {
   icon, modeIcon, topo, toast, sheet, confirmSheet, segmented, bindSegmented, stepperHtml, navBar, row, watchScroll,
 } from '../ui/kit.js';
+import { getIdentity } from '../core/identity.js';
 import { LESSONS, lessonById } from './lessons.js';
 import { READINESS_QUESTIONS } from './onboarding.js';
 
@@ -316,6 +317,10 @@ function rootHtml() {
 
   return `<header class="screen-head"><div class="head-text"><p class="eyebrow">Profile and settings</p><h1 class="title-xl me-h1">Me</h1></div></header>
     ${heroHtml()}
+    ${sec({ title: 'Account', rows: [
+      `<div class="row me-static has-icon me-acct" data-live="account"></div>`,
+      row({ title: 'Sign out', iconName: 'signout', attrs: 'data-act="sign-out"', chev: false, danger: true }),
+    ].join('') })}
     ${sec({ title: 'Plan & goal', rows: [
       row({ title: 'Goal & body', value: GOALS[p.goal] || '', iconName: 'target', href: '#me-goal' }),
       row({ title: 'Edit plan answers', sub: 'Goal, schedule, where you walk and readiness', iconName: 'edit', attrs: 'data-act="edit-plan"' }),
@@ -352,6 +357,38 @@ function syncRowHtml() {
   const text = s.kind === 'local' && isNative ? 'Saved on this iPhone' : s.text;
   const sub = s.sub || (s.kind === 'warn' ? 'Export a backup to keep your latest changes.' : s.kind === 'ok' ? 'Available wherever you open Walking Companion.' : 'No account needed. Keep a backup somewhere safe.');
   return `<span class="row-icon ${s.kind === 'warn' ? 'me-warn' : ''}">${icon(ic)}</span><span class="row-main"><span class="row-title">${esc(text)}</span><span class="row-sub">${esc(sub)}</span></span>`;
+}
+
+/* Account: who is signed in. Identity resolves once per page load; the row fills in when it arrives. */
+let ident = null;
+function accountRowHtml() {
+  if (!ident) {
+    getIdentity().then((id) => { ident = id; if (currentView && currentView.root.isConnected) updateLive(currentView); });
+    return `<span class="row-icon me-acct-av is-loading" aria-hidden="true"></span><span class="row-main"><span class="row-title">Checking your account…</span></span>`;
+  }
+  const id = ident;
+  const named = (id.kind === 'claude' || id.kind === 'readonly') && id.name;
+  const title = id.kind === 'claude' ? (named ? id.name : 'Signed in with Claude')
+    : id.kind === 'readonly' ? (named ? id.name : 'Signed in (view-only link)')
+    : id.kind === 'guest' ? 'Guest'
+    : (isNative ? 'This iPhone' : 'This browser');
+  const sub = id.kind === 'claude' ? 'Signed in with Claude · your data is private to your account'
+    : id.kind === 'readonly' ? 'View-only link · progress stays on this device'
+    : id.kind === 'guest' ? 'Not signed in · progress stays in this browser'
+    : 'No account needed · progress stays on this device';
+  const av = id.avatarUrl
+    ? `<img class="me-acct-img" src="${esc(id.avatarUrl)}" alt="">`
+    : id.initials && id.kind !== 'device' ? `<span class="me-acct-ini">${esc(id.initials)}</span>` : icon(id.kind === 'device' ? (isNative ? 'watch' : 'lock') : 'me');
+  return `<span class="row-icon me-acct-av" aria-hidden="true">${av}</span><span class="row-main"><span class="row-title">${esc(title)}</span><span class="row-sub">${esc(sub)}</span></span>`;
+}
+
+async function signOut() {
+  const id = ident || await getIdentity();
+  const body = id.kind === 'claude'
+    ? 'Your plan and progress stay saved in your Claude account. You’ll go back to the welcome screen.'
+    : 'Your plan and progress stay saved on this device. You’ll go back to the welcome screen.';
+  const ok = await confirmSheet({ title: 'Sign out?', body, confirm: 'Sign out' });
+  if (ok) actions.signOut();
 }
 
 function editName() {
@@ -1389,6 +1426,7 @@ const LIVE = {
   'paces-note': pacesNote,
   'backup-note': backupNote,
   'sync-row': syncRowHtml,
+  account: accountRowHtml,
 };
 
 /* ---------------- events ---------------- */
@@ -1603,6 +1641,7 @@ function onClickView(v, e) {
     case 'review-readiness': actions.openOnboarding({ edit: true, step: 'readiness' }); break;
     case 'go-data': actions.go('me', 'data'); break;
     case 'go-safety': actions.go('me', 'safety'); break;
+    case 'sign-out': signOut(); break;
     case 'copy-email':
       copyText(SUPPORT_EMAIL).then((ok) => {
         if (ok) { haptic('success'); toast('Email address copied'); } else toast('Couldn’t copy. Press and hold the address to copy it.');

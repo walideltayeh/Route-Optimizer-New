@@ -18,6 +18,7 @@ import './screens/builder.js';
 import './screens/player.js';
 import './screens/summary.js';
 import './screens/onboarding.js';
+import { entered } from './screens/landing.js';
 
 const SCREENS = [today, plan, library, progress, me];
 for (const s of SCREENS) for (const r of s.routes || [s]) router.define(r.route, r);
@@ -109,14 +110,15 @@ let artifactDb = null; // {db, uid} on claude.ai, used once to bring over data f
  * If this account has nothing in Walking Companion yet, convert that history and finish setup in edit mode.
  */
 async function migrateEarlierVersion() {
-  if (!artifactDb || state.main.onboarded || state.sessions.length || state.main.weights.length) return;
+  if (!artifactDb || state.main.onboarded || state.sessions.length || state.main.weights.length) return false;
   const data = await readArtifactV1(artifactDb.db, artifactDb.uid);
-  if (!data || (!data.sessions.length && !data.main.weights.length)) return;
+  if (!data || (!data.sessions.length && !data.main.weights.length)) return false;
   await store.replaceAll(data.main, data.sessions);
   actions.closeOnboarding && actions.closeOnboarding();
   actions.openOnboarding({ edit: true });
   const n = data.sessions.length, w = data.main.weights.length;
   toast(`Welcome to Walking Companion. We brought over ${n} workout${n === 1 ? '' : 's'}${w ? ` and ${w} weigh-in${w === 1 ? '' : 's'}` : ''}. Finish a few questions to build your plan.`, { ms: 6000 });
+  return true;
 }
 
 async function chooseAdapter() {
@@ -165,16 +167,27 @@ async function boot() {
   store.loadLocal();
   applyAppearance();
   router.route();
-  if (!state.main.onboarded) actions.openOnboarding({ edit: false });
   hideSplash();
 
-  const adapter = await chooseAdapter();
-  if (adapter) {
-    const wasOnboarded = state.main.onboarded;
-    await store.useAdapter(adapter);
-    // An account that already has data skips onboarding on a new device.
-    if (!wasOnboarded && state.main.onboarded) { actions.closeOnboarding && actions.closeOnboarding(); renderRoute(router.currentRoute(), { force: true }); }
-    try { await migrateEarlierVersion(); } catch (e) { console.warn('migration skipped', e); }
+  // The account's data loads behind the landing page, so it is usually ready by the time they tap Continue.
+  const ready = (async () => {
+    const adapter = await chooseAdapter();
+    if (adapter) await store.useAdapter(adapter);
+  })().catch((e) => console.warn('storage', e));
+
+  // Landing / sign-in page once per browser tab (and again after Sign out). It replaces onboarding's welcome step.
+  const showLanding = !entered();
+  if (showLanding) await actions.openLanding();
+  // Don't hold a returning person on a spinner: give the account a few seconds, then carry on (it applies when it lands).
+  await Promise.race([ready, new Promise((r) => setTimeout(r, 4000))]);
+  renderRoute(router.currentRoute(), { force: true });
+
+  let migrated = false;
+  try { migrated = await migrateEarlierVersion(); } catch (e) { console.warn('migration skipped', e); }
+  if (!migrated && !state.main.onboarded) {
+    actions.openOnboarding({ edit: false, step: showLanding ? 'goal' : undefined });
+    // A returning account whose data arrived late: close setup again and show their plan.
+    ready.then(() => { if (state.main.onboarded) { actions.closeOnboarding && actions.closeOnboarding(); renderRoute(router.currentRoute(), { force: true }); } });
   }
   if (state.main.onboarded) offerResume();
   retryHealthSaves();

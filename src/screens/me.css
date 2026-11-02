@@ -21,6 +21,12 @@
 .me-stats { padding-top: 14px; border-top: 1px solid var(--hero-line); }
 .me-stats-empty { padding-top: 12px; border-top: 1px solid var(--hero-line); font-size: 14px; color: var(--hero-ink-2); }
 
+/* ---- account row ---- */
+.row .row-icon.me-acct-av { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: var(--hero-bg, var(--surface-2)); color: var(--hero-ink, var(--ink)); }
+.me-acct-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.me-acct-ini { font-family: var(--font-display); font-stretch: 105%; font-weight: 800; font-size: 14px; letter-spacing: .02em; }
+.me-acct-av.is-loading { background: var(--surface-2); }
+
 /* ---- grouped sections ---- */
 .me-sec { display: flex; flex-direction: column; min-width: 0; }
 .me-sec > .group-title { margin: 0; padding: 0 16px 8px; }
