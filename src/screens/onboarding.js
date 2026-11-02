@@ -18,6 +18,7 @@ import { actions } from '../ui/actions.js';
 import { icon, topo, toast, sheet, confirmSheet, switchHtml, RM } from '../ui/kit.js';
 import { intervalChart, planMeter, lineChart } from '../ui/charts.js';
 import { detachPlanSessions } from './plan.js';
+import { walkerMark } from '../ui/brand.js';
 
 const LB = sci.LB_PER_KG;
 const MPH = sci.KMH_PER_MPH;
@@ -441,7 +442,6 @@ function switchRow(id, on, title, sub) {
 }
 const banner = (kind, ico, title, body) => `<div class="banner ${kind}"><span class="banner-icon">${icon(ico)}</span><div class="banner-body">${title ? `<b>${title}</b>` : ''}${body}</div></div>`;
 const trendDown = () => '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4v16h16"/><path d="m7.5 8 3.5 4 3-2.5 5 6"/><path d="M19 12.5v3h-3"/></svg>';
-const hillMark = () => `<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M4 31 14.5 15l6 8.5 4.5-6L36 31Z" fill="currentColor" opacity=".9"/><path d="M4 34.5h32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="29" cy="9.5" r="3.2" fill="currentColor" opacity=".55"/></svg>`;
 
 /* ---------------- steps ---------------- */
 
@@ -453,7 +453,7 @@ const STEPS = {
       return `
       <div class="hero-card onb-hero">
         ${topo({ w: 400, h: 460, seed: 7, lines: 18, cx: 0.8, cy: 0.16 })}
-        <span class="onb-mark">${hillMark()}</span>
+        <span class="onb-mark">${walkerMark({ id: 'wcm-onb-g' })}</span>
         <div class="onb-hero-text">
           <p class="eyebrow">Walking coach</p>
           <h1 class="onb-brand" tabindex="-1">Walking Companion</h1>

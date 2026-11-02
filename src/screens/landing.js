@@ -7,13 +7,13 @@ import { getIdentity, storageLine } from '../core/identity.js';
 import { actions } from '../ui/actions.js';
 import { esc, RM } from '../ui/kit.js';
 import { createWalker } from '../ui/walker.js';
+import { walkerMark } from '../ui/brand.js';
 
 const KEY = 'wc.entered';
 export const entered = () => { try { return sessionStorage.getItem(KEY) === '1'; } catch { return false; } };
 const markEntered = (on) => { try { if (on) sessionStorage.setItem(KEY, '1'); else sessionStorage.removeItem(KEY); } catch { /* ignore */ } };
 
-// Brand mark: a path rising over a hill with a pace point travelling along it (temporary until the final logo).
-const MARK = `<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="ldg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3E2B6"/><stop offset="1" stop-color="#B98B3E"/></linearGradient></defs><path d="M6 36c7 0 10-14 18-14s9 8 18 8" fill="none" stroke="url(#ldg)" stroke-width="2.6" stroke-linecap="round"/><path d="M6 41h36" stroke="url(#ldg)" stroke-width="1.4" stroke-linecap="round" opacity=".55"/><circle cx="24" cy="22" r="3.6" fill="#F3E2B6"/></svg>`;
+const MARK = walkerMark({ id: 'wcm-ld-g' });
 
 let open = null;
 
