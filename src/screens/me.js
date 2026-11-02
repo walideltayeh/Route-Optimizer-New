@@ -364,7 +364,7 @@ const PAGES = {
   paces: { title: 'Paces & units', lede: 'The speeds Hillpace uses for each kind of interval.', html: pacesPage },
   cues: { title: 'Voice & cues', lede: 'What you hear during a workout.', html: cuesPage },
   reminders: { title: 'Reminders', lede: 'A nudge on the days your plan has a workout.', html: remindersPage },
-  health: { title: 'Apple Health', lede: 'Keep your workouts and weigh-ins in one place.', html: healthPage },
+  health: { title: features.health ? 'Apple Health' : 'Health sync', lede: features.health ? 'Keep your workouts and weigh-ins in one place.' : '', html: healthPage },
   appearance: { title: 'Appearance', lede: '', html: appearancePage },
   data: { title: 'Back up & restore', lede: '', html: dataPage },
   calc: { title: 'How we calculate', lede: 'The equations behind every estimate in Hillpace.', html: calcPage },
@@ -600,7 +600,7 @@ function testVoice() {
 /* ----- Reminders ----- */
 
 function remindersPage() {
-  if (!features.reminders) return unavailable('Reminders are available in the Hillpace iPhone app.');
+  if (!features.reminders) return unavailable('Training reminders aren’t part of the web version. Your plan on the Today tab always shows what’s next.');
   const p = P(), rem = p.reminders;
   const days = (state.main.plan.days || []).slice().sort((a, b) => a - b).map((d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d - 1]).join(', ');
   const remSub = rem.enabled ? `On ${days || 'your plan days'}` : notifPerm === 'denied' ? 'Allow notifications in the Settings app first' : notifPerm === 'granted' ? 'A notification on your plan days' : 'Hillpace asks for permission the first time';
@@ -652,7 +652,7 @@ async function setReminders(v, on) {
 /* ----- Apple Health ----- */
 
 function healthPage() {
-  if (!features.health) return unavailable('Apple Health works in the Hillpace iPhone app.');
+  if (!features.health) return unavailable('Health app sync isn’t part of the web version. Your workouts and weigh-ins are kept in Hillpace.');
   const h = P().health;
   const what = `<article class="card me-doc prose">
     <h3>What Hillpace saves</h3>
@@ -1196,7 +1196,9 @@ function termsPage() {
   return `<article class="card me-doc prose">
     <p class="me-doc-date">Last updated ${POLICY_DATE}</p>
     <h3>Licence</h3>
-    <p>This app uses Apple’s standard licence agreement. Your use of Hillpace is governed by Apple’s Licensed Application End User License Agreement, available at <span class="me-select-text">apple.com/legal/internet-services/itunes/dev/stdeula</span>.</p>
+    ${isNative
+    ? `<p>This app uses Apple’s standard licence agreement. Your use of Hillpace is governed by Apple’s Licensed Application End User License Agreement, available at <span class="me-select-text">apple.com/legal/internet-services/itunes/dev/stdeula</span>.</p>`
+    : `<p>Hillpace is free to use for your personal training. These terms apply to your use of the Hillpace web app.</p>`}
     <h3>Not medical advice</h3>
     <p>Hillpace provides general fitness information and workout guidance. It is not a medical device. It doesn’t diagnose, treat or prevent any condition, and it isn’t a substitute for advice from a doctor or other qualified professional. Check with your doctor before starting a new exercise programme or changing how you eat, especially if you have a health condition, are pregnant or take regular medicine.</p>
     <h3>Exercise safely</h3>
@@ -1216,7 +1218,9 @@ function termsPage() {
 function supportPage() {
   const platform = isNative ? 'iPhone' : isArtifact ? 'web' : 'browser';
   let faq = [
-    ['Why do voice cues stop when my phone locks?', `<p>iPhone pauses apps when the screen locks, so spoken cues play only while Hillpace is on screen. Hillpace keeps the screen awake during a workout. If the phone does lock, interval changes arrive as notifications with a sound (or a vibration on silent), as long as you’ve allowed notifications in Me, then Reminders.</p>`],
+    isNative
+      ? ['Why do voice cues stop when my phone locks?', `<p>iPhone pauses apps when the screen locks, so spoken cues play only while Hillpace is on screen. Hillpace keeps the screen awake during a workout. If the phone does lock, interval changes arrive as notifications with a sound (or a vibration on silent), as long as you’ve allowed notifications in Me, then Reminders.</p>`]
+      : ['Why do voice cues stop when my screen locks?', `<p>Browsers pause pages that aren’t on screen, so spoken cues play only while Hillpace is open and visible. During a workout Hillpace asks your browser to keep the screen awake, where your browser allows it. Keep the page open on your treadmill console and turn the volume up.</p>`],
     ['Why don’t my calories match my treadmill or watch?', `<p>Every device uses its own formula. Hillpace shows estimated active energy from the ACSM equations, which leaves out the energy you’d use at rest anyway, while many treadmills show total energy. All of these are estimates and can differ substantially from your actual burn. <a class="me-inline" href="#me-calc">How we calculate</a></p>`],
     ['How do I back up my data?', `<p>Go to Me, then Back up & restore, and tap Export backup. Save the file somewhere safe, such as iCloud Drive or Files. To restore, tap Import backup and choose the file. A monthly backup is a good habit. <a class="me-inline" href="#me-data">Back up now</a></p>`],
     ['How do I change my plan or training days?', `<p>Tap Edit plan answers on the Me tab to change your goal, schedule, treadmill or readiness answers. Your plan updates from the current week.</p>`],
