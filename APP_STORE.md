@@ -1,4 +1,4 @@
-# Hillpace: App Store Connect metadata
+# Walking Companion: App Store Connect metadata
 
 Ready to paste. Last updated 1 November 2026. Character counts were checked with a script (counts are Unicode characters; keywords are counted in bytes, as Apple counts them).
 
@@ -10,14 +10,15 @@ Rules this copy follows: calories are always called estimates; no weight-loss or
 
 Do these the same day, then create the App Store Connect record immediately to reserve the name.
 
-1. **Hillpace** (chosen). Search:
-   - USPTO trademark search (<https://tmsearch.uspto.gov>): "Hillpace", and close variants "Hill Pace", "Hilpace", in classes **9** (software), **41** (fitness instruction), **44** (health) and **42** (software as a service).
+1. **Walking Companion** (chosen). Search:
+   - USPTO trademark search (<https://tmsearch.uspto.gov>): "Walking Companion" and close variants ("Walk Companion", "Walking Buddy"), in classes **9** (software), **41** (fitness instruction), **44** (health) and **42** (software as a service).
    - EUIPO eSearch plus and the UK IPO search (same classes), and WIPO Global Brand Database.
-   - App Store search on an iPhone and on the web ("Hillpace", "Hill Pace").
-   - Domain (`hillpace.app`, `hillpace.com`) and social handles, if you want them.
-   - "Incline" appears in the title only as a description of the activity. A live US registration "INCLINE RUNNING" (Reg. 5278311, class 41) exists, so do not style "Incline" as part of the brand (no "Hillpace Incline").
-2. **Backups**, if Hillpace is taken: **Slopewise** (title: `Slopewise: Treadmill Coach`, 26 characters) and **Treadpeak** (title: `Treadpeak: Incline Walking`, 26 characters). Run the same searches. If you switch, change `appName` in `capacitor.config.json`, `CFBundleDisplayName`, the legal pages and this file.
-3. Create the record: App Store Connect → Apps → + → New App → iOS, name, primary language, bundle ID (from Xcode), SKU `hillpace-ios-1`, Full Access.
+   - App Store search on an iPhone and on the web ("Walking Companion", "Walk Companion"). App Store names must be unique, and "Walking Companion" is a descriptive phrase, so check this first: if an app already uses it, keep "Walking Companion" as the brand and make the store name distinctive, e.g. `Walking Companion: Walk Coach` or `Walking Companion – Treadmill`.
+   - Domain (`walkingcompanion.app`, `walkingcompanion.com`) and social handles, if you want them.
+   - A descriptive name like "Walking Companion" is harder to register as a trademark than an invented word. That doesn't stop you publishing, but a trademark lawyer can tell you how much protection you'd get.
+   - Never shorten the name to "WC" (it reads as "toilet" in many countries).
+2. **Backups**, if Walking Companion is taken: **Stride Companion** or **Pace Companion** (run the same searches). If you switch, change `appName` in `capacitor.config.json`, `CFBundleDisplayName`, the legal pages and this file.
+3. Create the record: App Store Connect → Apps → + → New App → iOS, name, primary language, bundle ID (from Xcode), SKU `walkingcompanion-ios-1`, Full Access.
 
 ---
 
@@ -25,12 +26,12 @@ Do these the same day, then create the App Store Connect record immediately to r
 
 | Field | Value |
 |---|---|
-| **Name** (≤30) | `Hillpace: Incline Treadmill` (27) |
+| **Name** (≤30) | `Walking Companion: Walk Coach` (29) |
 | **Subtitle** (≤30) | `Walk Intervals for Weight Loss` (30) |
 | Alternative subtitle | `Incline Walking Plan & Coach` (28), if you prefer to avoid "weight loss" entirely |
 | Primary language | English (U.S.). The copy below uses US spelling ("labeled"); add an English (U.K.) localization later if you want "labelled". |
 | Bundle ID | your reverse-DNS ID (see `IOS_BUILD.md` 4.1) |
-| SKU | `hillpace-ios-1` |
+| SKU | `walkingcompanion-ios-1` |
 | **Primary category** | Health & Fitness |
 | Secondary category | Sports (optional) |
 | Content rights | "No, it does not contain, show, or access third-party content" |
@@ -39,8 +40,8 @@ Do these the same day, then create the App Store Connect record immediately to r
 | Availability | All countries you are comfortable supporting. For the **EU**, complete the Digital Services Act trader status first (a trader's address and phone are shown publicly), or leave EU storefronts out of v1. |
 | iPhone and iPad apps on Apple Silicon Mac | **Untick** (Pricing and Availability). Apple Health and the treadmill use case are iPhone-only. |
 | Apple Vision Pro | Untick ("Designed for iPhone" availability). |
-| Support URL | `https://<your-github-user>.github.io/hillpace-site/support.html` |
-| Privacy Policy URL | `https://<your-github-user>.github.io/hillpace-site/privacy.html` |
+| Support URL | `https://<your-github-user>.github.io/walking-companion-site/support.html` |
+| Privacy Policy URL | `https://<your-github-user>.github.io/walking-companion-site/privacy.html` |
 | Marketing URL | optional; leave empty or use the support page |
 
 ---
@@ -59,13 +60,13 @@ Your personal 12-week incline walking plan, coached interval by interval with vo
 2,971 characters.
 
 ```
-Hillpace turns your treadmill into a personal hill-walking coach. Answer a few questions about your goal, your week and your treadmill, and Hillpace builds a 12-week incline walking and jogging plan that fits. Then it coaches every session, interval by interval.
+Walking Companion turns your treadmill into a personal hill-walking coach. Answer a few questions about your goal, your week and your treadmill, and Walking Companion builds a 12-week incline walking and jogging plan that fits. Then it coaches every session, interval by interval.
 
 A PLAN THAT FITS YOU
 • 12 weeks in three phases (Foundation, Build and Burn), with lighter recovery weeks built in
 • Every workout stays within your treadmill's maximum speed and incline. No incline? Climbs become faster walking intervals instead
 • Short on time? Switch any session to its 30-minute busy-day version and it still counts
-• Rate how hard each session felt. After two very hard sessions Hillpace eases off or holds steady; after two easy ones it offers a step up, and you decide
+• Rate how hard each session felt. After two very hard sessions Walking Companion eases off or holds steady; after two easy ones it offers a step up, and you decide
 
 COACHED INTERVAL BY INTERVAL
 • Big, clear speed and incline targets you can read from the treadmill, with the change from the last interval
@@ -86,7 +87,7 @@ PROGRESS YOU CAN TRUST
 • Rather not see calories or weight? Train with minutes, distance and climb only
 
 WORKS WITH APPLE HEALTH
-Connect Apple Health to save your treadmill sessions as indoor walking or running workouts, save the weights you log, and read your weight from other apps and smart scales. Apple Health is optional, and Hillpace works fully without it.
+Connect Apple Health to save your treadmill sessions as indoor walking or running workouts, save the weights you log, and read your weight from other apps and smart scales. Apple Health is optional, and Walking Companion works fully without it.
 
 PRIVATE BY DESIGN
 • No account and no sign-in
@@ -95,9 +96,9 @@ PRIVATE BY DESIGN
 • Export a backup or erase everything at any time
 
 SAFETY FIRST
-Hillpace starts with a short health check and keeps the early weeks moderate. Stop signs are shown before every workout and are always available in Me > Health & safety. Hillpace is a fitness app, not a medical device: talk to your doctor before starting a new exercise plan.
+Walking Companion starts with a short health check and keeps the early weeks moderate. Stop signs are shown before every workout and are always available in Me > Health & safety. Walking Companion is a fitness app, not a medical device: talk to your doctor before starting a new exercise plan.
 
-Hillpace is free, with no subscriptions and no in-app purchases.
+Walking Companion is free, with no subscriptions and no in-app purchases.
 ```
 
 ---
@@ -107,7 +108,7 @@ Hillpace is free, with no subscriptions and no in-app purchases.
 ```
 hiit,hill,climb,jog,cardio,calorie,plan,coach,japanese,4x4,workout,run,uphill,slope,beginner,fitness
 ```
-100 bytes, 16 terms, no spaces. Words already in the name or subtitle (hillpace, incline, treadmill, walk, intervals, weight, loss) are left out because Apple indexes those automatically.
+100 bytes, 16 terms, no spaces. Words already in the name or subtitle (walking, companion, incline, treadmill, walk, intervals, weight, loss) are left out because Apple indexes those automatically.
 
 - "japanese" is there because the app's 3-Minute Intervals workout is the fast/slow interval-walking method people search for by that name. Drop it if that workout is removed.
 - Do not add "12-3-30", brand names or competitor names. Add "norwegian" only after a trademark check (swap it for "beginner").
@@ -169,7 +170,7 @@ Optional: **Accessibility Nutrition Labels** (App Store Connect → App Accessib
 - **Notes** (paste):
 
 ```
-Hillpace is a coaching app for incline treadmill walking and jogging. No account is needed and all data stays on the device; the app makes no network requests.
+Walking Companion is a coaching app for incline treadmill walking and jogging. No account is needed and all data stays on the device; the app makes no network requests.
 
 Suggested walkthrough (about 6 minutes):
 1. Onboarding (about 3 minutes): tap "Build my plan" and answer the questions about goal, body, treadmill limits, schedule and a short health check. Notification and Apple Health permissions are offered on their own step; both are optional and "Not now" works.
@@ -184,7 +185,7 @@ Other features: Workouts tab (plan workouts, classics, custom workout builder, o
 
 Optional system features: Apple Health (Me > Apple Health) writes indoor walking or running workouts with estimated active energy and distance, writes logged weights, and reads body weight. Notifications are local only: training reminders and, if the phone locks during a workout, interval-change notifications (a banner with the default sound, or vibration when the phone is on silent). The app works fully with both declined.
 
-Calorie figures are estimates from the ACSM metabolic equations (net active energy); the method is in Me > How we calculate. Hillpace is not a medical device; it includes a readiness check, a doctor reminder and stop signs.
+Calorie figures are estimates from the ACSM metabolic equations (net active energy); the method is in Me > How we calculate. Walking Companion is not a medical device; it includes a readiness check, a doctor reminder and stop signs.
 ```
 
 - **Attachment:** none needed. Optionally a 30-second screen recording of steps 3 to 6.
@@ -203,7 +204,7 @@ No iPad set (iPhone-only build).
 
 ```bash
 xcrun simctl status_bar booted override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
-xcrun simctl io booted screenshot ~/Desktop/hillpace-01.png
+xcrun simctl io booted screenshot ~/Desktop/walking-companion-01.png
 ```
 
 Screens must show the real app. Captions may sit above the screenshot on a plain background in the app's colours (deep slate `#0F1E21` with off-white text, or mist `#EEF1EF` with ink `#0D1A1C`). Use 3 to 7 words, no claims, no Apple Health icon.
@@ -228,7 +229,7 @@ Do not show calorie numbers without the "≈" and "estimate" wording, and do not
 ## 10. Final pre-submission checklist
 
 - [ ] Trademark searches done; record created (section 0)
-- [ ] Privacy and support URLs live and show your real name and a working email (no placeholders left anywhere: search the repo for `[Your name]`, `com.example` and `hillpace.app`, and set the in-app support address in `package.json` → `config.supportEmail`; production builds warn while it is still `support@hillpace.app`)
+- [ ] Privacy and support URLs live and show your real name and a working email (no placeholders left anywhere: search the repo for `[Your name]`, `com.example` and `hillpace.app`, and set the in-app support address in `package.json` → `config.supportEmail`; production builds warn while it is still `support@walkingcompanion.app`)
 - [ ] Build uploaded from Xcode 26+, processed with no ITMS errors; TestFlight week done (`IOS_BUILD.md` sections 6 and 7)
 - [ ] App Privacy published as Data Not Collected; age rating completed; medical device = No
 - [ ] Screenshots uploaded for both sizes; captions free of outcome claims

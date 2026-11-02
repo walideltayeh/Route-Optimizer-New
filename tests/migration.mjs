@@ -1,8 +1,8 @@
-// Migration test: the earlier single-file page's account data (data/users/<uid>/profile + sessions) is brought into Hillpace.
+// Migration test: the earlier single-file page's account data (data/users/<uid>/profile + sessions) is brought into Walking Companion.
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
-const page = new URL('../dist/hillpace.html', import.meta.url).pathname;
+const page = new URL('../dist/walking-companion.html', import.meta.url).pathname;
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 393, height: 852 } });
 const errors = [];

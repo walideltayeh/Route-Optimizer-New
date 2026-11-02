@@ -1,5 +1,5 @@
 // Build: bundles src/ into
-//   dist/hillpace.html  – single self-contained page (claude.ai artifact / any browser; Google Fonts link)
+//   dist/walking-companion.html  – single self-contained page (claude.ai artifact / any browser; Google Fonts link)
 //   www/index.html      – full document for the Capacitor iOS app (fonts bundled, fully offline)
 // Usage: node scripts/build.mjs [--dev]
 import { build } from 'esbuild';
@@ -14,7 +14,7 @@ const outArg = process.argv.indexOf('--out');
 const outDir = outArg > 0 ? process.argv[outArg + 1] : null; // optional private output dir for parallel work
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 // In-app support address (Me → Support): package.json "config.supportEmail".
-const PLACEHOLDER_EMAIL = 'support@hillpace.app';
+const PLACEHOLDER_EMAIL = 'support@walkingcompanion.app';
 const supportEmail = String((pkg.config && pkg.config.supportEmail) || PLACEHOLDER_EMAIL).trim();
 // Used in place of the email while the email is still the placeholder (package.json "config.supportUrl").
 const supportUrl = String((pkg.config && pkg.config.supportUrl) || '').trim();
@@ -39,11 +39,11 @@ let css = cssFiles.map((f) => `/* ${f.split('/src/')[1]} */\n` + readFileSync(f,
 if (!dev) css = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n/g, '\n');
 
 const body = `<div id="app"><main id="screen" class="screen-host"></main><nav id="tabbar" class="tabbar" aria-label="Main"></nav></div>`;
-const desc = 'Hillpace: incline treadmill interval plans with voice cues, a 12-week plan and progress tracking.';
+const desc = 'Walking Companion: incline treadmill interval plans with voice cues, a 12-week plan and progress tracking.';
 
 // 1) single-file page (the artifact wrapper supplies doctype/head/body)
 const artifactCss = `:root{--flow-top:0px;--sticky-top:env(safe-area-inset-top,0px)}`;
-const page = `<title>Hillpace</title>
+const page = `<title>Walking Companion</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="${desc}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,8 +54,8 @@ ${body}
 `;
 const distDir = outDir || join(root, 'dist');
 mkdirSync(distDir, { recursive: true });
-writeFileSync(join(distDir, 'hillpace.html'), page);
-if (outDir) { console.log('built ' + join(distDir, 'hillpace.html')); process.exit(0); }
+writeFileSync(join(distDir, 'walking-companion.html'), page);
+if (outDir) { console.log('built ' + join(distDir, 'walking-companion.html')); process.exit(0); }
 
 // 2) Capacitor document. Pinch-zoom stays enabled (no user-scalable=no) and text follows Dynamic Type (base.css).
 const fontsCss = readFileSync(join(root, 'assets/fonts/local-fonts.css'), 'utf8');
@@ -78,7 +78,7 @@ const native = `<!doctype html>
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#EEF1EF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A1012" media="(prefers-color-scheme: dark)">
-<title>Hillpace</title>
+<title>Walking Companion</title>
 <style>${fontsCss}\n${css}</style>
 </head>
 <body>
@@ -94,4 +94,4 @@ const legal = join(root, 'legal');
 if (existsSync(legal)) for (const f of readdirSync(legal)) if (f.endsWith('.html')) copyFileSync(join(legal, f), join(root, 'www', f));
 
 const kb = (s) => (Buffer.byteLength(s) / 1024).toFixed(0) + ' KB';
-console.log(`built dist/hillpace.html (${kb(page)}), www/index.html (${kb(native)}), js ${kb(js)}, css ${kb(css)}`);
+console.log(`built dist/walking-companion.html (${kb(page)}), www/index.html (${kb(native)}), js ${kb(js)}, css ${kb(css)}`);

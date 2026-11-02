@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Wires Hillpace's native files and settings into the Capacitor-generated Xcode project.
+// Wires Walking Companion's native files and settings into the Capacitor-generated Xcode project.
 // Safe to run any number of times. Run it after `npx cap add ios` (or whenever ios/ is regenerated):
 //
 //   node native/wire-ios.mjs
@@ -138,6 +138,6 @@ if (existsSync(splash)) {
   done.push('launch images: assets/splash.png (light) and assets/splash-dark.png (dark)');
 }
 
-console.log('Hillpace iOS wiring\n' + done.map((d) => '  ✓ ' + d).join('\n'));
+console.log('Walking Companion iOS wiring\n' + done.map((d) => '  ✓ ' + d).join('\n'));
 if (warn.length) console.log('\nNeeds attention:\n' + warn.map((w) => '  ! ' + w).join('\n'));
 console.log('\nNext, in Xcode (see IOS_BUILD.md): set your Team and bundle ID, confirm the HealthKit and Time Sensitive Notifications capabilities, then build to a device.');

@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>en</string>
 		<key>CFBundleDisplayName</key>
-		<string>Hillpace</string>
+		<string>Walking Companion</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -56,9 +56,9 @@
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<true/>
 		<key>NSHealthShareUsageDescription</key>
-		<string>Hillpace reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone.</string>
+		<string>Walking Companion reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone.</string>
 		<key>NSHealthUpdateUsageDescription</key>
-		<string>Hillpace saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health.</string>
+		<string>Walking Companion saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health.</string>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
 	</dict>

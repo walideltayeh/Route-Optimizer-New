@@ -84,7 +84,7 @@ const howLink = (txt = 'How we calculate') => (has('openHowWeCalculate') ? `<but
 
 /* ---------------- Apple Health weigh-ins (memory only) ---------------- */
 // Spec 6.7 (a conservative reading of guideline 5.1.3): weigh-ins read from Apple Health are re-read from HealthKit
-// when the app starts and on "Sync from Apple Health". They are never copied into Hillpace's data file, iCloud device
+// when the app starts and on "Sync from Apple Health". They are never copied into Walking Companion's data file, iCloud device
 // backups or exported backups; they live in this map for the current app run and show only while Health is connected.
 
 const byDay = (a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
@@ -692,7 +692,7 @@ function weightBody() {
   const m = weightModel();
   const logBtn = `<button type="button" class="btn btn-primary btn-block" data-act="log-weight">${icon('plus')}Log weight</button>`;
   const healthRow = features.health && state.main.profile.health.enabled
-    ? `<div class="group"><button type="button" class="row has-icon" data-act="health-sync"><span class="row-icon">${icon('heart')}</span><span class="row-main"><span class="row-title">Sync from Apple Health</span><span class="row-sub">Shows weigh-ins from other apps and scales, one per day. Read from Health each time, not copied into Hillpace.</span></span>${icon('refresh', 'chev')}</button></div>`
+    ? `<div class="group"><button type="button" class="row has-icon" data-act="health-sync"><span class="row-icon">${icon('heart')}</span><span class="row-main"><span class="row-title">Sync from Apple Health</span><span class="row-sub">Shows weigh-ins from other apps and scales, one per day. Read from Health each time, not copied into Walking Companion.</span></span>${icon('refresh', 'chev')}</button></div>`
     : '';
   const hideRow = `<div class="group"><label class="row pg-switchrow" for="pg-hidew"><span class="row-main"><span class="row-title">Hide weight figures</span><span class="row-sub">On Today and Progress. Weigh-ins are still saved.</span></span>${switchHtml('pg-hidew', !!state.main.profile.hideWeight, 'Hide weight figures')}</label></div>`;
   if (!m.current) {
@@ -1061,7 +1061,7 @@ function openWeightSheet(editDay = null) {
     if (b.dataset.act === 'w-del' && editing) {
       const ok = await confirmSheet({
         title: 'Delete this weigh-in?',
-        body: `${esc(dateLong(parseYmd(editing.d)))}: <b>${esc(wTxt(editing.kg))}</b>. ${editing.source === 'health' ? 'This hides it until Hillpace next reads Apple Health. To remove it for good, delete it in the Health app.' : 'This can’t be undone.'}`,
+        body: `${esc(dateLong(parseYmd(editing.d)))}: <b>${esc(wTxt(editing.kg))}</b>. ${editing.source === 'health' ? 'This hides it until Walking Companion next reads Apple Health. To remove it for good, delete it in the Health app.' : 'This can’t be undone.'}`,
         confirm: 'Delete', danger: true,
       });
       if (!ok) return;
@@ -1085,7 +1085,7 @@ function healthStatusHtml(s) {
   if (!features.health) return '';
   const h = state.main.profile.health;
   let title, sub, btn = '', ico = 'heart';
-  if (s.source === 'manual') { title = 'Kept in Hillpace only'; sub = 'Logged sessions aren’t saved to Apple Health, so nothing is counted twice.'; }
+  if (s.source === 'manual') { title = 'Kept in Walking Companion only'; sub = 'Logged sessions aren’t saved to Apple Health, so nothing is counted twice.'; }
   else if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : surfaceOf(s) === 'outdoor' ? 'Saved as a walking workout.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
   else if (!h.enabled) { title = 'Apple Health is off'; sub = 'Turn it on in Me to save workouts.'; }
   else if ((s.durationSec || 0) < 60) { title = 'Not saved to Apple Health'; sub = 'Workouts under a minute aren’t saved.'; }
@@ -1188,7 +1188,7 @@ actions.openSession = (id) => {
       b.disabled = true; b.textContent = 'Saving…';
       const uuid = await healthSaveWorkout(getS(id));
       if (uuid) { store.updateSession(id, { healthUUID: uuid }); haptic('success'); toast('Saved to Apple Health'); }
-      else toast('Couldn’t save to Apple Health. Check Hillpace’s access in the Health app.');
+      else toast('Couldn’t save to Apple Health. Check Walking Companion’s access in the Health app.');
       const s = getS(id);
       const wrap = el.querySelector('.pg-ss-health-wrap');
       if (s && wrap) wrap.innerHTML = healthStatusHtml(s);

@@ -1,6 +1,6 @@
-# Hillpace — architecture and build contract
+# Walking Companion — architecture and build contract
 
-Hillpace is an original iPhone app (Capacitor 8 wrapper around vanilla ES modules) that coaches incline-treadmill interval
+Walking Companion is an original iPhone app (Capacitor 8 wrapper around vanilla ES modules) that coaches incline-treadmill interval
 workouts for weight loss: a personal 12-week plan, a big-number workout player with voice cues, history, weight trend and badges.
 The same source also builds a single-file web page. Product research and decisions: `docs/research/spec.md` (+ `docs/research/critique.md`, which overrides the spec where they conflict).
 
@@ -8,10 +8,10 @@ The same source also builds a single-file web page. Product research and decisio
 APIs. If you need a small helper that belongs in core/ui, add it to your own screen file instead (or add a new export without changing existing ones).
 
 ## Build & run
-- `node scripts/build.mjs --dev` → `dist/hillpace.html` (open with Playwright via `file://`) and `www/index.html`.
-- **While several people work in parallel, build privately:** `node scripts/build.mjs --dev --out /tmp/hp-<yourname>` → `/tmp/hp-<yourname>/hillpace.html`.
+- `node scripts/build.mjs --dev` → `dist/walking-companion.html` (open with Playwright via `file://`) and `www/index.html`.
+- **While several people work in parallel, build privately:** `node scripts/build.mjs --dev --out /tmp/hp-<yourname>` → `/tmp/hp-<yourname>/walking-companion.html`.
   If the build fails because of a file you don't own, wait ~60 s and retry (another agent is mid-edit). Never edit files you don't own.
-- Screenshots: `node scripts/shoot.mjs <hash> <outPrefix> --page /tmp/hp-<yourname>/hillpace.html [--fresh] [--js "<code run after load>"] [--full]`
+- Screenshots: `node scripts/shoot.mjs <hash> <outPrefix> --page /tmp/hp-<yourname>/walking-companion.html [--fresh] [--js "<code run after load>"] [--full]`
   seeds `tests/fixture.json` (Sam, week 3 of the plan, 11 sessions, 10 weigh-ins; `--fresh` = brand-new user) and writes `<outPrefix>-light.png` / `-dark.png`
   and prints page errors. Look at the PNGs with the Read tool. Example to open an overlay: `--js "document.querySelector('[data-act=start]').click()"`.
 - Tests: `node tests/logic.mjs` (core plan and safety rules in plain Node: doctor-flag moderate cap, restarts, skip-to-end,

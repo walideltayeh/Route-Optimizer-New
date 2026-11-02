@@ -1,4 +1,4 @@
-# Publishes the web version of Hillpace plus the privacy policy and support pages to GitHub Pages.
+# Publishes the web version of Walking Companion plus the privacy policy and support pages to GitHub Pages.
 # App Store Connect needs public URLs for the privacy policy and support pages:
 #   https://<user>.github.io/<repo>/privacy.html  and  https://<user>.github.io/<repo>/support.html
 # One-time setup: repository Settings → Pages → Build and deployment → Source: "GitHub Actions".

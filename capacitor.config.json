@@ -1,6 +1,6 @@
 {
-  "appId": "com.example.hillpace",
-  "appName": "Hillpace",
+  "appId": "com.example.walkingcompanion",
+  "appName": "Walking Companion",
   "webDir": "www",
   "ios": {
     "contentInset": "never",

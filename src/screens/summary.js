@@ -131,7 +131,7 @@ function localReason(text) {
 
 /** Plain-text line for copying or sharing (hidden stats are left off; calories are never shared). */
 function shareText(s) {
-  const parts = ['Hillpace', s.name || 'Workout', clock(s.durationSec), `${distEstimated(s) ? '≈ ' : ''}${fmt2(toDist(s.distanceKm))} ${distUnit()}`];
+  const parts = ['Walking Companion', s.name || 'Workout', clock(s.durationSec), `${distEstimated(s) ? '≈ ' : ''}${fmt2(toDist(s.distanceKm))} ${distUnit()}`];
   if ((s.elevM || 0) > 0) parts.push(`${Math.round(toElev(s.elevM)).toLocaleString()} ${elevUnit()} climbed`);
   if (s.rpe) parts.push(`effort ${s.rpe}/10`);
   return parts.join(' · ');
@@ -154,7 +154,7 @@ const timeOfDay = (d) => new Date(d).toLocaleTimeString(undefined, { hour: 'nume
 const surfaceOf = (s) => (s && SURFACES[s.surface] ? s.surface : null);
 const isOutdoor = (s) => surfaceOf(s) === 'outdoor';
 const isFree = (s) => !!s && s.workoutId === FREE_WALK_ID;
-/** Outdoors Hillpace estimates distance from the walker's paces, until they match it to a watch or phone. */
+/** Outdoors Walking Companion estimates distance from the walker's paces, until they match it to a watch or phone. */
 const distEstimated = (s) => isOutdoor(s) && !s.consoleEdited;
 /** Minutes of hard effort (power walking or harder), or of brisk-or-harder walking if there was none: [label, min].
  *  null without interval splits. Outdoors this replaces an average speed that would only echo the usual paces. */
@@ -355,7 +355,7 @@ function consoleHtml(s, c) {
   const title = out ? 'Match your watch or phone' : 'Match your treadmill';
   const sub = out ? 'Use the time and distance it recorded' : 'Use the time and distance on your console';
   const intro = out
-    ? 'Outdoors, Hillpace estimates distance from your usual walking paces. If a watch or phone app tracked this walk, enter its time and distance and we’ll update this workout. Climb and the energy estimate scale with distance.'
+    ? 'Outdoors, Walking Companion estimates distance from your usual walking paces. If a watch or phone app tracked this walk, enter its time and distance and we’ll update this workout. Climb and the energy estimate scale with distance.'
     : 'Treadmill belts often read a little differently. Enter what your console shows and we’ll update this workout. Climb and the energy estimate scale with distance.';
   return `
   <details class="sm-details" data-details="console"${c.open.console ? ' open' : ''}>
@@ -369,7 +369,7 @@ function consoleHtml(s, c) {
       <p class="sm-err" data-region="console-err" role="alert"></p>
       <div class="sm-console-actions">
         <button type="submit" class="btn btn-primary btn-block">Update workout</button>
-        ${s.consoleEdited && s.appValues ? '<button type="button" class="btn btn-text" data-act="console-reset">Use Hillpace’s numbers instead</button>' : ''}
+        ${s.consoleEdited && s.appValues ? '<button type="button" class="btn btn-text" data-act="console-reset">Use Walking Companion’s numbers instead</button>' : ''}
       </div>
     </form>
   </details>`;
@@ -422,7 +422,7 @@ function healthHtml(s, c) {
   if (s.healthUUID) { title = 'Saved to Apple Health'; sub = h.watch ? 'Saved without energy and distance, because your Apple Watch records those.' : isOutdoor(s) ? 'Saved as a walking workout.' : 'Saved as an indoor workout.'; ico = 'checkCircle'; }
   else if ((s.durationSec || 0) < 60) { title = 'Not saved to Apple Health'; sub = 'Workouts under a minute aren’t saved.'; }
   else if (c.health === 'saving') { title = 'Saving to Apple Health…'; sub = 'This takes a moment.'; }
-  else if (c.health === 'failed') { title = 'Couldn’t save to Apple Health'; sub = 'Check that Hillpace can write workouts in the Health app.'; btn = '<button type="button" class="btn btn-sm" data-act="health-save">Retry</button>'; ico = 'alert'; }
+  else if (c.health === 'failed') { title = 'Couldn’t save to Apple Health'; sub = 'Check that Walking Companion can write workouts in the Health app.'; btn = '<button type="button" class="btn btn-sm" data-act="health-save">Retry</button>'; ico = 'alert'; }
   else if (c.fresh) { title = 'Apple Health'; sub = 'This workout saves when you tap Done.'; }
   else { title = 'Not in Apple Health'; sub = 'Save this workout to Apple Health.'; btn = '<button type="button" class="btn btn-sm" data-act="health-save">Save</button>'; }
   return `<div class="group sm-health"><div class="row has-icon" role="status"><span class="row-icon${ico === 'alert' ? ' warn' : ''}">${icon(ico)}</span><span class="row-main"><span class="row-title">${esc(title)}</span><span class="row-sub">${esc(sub)}</span></span>${btn}</div></div>`;
@@ -575,7 +575,7 @@ function resetConsole(c) {
   const splits = scaleSplits(s.splits, s.distanceKm > 0 ? b.distanceKm / s.distanceKm : 1, s.durationSec > 0 ? b.durationSec / s.durationSec : 1, b.durationSec);
   store.updateSession(c.id, { ...b, splits, consoleEdited: false, appValues: null });
   afterNumbersChanged(c);
-  toast('Back to Hillpace’s numbers');
+  toast('Back to Walking Companion’s numbers');
 }
 
 function afterNumbersChanged(c) {

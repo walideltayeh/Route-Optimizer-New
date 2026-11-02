@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Hillpace: keys to merge into ios/App/App/Info.plist (node native/wire-ios.mjs does this for you).
+  Walking Companion: keys to merge into ios/App/App/Info.plist (node native/wire-ios.mjs does this for you).
   Also required, applied by the script as edits rather than additions:
     - UISupportedInterfaceOrientations: portrait only (UIInterfaceOrientationPortrait)
     - remove UISupportedInterfaceOrientations~ipad (iPhone-only app)
@@ -14,11 +14,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Hillpace</string>
+	<string>Walking Companion</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Hillpace reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone.</string>
+	<string>Walking Companion reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Hillpace saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health.</string>
+	<string>Walking Companion saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UISupportedInterfaceOrientations</key>

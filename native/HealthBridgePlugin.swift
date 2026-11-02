@@ -1,5 +1,5 @@
 // HealthBridgePlugin.swift
-// Hillpace: local Capacitor 8 plugin that connects the app to Apple Health.
+// Walking Companion: local Capacitor 8 plugin that connects the app to Apple Health.
 //
 // JavaScript side: registerPlugin('HealthBridge') in src/core/platform.js.
 // Registered at runtime by MainViewController.capacitorDidLoad().
@@ -98,7 +98,7 @@ public class HealthBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         guard healthStore.authorizationStatus(for: workoutType) == .sharingAuthorized else {
-            call.reject("Hillpace is not allowed to save workouts to Apple Health.", "NOT_AUTHORIZED")
+            call.reject("Walking Companion is not allowed to save workouts to Apple Health.", "NOT_AUTHORIZED")
             return
         }
 
@@ -226,7 +226,7 @@ public class HealthBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         guard healthStore.authorizationStatus(for: bodyMassType) == .sharingAuthorized else {
-            call.reject("Hillpace is not allowed to save weight to Apple Health.", "NOT_AUTHORIZED")
+            call.reject("Walking Companion is not allowed to save weight to Apple Health.", "NOT_AUTHORIZED")
             return
         }
         let date = Self.parseDate(call.getString("date")) ?? Date()

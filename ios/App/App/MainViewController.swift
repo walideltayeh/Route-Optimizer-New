@@ -1,5 +1,5 @@
 // MainViewController.swift
-// Hillpace: the app's root view controller. It is Capacitor's bridge view controller plus two things:
+// Walking Companion: the app's root view controller. It is Capacitor's bridge view controller plus two things:
 //   1. registers the local HealthBridge plugin (HealthBridgePlugin.swift) before the web app loads;
 //   2. paints the web view background in the app's own light/dark colours, so there is no white flash on launch in dark mode.
 //

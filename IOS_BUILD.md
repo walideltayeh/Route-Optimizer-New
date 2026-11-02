@@ -1,4 +1,4 @@
-# Hillpace: building the iPhone app
+# Walking Companion: building the iPhone app
 
 Step-by-step instructions for the owner, on a Mac, from a fresh checkout to TestFlight.
 
@@ -44,7 +44,7 @@ This repository has three GitHub Actions workflows (`.github/workflows/`):
 ### Upload to TestFlight from GitHub (still no Mac)
 
 1. **Join the Apple Developer Program** and wait for it to be approved.
-2. **Create the app in App Store Connect** (My Apps → + → New App) with your bundle ID, e.g. `com.yourname.hillpace`. Xcode's automatic signing registers the ID and its HealthKit capability on the first upload; if App Store Connect asks for the ID first, register it at developer.apple.com → Certificates, IDs & Profiles → Identifiers with **HealthKit** and **Time Sensitive Notifications** ticked.
+2. **Create the app in App Store Connect** (My Apps → + → New App) with your bundle ID, e.g. `com.yourname.walkingcompanion`. Xcode's automatic signing registers the ID and its HealthKit capability on the first upload; if App Store Connect asks for the ID first, register it at developer.apple.com → Certificates, IDs & Profiles → Identifiers with **HealthKit** and **Time Sensitive Notifications** ticked.
 3. **Create an App Store Connect API key:** App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → +. Give it the **Admin** role (automatic signing in the cloud needs it to create the distribution certificate). Download the `.p8` file (you can only download it once) and note the **Key ID** and the **Issuer ID** shown above the list.
 4. **Find your Team ID:** developer.apple.com → Account → Membership details.
 5. **Add five repository secrets** (GitHub → Settings → Secrets and variables → Actions → New repository secret):
@@ -58,7 +58,7 @@ This repository has three GitHub Actions workflows (`.github/workflows/`):
    | `IOS_BUNDLE_ID` | the bundle ID from step 2 |
 
 6. **Run it:** GitHub → Actions → **iOS build** → Run workflow → tick **Upload a signed build to TestFlight** → Run. The build number is the workflow run number, so every upload is unique.
-7. After Apple processes the build (usually 10–30 minutes) it appears in App Store Connect → TestFlight. Install the **TestFlight** app on your iPhone, add yourself as an internal tester, and install Hillpace.
+7. After Apple processes the build (usually 10–30 minutes) it appears in App Store Connect → TestFlight. Install the **TestFlight** app on your iPhone, add yourself as an internal tester, and install Walking Companion.
 8. Do the device checklist in section 6 using that TestFlight build, then submit for review from App Store Connect in your browser. Submission itself never needs a Mac.
 
 Notes:
@@ -81,8 +81,8 @@ Notes:
 ## 2. Get the code and build the web app
 
 ```bash
-git clone <your repository URL> hillpace
-cd hillpace
+git clone <your repository URL> walking-companion
+cd walking-companion
 npm ci                         # installs the exact pinned versions from package-lock.json
 node scripts/build.mjs         # writes www/index.html, www/fonts/, www/privacy.html, www/support.html
 ```
@@ -124,7 +124,7 @@ Select the blue **App** project in the navigator, then the **App** target.
 ### 4.1 Signing & Capabilities
 
 1. **Team:** choose your developer team. Leave "Automatically manage signing" on.
-2. **Bundle Identifier:** replace `com.example.hillpace` with your own reverse-DNS ID, for example `com.yourname.hillpace`. Also change `appId` in `capacitor.config.json` to the same value and run `npx cap sync ios` (keeps the two in step; the bundle ID in Xcode is the one that counts).
+2. **Bundle Identifier:** replace `com.example.walkingcompanion` with your own reverse-DNS ID, for example `com.yourname.walkingcompanion`. Also change `appId` in `capacitor.config.json` to the same value and run `npx cap sync ios` (keeps the two in step; the bundle ID in Xcode is the one that counts).
 3. **Capabilities:** the entitlements file `App/App.entitlements` is already linked (build setting `CODE_SIGN_ENTITLEMENTS`), so you should see:
    - **HealthKit**: leave "Clinical Health Records" and "Background Delivery" **unchecked**.
    - **Time Sensitive Notifications.**
@@ -135,7 +135,7 @@ Select the blue **App** project in the navigator, then the **App** target.
 
 - **Supported Destinations:** iPhone only. Remove iPad, "Mac (Designed for iPhone)" and "Apple Vision (Designed for iPhone)" if listed (the wiring script already sets `TARGETED_DEVICE_FAMILY = 1` and turns the Mac/Vision options off).
 - **Minimum Deployments:** iOS **17.0** (already set for the project and the target).
-- **Display Name:** Hillpace. **Version:** 1.0. **Build:** 1 (increase the build for every upload).
+- **Display Name:** Walking Companion. **Version:** 1.0. **Build:** 1 (increase the build for every upload).
 - **Device Orientation:** Portrait only (already set in Info.plist).
 - **App Icons and Launch Screen:** App Icon source = `AppIcon` (already contains `assets/icon-only.png`, 1024×1024, no transparency). The launch screen uses the `Splash` image set (light and dark variants from `assets/splash.png` and `assets/splash-dark.png`).
 
@@ -145,8 +145,8 @@ Select the blue **App** project in the navigator, then the **App** target.
 - **Build Phases → Copy Bundle Resources** lists `PrivacyInfo.xcprivacy` and `public`.
 - `SceneDelegate.swift` contains `window?.rootViewController = MainViewController()`. This is the line that matters: the Capacitor 8 template builds its window in code. (`Main.storyboard` also names `MainViewController`, module App, for completeness. The scene's `UISceneStoryboardFile` entry was removed from Info.plist so only one bridge is ever created.)
 - **Info** tab (Info.plist) contains:
-  - `NSHealthShareUsageDescription`: "Hillpace reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone."
-  - `NSHealthUpdateUsageDescription`: "Hillpace saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health."
+  - `NSHealthShareUsageDescription`: "Walking Companion reads your body weight from Apple Health to keep your weight trend up to date. Your data stays on your iPhone."
+  - `NSHealthUpdateUsageDescription`: "Walking Companion saves your treadmill workouts (time, estimated distance and estimated active energy) and the weights you log to Apple Health."
   - `ITSAppUsesNonExemptEncryption` = NO (no export-compliance question on upload)
   - `UISupportedInterfaceOrientations` = Portrait only
   - **No** `UIBackgroundModes` key.
@@ -161,7 +161,7 @@ Select the blue **App** project in the navigator, then the **App** target.
 3. The first time, the phone may refuse to open the app: Settings → General → VPN & Device Management → trust your developer certificate.
 4. In the Xcode console you should see `⚡️  Loading app at capacitor://localhost...` **once**, and no line saying `HealthBridge` "is not implemented".
 
-**Optional plugin smoke test (Debug builds only).** On the Mac, Safari → Settings → Advanced → "Show features for web developers". With the app open on the phone: Safari → Develop → *your iPhone* → Hillpace. In the console:
+**Optional plugin smoke test (Debug builds only).** On the Mac, Safari → Settings → Advanced → "Show features for web developers". With the app open on the phone: Safari → Develop → *your iPhone* → Walking Companion. In the console:
 
 ```js
 const H = Capacitor.registerPlugin('HealthBridge');
@@ -199,10 +199,10 @@ Use a real iPhone, a release-like build (Product → Scheme → Edit Scheme → 
 
 **Apple Health** (check in the Health app, Browse → Activity → Workouts)
 - [ ] A finished session of 1 minute or more appears as an **Indoor Walk** (or Indoor Run) with duration, active energy and distance; "Elevation Gain" shows in its details.
-- [ ] Logging a weight in Hillpace adds it under Browse → Body Measurements → Weight. Changing the same day's weight in Hillpace **replaces** it (no duplicate).
-- [ ] Add a weight in the Health app by hand: it appears in Hillpace's weight trend. Hillpace's own weights are not imported twice.
+- [ ] Logging a weight in Walking Companion adds it under Browse → Body Measurements → Weight. Changing the same day's weight in Walking Companion **replaces** it (no duplicate).
+- [ ] Add a weight in the Health app by hand: it appears in Walking Companion's weight trend. Walking Companion's own weights are not imported twice.
 - [ ] With the Apple Watch option on, the workout is saved without energy and distance.
-- [ ] Deny Health access in Settings → Health → Data Access & Devices → Hillpace: the app keeps working, manual weights still save.
+- [ ] Deny Health access in Settings → Health → Data Access & Devices → Walking Companion: the app keeps working, manual weights still save.
 
 **Notifications**
 - [ ] Reminders: set one for 2 minutes from now, close the app: it arrives on time. With the app open, it does **not** show (by design: `presentationOptions: []`).
@@ -236,10 +236,10 @@ Use a real iPhone, a release-like build (Product → Scheme → Edit Scheme → 
 
 App Store Connect needs public HTTPS URLs for both pages.
 
-1. Create a public GitHub repository, for example `hillpace-site`.
+1. Create a public GitHub repository, for example `walking-companion-site`.
 2. Add `legal/privacy.html`, `legal/support.html`, plus a `fonts/` folder with `assets/fonts/Archivo-latin.woff2` and `assets/fonts/HankenGrotesk-latin.woff2` (optional: without them the pages fall back to system fonts and log a harmless 404). Copy `support.html` to `index.html` as well, so the site root shows the support page.
 3. Repository Settings → Pages → Deploy from branch → `main` / root. After a minute the pages are at
-   `https://<your-github-user>.github.io/hillpace-site/privacy.html` and `.../support.html`.
+   `https://<your-github-user>.github.io/walking-companion-site/privacy.html` and `.../support.html`.
 4. Put these URLs into App Store Connect (Privacy Policy URL, Support URL). On iPhone, Me → Privacy policy shows the text of the bundled `privacy.html` and Me → Support shows the FAQ from the bundled `support.html` (both in `www/`, so they work offline). Editing `legal/` and rebuilding updates both.
 
 ---
@@ -249,8 +249,8 @@ App Store Connect needs public HTTPS URLs for both pages.
 | Placeholder | Where | Replace with |
 |---|---|---|
 | `[Your name]` | `legal/privacy.html` (sections 1 and 11, footer), `legal/support.html` (contact card, footer) | Your legal name or company name (must match your developer account seller name) |
-| `support@hillpace.app` | `legal/privacy.html`, `legal/support.html`, `APP_STORE.md`, and `package.json` → `config.supportEmail` (the in-app address on Me → Support; `node scripts/build.mjs` warns while it is the placeholder) | A mailbox you read. Either register the `hillpace.app` domain and set up forwarding, or use your own address everywhere |
-| `com.example.hillpace` | `capacitor.config.json` (`appId`), Xcode bundle identifier | Your reverse-DNS bundle ID |
+| `support@walkingcompanion.app` | `legal/privacy.html`, `legal/support.html`, `APP_STORE.md`, and `package.json` → `config.supportEmail` (the in-app address on Me → Support; `node scripts/build.mjs` warns while it is the placeholder) | A mailbox you read. Either register the `hillpace.app` domain and set up forwarding, or use your own address everywhere |
+| `com.example.walkingcompanion` | `capacitor.config.json` (`appId`), Xcode bundle identifier | Your reverse-DNS bundle ID |
 | `© 2026 [Your name]` / Copyright | page footers, App Store Connect "Copyright" | "2026 Your Name" |
 | `<your-github-user>` URLs | App Store Connect Support/Privacy URLs, `APP_STORE.md` | Your real GitHub Pages URLs |
 
@@ -279,7 +279,7 @@ If you change a page in `legal/`, run `node scripts/build.mjs && npx cap sync io
 | "Missing package product 'CapApp-SPM'" or a plugin package path not found | `node_modules/` is missing or stale. Run `npm ci`, then `npx cap sync ios`, then in Xcode File → Packages → Reset Package Caches. |
 | White screen, or Xcode console says the app could not find `index.html` | `www/` was not built or not copied: `node scripts/build.mjs && npx cap sync ios`. If the Safari Web Inspector console shows "Refused to execute … Content Security Policy", `www/index.html` was edited by hand after the build: rebuild instead. |
 | Notifications appear as banners while the app is open | `capacitor.config.json` must have `"LocalNotifications": {"presentationOptions": []}`; run `npx cap sync ios` (it writes `ios/App/App/capacitor.config.json`). |
-| Interval notifications don't break through a Focus | Expected unless the user allows time-sensitive notifications for Hillpace in that Focus. Without the Time Sensitive entitlement they arrive as ordinary notifications. |
+| Interval notifications don't break through a Focus | Expected unless the user allows time-sensitive notifications for Walking Companion in that Focus. Without the Time Sensitive entitlement they arrive as ordinary notifications. |
 | Upload warning ITMS-91053 (missing API declaration) | Add the named API category and its reason code to `native/PrivacyInfo.xcprivacy`, re-run the wiring script, archive again. |
 | Upload error ITMS-90717 (icon has transparency) | The icon must be opaque. `assets/icon-only.png` is RGB without alpha; if you replace it, export without alpha. |
 | Swift 6 concurrency errors after accepting Xcode's recommended settings | Set Swift Language Version back to Swift 5 for the App target. |

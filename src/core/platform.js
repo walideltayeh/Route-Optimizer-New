@@ -221,7 +221,7 @@ export async function scheduleReminders(days, time) {
   const [hour, minute] = String(time || '18:00').split(':').map(Number);
   const list = days.map((d, i) => ({
     id: REMINDER_BASE + i,
-    title: 'Time for your Hillpace session',
+    title: 'Time for your walk',
     body: 'Your plan has a workout today. Ready when you are.',
     sound: 'default',
     schedule: { on: { weekday: (d % 7) + 1, hour, minute }, allowWhileIdle: true }, // iOS weekday 1 = Sunday
@@ -396,7 +396,7 @@ export function statusBar(style) { // 'light' text on dark backgrounds, or 'dark
 export function hideSplash() { if (isNative) safe(() => P.SplashScreen.hide()); }
 
 /** Share plain text: iOS share sheet, Web Share where available, otherwise copy. Returns 'shared' | 'copied' | 'failed'. */
-export async function shareText(text, title = 'Hillpace') {
+export async function shareText(text, title = 'Walking Companion') {
   if (isNative) { const r = await safe(() => P.Share.share({ title, text }), false); return r === false ? 'failed' : 'shared'; }
   try { if (navigator.share) { await navigator.share({ title, text }); return 'shared'; } } catch (e) { if (e && e.name === 'AbortError') return 'failed'; }
   return (await copyText(text)) ? 'copied' : 'failed';

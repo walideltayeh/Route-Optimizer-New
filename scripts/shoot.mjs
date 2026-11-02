@@ -1,4 +1,4 @@
-// Screenshot helper.  node scripts/shoot.mjs <hash> <outPrefix> [--fresh] [--js "<code run after load>"] [--page dist/hillpace.html] [--wait ms] [--full]
+// Screenshot helper.  node scripts/shoot.mjs <hash> <outPrefix> [--fresh] [--js "<code run after load>"] [--page dist/walking-companion.html] [--wait ms] [--full]
 // Seeds localStorage with tests/fixture.json (unless --fresh) and saves <outPrefix>-light.png and <outPrefix>-dark.png (393x852 @2x).
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const hash = args[0] || 'today', out = args[1] || '/tmp/shot';
 const opt = (k, d) => { const i = args.indexOf(k); return i > 0 ? args[i + 1] : d; };
 const fresh = args.includes('--fresh'), full = args.includes('--full');
-const page = opt('--page', new URL('../dist/hillpace.html', import.meta.url).pathname);
+const page = opt('--page', new URL('../dist/walking-companion.html', import.meta.url).pathname);
 const js = opt('--js', ''), wait = +opt('--wait', 900);
 const fx = readFileSync(new URL('../tests/fixture.json', import.meta.url), 'utf8');
 const b = await chromium.launch();

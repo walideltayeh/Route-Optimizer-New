@@ -1,6 +1,6 @@
 // App Store screenshots: renders real app screens and frames them with a caption.
 // Output: store/screenshots/6.9/<n>-<slug>.png (1320×2868) and store/screenshots/6.3/<n>-<slug>.png (1206×2622). Opaque PNG.
-// Usage: node scripts/store-shots.mjs [--page dist/hillpace.html] [--only 2]
+// Usage: node scripts/store-shots.mjs [--page dist/walking-companion.html] [--only 2]
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
 const root = new URL('..', import.meta.url).pathname;
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-const page = opt('--page', root + 'dist/hillpace.html');
+const page = opt('--page', root + 'dist/walking-companion.html');
 const only = opt('--only', null);
 
 // Fixture where today is a training day (so Today shows a session, not a rest day).

@@ -1,11 +1,11 @@
 {
-  "name": "hillpace",
+  "name": "walking-companion",
   "version": "1.0.0",
   "private": true,
-  "description": "Hillpace: incline treadmill interval coach for iPhone (Capacitor 8).",
+  "description": "Walking Companion: incline treadmill interval coach for iPhone (Capacitor 8).",
   "type": "module",
   "config": {
-    "supportEmail": "support@hillpace.app",
+    "supportEmail": "support@walkingcompanion.app",
     "supportUrl": "https://github.com/walideltayeh/Route-Optimizer-New/issues"
   },
   "scripts": {

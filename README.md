@@ -1,4 +1,4 @@
-# Hillpace
+# Walking Companion
 
 An iPhone app for incline-treadmill walking and jogging intervals. It builds a personal 12-week plan from your goal, schedule and treadmill, coaches each session with big speed and incline targets and voice cues, and tracks history, weight trend and badges. No account, no ads, no tracking: data stays on the device.
 
@@ -19,7 +19,7 @@ Built with Capacitor 8 around plain JavaScript modules. The same source also bui
 ```bash
 npm ci                     # install exact dependency versions
 npm test                   # 74 logic checks + 7 end-to-end journeys + data migration test
-node scripts/build.mjs     # production build → www/ (iOS app) and dist/hillpace.html (web page)
+node scripts/build.mjs     # production build → www/ (iOS app) and dist/walking-companion.html (web page)
 npx cap sync ios           # copy www/ and plugins into the Xcode project
 npx cap open ios           # open in Xcode (on a Mac)
 node scripts/store-shots.mjs   # regenerate App Store screenshots → store/screenshots/{6.9,6.3}/
@@ -40,8 +40,8 @@ scripts/        build, screenshot and fixture scripts
 
 ## Before you submit
 
-1. Replace the placeholders listed in `IOS_BUILD.md` §9: bundle ID (`com.example.hillpace`), support email (`package.json` → `config.supportEmail`), your name, and the hosted page URLs.
-2. Check the name "Hillpace" is free (App Store, USPTO, EUIPO), then create the App Store Connect record the same day (`APP_STORE.md` §0).
+1. Replace the placeholders listed in `IOS_BUILD.md` §9: bundle ID (`com.example.walkingcompanion`), support email (`package.json` → `config.supportEmail`), your name, and the hosted page URLs.
+2. Check the name "Walking Companion" is free (App Store, USPTO, EUIPO), then create the App Store Connect record the same day (`APP_STORE.md` §0).
 3. Install it on a real iPhone (from Xcode, or through TestFlight using the cloud workflow) and run the device checklist in `IOS_BUILD.md` §6. The project compiles on GitHub's macOS runners (Xcode 26.6), but iOS-only features (Apple Health, lock-screen notifications, voice cues with music, haptics) can only be checked on a device.
 4. Run TestFlight for at least a week of real sessions before submitting.
 

@@ -36,11 +36,11 @@ const VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.
 // The support address is set at build time (package.json "config.supportEmail" -> esbuild define __SUPPORT_EMAIL__).
 // The fallback is a placeholder that must not ship in a release build.
 // eslint-disable-next-line no-undef
-const SUPPORT_EMAIL = typeof __SUPPORT_EMAIL__ !== 'undefined' && __SUPPORT_EMAIL__ ? String(__SUPPORT_EMAIL__) : 'support@hillpace.app';
+const SUPPORT_EMAIL = typeof __SUPPORT_EMAIL__ !== 'undefined' && __SUPPORT_EMAIL__ ? String(__SUPPORT_EMAIL__) : 'support@walkingcompanion.app';
 // eslint-disable-next-line no-undef
 const SUPPORT_URL = typeof __SUPPORT_URL__ !== 'undefined' && __SUPPORT_URL__ ? String(__SUPPORT_URL__) : '';
 // While the email is still the placeholder, point people at the support link instead of an address nobody reads.
-const USE_LINK = SUPPORT_EMAIL === 'support@hillpace.app' && !!SUPPORT_URL;
+const USE_LINK = SUPPORT_EMAIL === 'support@walkingcompanion.app' && !!SUPPORT_URL;
 const contactHtml = () => (USE_LINK
   ? `<a class="me-inline" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">Report a problem or ask a question</a>`
   : `<span class="me-select-text">${esc(SUPPORT_EMAIL)}</span>`);
@@ -343,14 +343,14 @@ function rootHtml() {
       row({ title: 'Terms of use', iconName: 'book', href: '#me-terms' }),
       row({ title: 'Support', iconName: 'help', href: '#me-support' }),
     ].join('') })}
-    <p class="me-version">Hillpace ${esc(VERSION)}<br>Not a medical device. Estimates only.</p>`;
+    <p class="me-version">Walking Companion ${esc(VERSION)}<br>Not a medical device. Estimates only.</p>`;
 }
 
 function syncRowHtml() {
   const s = getSync();
   const ic = s.kind === 'warn' ? 'alert' : s.kind === 'ok' ? 'check' : 'lock';
   const text = s.kind === 'local' && isNative ? 'Saved on this iPhone' : s.text;
-  const sub = s.sub || (s.kind === 'warn' ? 'Export a backup to keep your latest changes.' : s.kind === 'ok' ? 'Available wherever you open Hillpace.' : 'No account needed. Keep a backup somewhere safe.');
+  const sub = s.sub || (s.kind === 'warn' ? 'Export a backup to keep your latest changes.' : s.kind === 'ok' ? 'Available wherever you open Walking Companion.' : 'No account needed. Keep a backup somewhere safe.');
   return `<span class="row-icon ${s.kind === 'warn' ? 'me-warn' : ''}">${icon(ic)}</span><span class="row-main"><span class="row-title">${esc(text)}</span><span class="row-sub">${esc(sub)}</span></span>`;
 }
 
@@ -376,14 +376,14 @@ function editName() {
 const PAGES = {
   goal: { title: 'Goal & body', lede: 'About you, your goal and your day. Changes apply right away.', html: goalPage },
   treadmill: { title: 'Where you walk', lede: 'Your usual setting shapes how every session is coached.', html: treadmillPage },
-  paces: { title: 'Paces & units', lede: 'The speeds Hillpace uses for each kind of interval.', html: pacesPage },
+  paces: { title: 'Paces & units', lede: 'The speeds Walking Companion uses for each kind of interval.', html: pacesPage },
   cues: { title: 'Voice & cues', lede: 'What you hear during a workout.', html: cuesPage },
   reminders: { title: 'Reminders', lede: 'A nudge on the days your plan has a workout.', html: remindersPage },
   health: { title: features.health ? 'Apple Health' : 'Health sync', lede: features.health ? 'Keep your workouts and weigh-ins in one place.' : '', html: healthPage },
   appearance: { title: 'Appearance', lede: '', html: appearancePage },
   data: { title: 'Back up & restore', lede: '', html: dataPage },
-  calc: { title: 'How we calculate', lede: 'The equations behind every estimate in Hillpace.', html: calcPage },
-  safety: { title: 'Health & safety', lede: 'Hillpace is not a medical device. Listen to your body first.', html: safetyPage },
+  calc: { title: 'How we calculate', lede: 'The equations behind every estimate in Walking Companion.', html: calcPage },
+  safety: { title: 'Health & safety', lede: 'Walking Companion is not a medical device. Listen to your body first.', html: safetyPage },
   privacy: { title: 'Privacy policy', lede: '', html: privacyPage },
   terms: { title: 'Terms of use', lede: '', html: termsPage },
   support: { title: 'Support', lede: 'Questions, problems or ideas: we’d like to hear them.', html: supportPage },
@@ -490,7 +490,7 @@ function paceNote() {
   const cur = PACES.find((x) => x.id === p.pace);
   const capTxt = isLb() ? `${fmt1(cap * LB_PER_KG)} lb` : `${fmt2(cap).replace(/0$/, '')} kg`;
   if (cur && cur.kgPerWeek > cap + 1e-9) return `<span class="me-warn-text">Your current pace is faster than 1% of your weight a week. Choose a slower pace.</span>`;
-  return `Hillpace caps your pace at 1% of your body weight a week, up to 1 kg (2.2 lb). For you that’s ${capTxt} a week. Projections are estimates, not a promise.`;
+  return `Walking Companion caps your pace at 1% of your body weight a week, up to 1 kg (2.2 lb). For you that’s ${capTxt} a week. Projections are estimates, not a promise.`;
 }
 
 /* ----- Where you walk ----- */
@@ -522,18 +522,18 @@ function treadmillPage() {
     if (inc) {
       rail = p.noNumbers
         ? 'Holding the rails on a steep incline supports part of your weight, which makes the workout easier than it looks. If you need to hold on, try a lower incline or speed.'
-        : 'Holding the rails on a steep incline supports part of your weight, so you use less energy than the incline suggests. When this is off, Hillpace counts only 75% of the incline on slopes of 8% and above. Energy figures are always estimates.';
+        : 'Holding the rails on a steep incline supports part of your weight, so you use less energy than the incline suggests. When this is off, Walking Companion counts only 75% of the incline on slopes of 8% and above. Energy figures are always estimates.';
     } else {
       rail = p.noNumbers
         ? 'Many walking pads have no rails. Walking without holding on keeps your posture natural; if you need support, try a slower speed.'
-        : 'Many walking pads have no rails. On the flat, holding on doesn’t change your estimates. On days you walk on an incline, Hillpace counts only 75% of the incline on slopes of 8% and above when this is off.';
+        : 'Many walking pads have no rails. On the flat, holding on doesn’t change your estimates. On days you walk on an incline, Walking Companion counts only 75% of the incline on slopes of 8% and above when this is off.';
     }
     html += sec({ title: 'Handrails', rows: switchRow({ id: 'me-sw-hands', sw: 'handsFree', title: 'I walk hands-free', sub: 'Most of the time, without holding the rails', checked: t.handsFree !== false, iconName: 'hand' }), note: esc(rail) });
   }
 
   const jogNote = p.walkOnly ? ''
     : p.canJog === 'yes' ? 'Your plan includes short jog intervals.'
-      : 'Jogs join your plan once you’re ready: from week 5, after two sessions that feel comfortable, Hillpace asks first.';
+      : 'Jogs join your plan once you’re ready: from week 5, after two sessions that feel comfortable, Walking Companion asks first.';
   html += sec({
     title: 'Jogs',
     rows: switchRow({ id: 'me-sw-walkonly', sw: 'walkOnly', title: 'Walking only', sub: 'No jogs or runs. Harder parts become power walking.', checked: !!p.walkOnly, iconName: 'stride' }),
@@ -629,8 +629,8 @@ function cuesPage() {
     title: 'Sounds',
     rows: switchRow({ id: 'me-sw-beeps', sw: 'beeps', title: 'Countdown beeps', sub: 'Three beeps before each change', checked: !!c.beeps, iconName: 'timer' }),
     note: features.lockScreenCues
-      ? `Voice cues play while Hillpace is on screen, so it keeps your screen awake during a workout. If your phone locks, interval changes arrive as notifications with a sound or vibration instead, if you allow them.${features.reminders ? ' <a class="me-inline" href="#me-reminders">Notification settings</a>' : ''}`
-      : 'Keep Hillpace open with the screen on during a workout so cues can play.',
+      ? `Voice cues play while Walking Companion is on screen, so it keeps your screen awake during a workout. If your phone locks, interval changes arrive as notifications with a sound or vibration instead, if you allow them.${features.reminders ? ' <a class="me-inline" href="#me-reminders">Notification settings</a>' : ''}`
+      : 'Keep Walking Companion open with the screen on during a workout so cues can play.',
   });
   return html;
 }
@@ -657,7 +657,7 @@ function remindersPage() {
   if (!features.reminders) return unavailable('Training reminders aren’t part of the web version. Your plan on the Today tab always shows what’s next.');
   const p = P(), rem = p.reminders;
   const days = (state.main.plan.days || []).slice().sort((a, b) => a - b).map((d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d - 1]).join(', ');
-  const remSub = rem.enabled ? `On ${days || 'your plan days'}` : notifPerm === 'denied' ? 'Allow notifications in the Settings app first' : notifPerm === 'granted' ? 'A notification on your plan days' : 'Hillpace asks for permission the first time';
+  const remSub = rem.enabled ? `On ${days || 'your plan days'}` : notifPerm === 'denied' ? 'Allow notifications in the Settings app first' : notifPerm === 'granted' ? 'A notification on your plan days' : 'Walking Companion asks for permission the first time';
   const rows = [switchRow({ id: 'me-sw-rem', sw: 'reminders', title: 'Training-day reminders', sub: remSub, checked: !!rem.enabled, iconName: 'bell' })];
   if (rem.enabled) {
     rows.push(`<label class="row me-field" for="me-rem-time"><span class="row-main"><span class="row-title">Time</span></span><span class="me-input-wrap"><input id="me-rem-time" class="me-input num" type="time" data-field="remtime" value="${esc(rem.time || '18:00')}"></span></label>`);
@@ -669,14 +669,14 @@ function remindersPage() {
     : notifPerm === 'prompt'
       ? row({ title: 'Allow notifications', sub: 'Shows the iPhone permission prompt', iconName: 'bell', attrs: 'data-act="allow-notif"', chev: false })
       : notifPerm === 'denied'
-        ? staticRow({ title: 'Notifications are off for Hillpace', sub: 'Open the Settings app, tap Notifications, then Hillpace, and turn on Allow Notifications.', iconName: 'alert', cls: 'me-denied' })
+        ? staticRow({ title: 'Notifications are off for Walking Companion', sub: 'Open the Settings app, tap Notifications, then Walking Companion, and turn on Allow Notifications.', iconName: 'alert', cls: 'me-denied' })
         : notifPerm === 'unavailable'
           ? staticRow({ title: 'Notifications aren’t available', sub: 'This device doesn’t support local notifications', iconName: 'alert' })
           : staticRow({ title: 'Checking permission…', iconName: 'bell' });
   html += sec({
     title: 'Lock-screen workout cues',
     rows: perm,
-    note: 'Voice cues need Hillpace on screen. During a workout, Hillpace also schedules a notification for each interval change, so if your phone locks you still get a banner with a sound (or a vibration when your iPhone is on silent). These cues need notification permission. Everything is scheduled on your iPhone; nothing is sent to a server.',
+    note: 'Voice cues need Walking Companion on screen. During a workout, Walking Companion also schedules a notification for each interval change, so if your phone locks you still get a banner with a sound (or a vibration when your iPhone is on silent). These cues need notification permission. Everything is scheduled on your iPhone; nothing is sent to a server.',
   });
   return html;
 }
@@ -694,7 +694,7 @@ async function setReminders(v, on) {
   if (perm !== 'granted') {
     save((m) => { m.profile.reminders.enabled = false; });
     paint(v);
-    toast('Notifications are off for Hillpace. You can allow them in the Settings app.');
+    toast('Notifications are off for Walking Companion. You can allow them in the Settings app.');
     return;
   }
   save((m) => { m.profile.reminders.enabled = true; });
@@ -706,25 +706,25 @@ async function setReminders(v, on) {
 /* ----- Apple Health ----- */
 
 function healthPage() {
-  if (!features.health) return unavailable('Health app sync isn’t part of the web version. Your workouts and weigh-ins are kept in Hillpace.');
+  if (!features.health) return unavailable('Health app sync isn’t part of the web version. Your workouts and weigh-ins are kept in Walking Companion.');
   const h = P().health;
   const what = `<article class="card me-doc prose">
-    <h3>What Hillpace saves</h3>
+    <h3>What Walking Companion saves</h3>
     <ul><li>Walking or running workouts, with estimated active energy and distance</li><li>Your weigh-ins, as body weight</li></ul>
-    <h3>What Hillpace reads</h3>
+    <h3>What Walking Companion reads</h3>
     <ul><li>Your body weight, to keep your weight trend up to date</li></ul>
-    <p>Health data stays on your iPhone and in Apple Health. Hillpace never shares it or uses it for advertising.</p>
+    <p>Health data stays on your iPhone and in Apple Health. Walking Companion never shares it or uses it for advertising.</p>
   </article>`;
   if (healthOk === false) return banner('warn', 'alert', 'Apple Health isn’t available', 'This device doesn’t support Apple Health.') + what;
   if (!h.enabled) {
     return what + `<button type="button" class="btn btn-primary btn-block btn-lg" data-act="connect-health">${icon('heart')}Connect Apple Health</button>
-      <p class="group-note me-center">Apple Health will ask which data to share. Hillpace works fully if you say no.</p>`;
+      <p class="group-note me-center">Apple Health will ask which data to share. Walking Companion works fully if you say no.</p>`;
   }
   return sec({
     title: 'Connection',
     rows: switchRow({ id: 'me-sw-health', sw: 'health', title: 'Use Apple Health', sub: 'Save workouts and weigh-ins, read body weight', checked: true, iconName: 'heart' })
       + switchRow({ id: 'me-sw-watch', sw: 'watch', title: 'I also record on Apple Watch', sub: 'Save sessions without energy and distance so they aren’t counted twice', checked: !!h.watch, iconName: 'watch' }),
-    note: 'To change what Hillpace can read or write, open the Health app, tap your profile picture, then Apps, then Hillpace.',
+    note: 'To change what Walking Companion can read or write, open the Health app, tap your profile picture, then Apps, then Walking Companion.',
   }) + what;
 }
 async function connectHealth(v) {
@@ -784,7 +784,7 @@ function dataPage() {
     rows: [
       row({ title: 'Export backup', sub: 'One file with your plan, workouts, weigh-ins and settings', iconName: 'download', attrs: 'data-act="export-backup"', chev: false }),
       row({ title: 'Export workouts as CSV', sub: 'For spreadsheets', iconName: 'share', attrs: 'data-act="export-csv"', chev: false }),
-      row({ title: 'Import backup', sub: busy['import-backup'] || 'Restore from a Hillpace backup file', iconName: 'upload', attrs: busyRow('import-backup'), chev: false }),
+      row({ title: 'Import backup', sub: busy['import-backup'] || 'Restore from a Walking Companion backup file', iconName: 'upload', attrs: busyRow('import-backup'), chev: false }),
     ].join(''),
     after: live('backup-note'),
   });
@@ -799,7 +799,7 @@ function backupNote() {
   const last = state.main.lastBackup;
   const tip = cloud()
     ? 'Your data syncs to your account. A backup file is still a good idea.'
-    : `Hillpace keeps your data on this ${deviceWord()} only. Back up monthly and keep the file somewhere safe, such as iCloud Drive.`;
+    : `Walking Companion keeps your data on this ${deviceWord()} only. Back up monthly and keep the file somewhere safe, such as iCloud Drive.`;
   if (!last) return `<b>No backup yet.</b> ${tip}`;
   const age = (Date.now() - new Date(last).getTime()) / 864e5;
   const lead = `Last backup: <b>${esc(dateMed(last))}</b>.`;
@@ -808,8 +808,8 @@ function backupNote() {
 
 async function exportBackup() {
   const exportedAt = new Date().toISOString();
-  const data = { app: 'hillpace', version: 1, exportedAt, main: { ...state.main, lastBackup: exportedAt }, sessions: state.sessions };
-  const res = await exportFileResult(`hillpace-backup-${ymd()}.json`, JSON.stringify(data, null, 2), 'application/json');
+  const data = { app: 'walking-companion', version: 1, exportedAt, main: { ...state.main, lastBackup: exportedAt }, sessions: state.sessions };
+  const res = await exportFileResult(`walking-companion-backup-${ymd()}.json`, JSON.stringify(data, null, 2), 'application/json');
   if (res === 'shared') {
     save((m) => { m.lastBackup = exportedAt; }); // only when the file actually went somewhere
     repaintCurrent();
@@ -852,11 +852,11 @@ async function exportCsv() {
       Math.round(toElev(s.elevM || 0)),
     ];
     if (nums) r.push(roundKcal(s.kcal));
-    r.push(s.rpe ?? '', s.source === 'manual' ? 'Manual entry' : 'Hillpace', s.notes || '');
+    r.push(s.rpe ?? '', s.source === 'manual' ? 'Manual entry' : 'Walking Companion', s.notes || '');
     return r;
   });
   const text = '\ufeff' + [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
-  const res = await exportFileResult(`hillpace-workouts-${ymd()}.csv`, text, 'text/csv');
+  const res = await exportFileResult(`walking-companion-workouts-${ymd()}.csv`, text, 'text/csv');
   toast(res === 'shared' ? 'Spreadsheet file ready' : res === 'cancelled' ? 'Export cancelled' : 'Couldn’t create the file. Try again.');
 }
 
@@ -907,8 +907,9 @@ function convertLegacy(d) {
 /** Returns {kind, main, sessions, exportedAt} or null when the file isn't a backup we understand. */
 function parseBackup(d) {
   if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
-  if (d.app != null && d.app !== 'hillpace') return null;
-  if (d.main && typeof d.main === 'object' && !Array.isArray(d.main) && (d.app === 'hillpace' || d.schemaVersion != null || d.main.profile)) {
+  const OURS = ['walking-companion', 'hillpace']; // 'hillpace': backups made before the rename
+  if (d.app != null && !OURS.includes(d.app)) return null;
+  if (d.main && typeof d.main === 'object' && !Array.isArray(d.main) && (OURS.includes(d.app) || d.schemaVersion != null || d.main.profile)) {
     if (d.main.profile != null && (typeof d.main.profile !== 'object' || Array.isArray(d.main.profile))) return null;
     const main = { ...d.main, weights: cleanWeights(d.main.weights), customs: cleanCustoms(d.main.customs) };
     return { kind: 'hillpace', main, sessions: cleanSessions(d.sessions), exportedAt: d.exportedAt || d.savedAt || null };
@@ -920,7 +921,7 @@ function parseBackup(d) {
 }
 
 function badFileSheet() {
-  sheet(`<p class="prose">This file isn’t a Hillpace backup, or it’s damaged. Choose a <b>.json</b> file made with <b>Export backup</b> in Hillpace, or a backup from the previous version of the app.</p>`, {
+  sheet(`<p class="prose">This file isn’t a Walking Companion backup, or it’s damaged. Choose a <b>.json</b> file made with <b>Export backup</b> in Walking Companion, or a backup from the previous version of the app.</p>`, {
     title: 'Can’t use this file',
     footer: '<button type="button" class="btn btn-primary" data-close>OK</button>',
   });
@@ -1024,7 +1025,7 @@ function calcHtml() {
   const p = P();
   const intro = p.noNumbers
     ? banner('', 'info', 'You’re training without numbers', 'Calorie and weight figures are hidden in your app. This page explains how they’re worked out, for reference.')
-    : banner('', 'info', 'Every figure is an estimate', 'Hillpace works out energy, distance and climb from your speeds, inclines and body weight with published equations. Your actual burn can differ substantially from these estimates, and from what your treadmill or watch shows, because each uses its own formula and sensors.');
+    : banner('', 'info', 'Every figure is an estimate', 'Walking Companion works out energy, distance and climb from your speeds, inclines and body weight with published equations. Your actual burn can differ substantially from these estimates, and from what your treadmill or watch shows, because each uses its own formula and sensors.');
   return `${intro}
   <article class="card me-doc prose">
     <h3>Workout energy</h3>
@@ -1035,13 +1036,13 @@ function calcHtml() {
     <h3>Active energy, not total</h3>
     <p>The 3.5 in each equation is what your body uses at rest. We take it out, so the figure you see is the extra energy the workout costs, often called net or active energy:</p>
     <p class="me-formula">kcal per minute = (VO<sub>2</sub> − 3.5) × weight (kg) ÷ 1000 × 5</p>
-    <p>For example, walking at 4.8 km/h (3.0 mph) up a 12% incline at 75 kg comes to about 9.5 kcal a minute. Many treadmills show total (gross) energy, which includes resting energy, so their numbers are usually higher. ${features.health ? 'Active energy is also what Hillpace saves to Apple Health. ' : ''}Figures are shown with ≈ and rounded to the nearest 5 kcal.</p>
+    <p>For example, walking at 4.8 km/h (3.0 mph) up a 12% incline at 75 kg comes to about 9.5 kcal a minute. Many treadmills show total (gross) energy, which includes resting energy, so their numbers are usually higher. ${features.health ? 'Active energy is also what Walking Companion saves to Apple Health. ' : ''}Figures are shown with ≈ and rounded to the nearest 5 kcal.</p>
     <h3>Holding the handrails</h3>
     <p>Holding on supports part of your weight, so a climb costs less than the incline suggests. If you turn off “I walk hands-free”, we count 75% of the incline on slopes of 8% and above (G′ = 0.75 × G). This is a rule of thumb, not a measured value.</p>
     <h3>Distance and climb</h3>
     <p>Distance is speed × time for each interval, using the speeds you actually ran, including any changes you make during the workout. Climb is distance × incline, the usual treadmill convention. If your belt runs faster or slower than its display, these will be off too.</p>
     <h3>Walking outdoors</h3>
-    <p>Outdoors, Hillpace can’t see your real speed or the hills on your route. Sessions are coached by effort, and distance and energy are worked out from your paces as if the ground were flat, so they are rougher estimates than on a treadmill. Climb isn’t counted.</p>
+    <p>Outdoors, Walking Companion can’t see your real speed or the hills on your route. Sessions are coached by effort, and distance and energy are worked out from your paces as if the ground were flat, so they are rougher estimates than on a treadmill. Climb isn’t counted.</p>
     <h3>Activity minutes</h3>
     <p>Following WHO and CDC guidelines, a moderate minute counts once and a vigorous minute counts twice. A minute is vigorous during jog and run intervals, or when the estimated effort is 6 METs or more (METs = VO<sub>2</sub> ÷ 3.5). Your weekly targets are 150, 200 and 250 activity minutes in the Foundation, Build and Burn phases. The guidelines suggest 150 to 300 moderate minutes a week for adults.</p>
     <h3>Resting and daily energy</h3>
@@ -1103,7 +1104,7 @@ function safetyPage() {
   const qs = READINESS_QUESTIONS.filter((q) => !(q.id === 'pregnant' && p.sex === 'male'));
   const answered = qs.some((q) => typeof r.answers[q.id] === 'boolean');
   let status;
-  if (!answered) status = banner('', 'info', 'No readiness answers yet', 'Answer a few questions so Hillpace can tell you when to check with your doctor first.');
+  if (!answered) status = banner('', 'info', 'No readiness answers yet', 'Answer a few questions so Walking Companion can tell you when to check with your doctor first.');
   else if (r.doctorFlag && !r.doctorAck) status = banner('warn', 'alert', 'Check with your doctor', 'One or more of your answers suggests checking with a doctor before harder exercise. Until you confirm below, your plan sticks to light and moderate workouts, and 4×4 Intervals and Sprint Intervals stay locked.');
   else if (r.doctorFlag) status = banner('good', 'check', 'You’ve checked with your doctor', 'Your plan can include harder intervals as it progresses. If your health changes, review your answers.');
   else status = banner('good', 'check', 'No doctor check flagged', 'None of your answers needed a doctor check. If your health changes, review your answers.');
@@ -1142,7 +1143,7 @@ function safetyPage() {
       ${r.doctorFlag ? `<div class="group">${switchRow({ id: 'me-sw-doc', sw: 'doctorAck', title: 'I’ve checked with my doctor', sub: 'A doctor has said harder exercise, such as jogging intervals, is OK for me', checked: !!r.doctorAck, iconName: 'shield' })}</div>` : ''}
       ${extra.length ? `<div class="card tight me-notes">${extra.map((t) => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
     </section>
-    ${answered ? sec({ title: 'Your answers', rows: ansRows, note: r.acceptedAt ? `You confirmed that Hillpace is not a medical device on ${esc(dateMed(r.acceptedAt))}.` : '' }) : ''}
+    ${answered ? sec({ title: 'Your answers', rows: ansRows, note: r.acceptedAt ? `You confirmed that Walking Companion is not a medical device on ${esc(dateMed(r.acceptedAt))}.` : '' }) : ''}
     <button type="button" class="btn btn-ghost btn-block" data-act="review-readiness">${icon('edit')}${answered ? 'Review my answers' : 'Answer the questions'}</button>
     ${sec({
       title: 'Food and weight',
@@ -1235,28 +1236,28 @@ function privacyPage() {
   }
   const dev = deviceWord();
   const storeTxt = cloud()
-    ? 'In this web version, your data is saved privately to your account so it’s there wherever you open Hillpace. Other people can’t see it.'
+    ? 'In this web version, your data is saved privately to your account so it’s there wherever you open Walking Companion. Other people can’t see it.'
     : isNative
-      ? 'They are kept in Hillpace’s private storage on your iPhone. If you use iCloud or computer backups, they’re included in those backups, which Apple handles.'
+      ? 'They are kept in Walking Companion’s private storage on your iPhone. If you use iCloud or computer backups, they’re included in those backups, which Apple handles.'
       : 'They are kept in this browser’s storage on your device. Clearing your browser data deletes them.';
   const short = cloud()
-    ? 'Hillpace has no analytics, no ads and no tracking. What you enter is saved privately to your account, under your control.'
-    : `Hillpace has no account, no analytics, no ads and no tracking. What you enter stays on your ${dev}, under your control.`;
+    ? 'Walking Companion has no analytics, no ads and no tracking. What you enter is saved privately to your account, under your control.'
+    : `Walking Companion has no account, no analytics, no ads and no tracking. What you enter stays on your ${dev}, under your control.`;
   return `<article class="card me-doc prose">
     <p class="me-doc-date">Last updated ${POLICY_DATE}</p>
     <p><b>The short version:</b> ${short}</p>
-    <h3>What Hillpace stores</h3>
+    <h3>What Walking Companion stores</h3>
     <p>Your plan answers (such as age, height, weight and goal), readiness answers, workouts, weigh-ins, custom workouts and settings. ${storeTxt}</p>
     <h3>What we don’t collect</h3>
-    <p>We don’t run servers that receive your data. Hillpace has no analytics or advertising tools and no third-party tracking. We can’t see your data, and we never sell or share it.</p>
+    <p>We don’t run servers that receive your data. Walking Companion has no analytics or advertising tools and no third-party tracking. We can’t see your data, and we never sell or share it.</p>
     ${features.health ? `<h3>Apple Health</h3>
-    <p>If you connect Apple Health, Hillpace saves your workouts (walks or runs with estimated active energy and distance) and your weigh-ins, and reads your body weight to keep your trend up to date. Health data is used only for these features. It is never shared, never used for advertising or marketing, and never leaves your iPhone through Hillpace. You can change or remove access at any time in the Health app.</p>` : ''}
+    <p>If you connect Apple Health, Walking Companion saves your workouts (walks or runs with estimated active energy and distance) and your weigh-ins, and reads your body weight to keep your trend up to date. Health data is used only for these features. It is never shared, never used for advertising or marketing, and never leaves your iPhone through Walking Companion. You can change or remove access at any time in the Health app.</p>` : ''}
     <h3>${features.notifications ? 'Notifications and voice' : 'Voice cues'}</h3>
     <p>${features.notifications ? 'Reminders and workout cues are local notifications scheduled on your iPhone. No push service or server is involved. ' : ''}Spoken cues use the speech voices built into your device.${isNative ? '' : ' In a web browser, some voices supplied by the browser may be processed online by the browser maker.'}</p>
     <h3>Your controls</h3>
     <p>You can export all your data as a backup file or a spreadsheet, and erase everything, in Me, then Back up & restore.${isNative ? ' Deleting the app also deletes its data from your iPhone.' : ''}</p>
     <h3>Children</h3>
-    <p>Hillpace is for ages 13 and up. Weight-loss targets and calorie intake suggestions are shown to adults only. It is not directed at children under 13.</p>
+    <p>Walking Companion is for ages 13 and up. Weight-loss targets and calorie intake suggestions are shown to adults only. It is not directed at children under 13.</p>
     <h3>Changes</h3>
     <p>If this policy changes, we’ll update this page and the date at the top.</p>
     <h3>Contact</h3>
@@ -1270,10 +1271,10 @@ function termsPage() {
     <p class="me-doc-date">Last updated ${POLICY_DATE}</p>
     <h3>Licence</h3>
     ${isNative
-    ? `<p>This app uses Apple’s standard licence agreement. Your use of Hillpace is governed by Apple’s Licensed Application End User License Agreement, available at <span class="me-select-text">apple.com/legal/internet-services/itunes/dev/stdeula</span>.</p>`
-    : `<p>Hillpace is free to use for your personal training. These terms apply to your use of the Hillpace web app.</p>`}
+    ? `<p>This app uses Apple’s standard licence agreement. Your use of Walking Companion is governed by Apple’s Licensed Application End User License Agreement, available at <span class="me-select-text">apple.com/legal/internet-services/itunes/dev/stdeula</span>.</p>`
+    : `<p>Walking Companion is free to use for your personal training. These terms apply to your use of the Walking Companion web app.</p>`}
     <h3>Not medical advice</h3>
-    <p>Hillpace provides general fitness information and workout guidance. It is not a medical device. It doesn’t diagnose, treat or prevent any condition, and it isn’t a substitute for advice from a doctor or other qualified professional. Check with your doctor before starting a new exercise programme or changing how you eat, especially if you have a health condition, are pregnant or take regular medicine.</p>
+    <p>Walking Companion provides general fitness information and workout guidance. It is not a medical device. It doesn’t diagnose, treat or prevent any condition, and it isn’t a substitute for advice from a doctor or other qualified professional. Check with your doctor before starting a new exercise programme or changing how you eat, especially if you have a health condition, are pregnant or take regular medicine.</p>
     <h3>Exercise safely</h3>
     <p>Exercise carries a risk of injury. You choose and control your treadmill settings and your route. On a treadmill, use the safety key and follow its maker’s instructions; outdoors, take care around traffic. Stop straight away if you feel unwell. Health & safety lists the warning signs.</p>
     <h3>Estimates</h3>
@@ -1292,20 +1293,20 @@ function supportPage() {
   const platform = isNative ? 'iPhone' : isArtifact ? 'web' : 'browser';
   let faq = [
     isNative
-      ? ['Why do voice cues stop when my phone locks?', `<p>iPhone pauses apps when the screen locks, so spoken cues play only while Hillpace is on screen. Hillpace keeps the screen awake during a workout. If the phone does lock, interval changes arrive as notifications with a sound (or a vibration on silent), as long as you’ve allowed notifications in Me, then Reminders.</p>`]
-      : ['Why do voice cues stop when my screen locks?', `<p>Browsers pause pages that aren’t on screen, so spoken cues play only while Hillpace is open and visible. During a workout Hillpace asks your browser to keep the screen awake, where your browser allows it. Keep the page open on your treadmill console and turn the volume up.</p>`],
-    ['Why don’t my calories match my treadmill or watch?', `<p>Every device uses its own formula. Hillpace shows estimated active energy from the ACSM equations, which leaves out the energy you’d use at rest anyway, while many treadmills show total energy. All of these are estimates and can differ substantially from your actual burn. <a class="me-inline" href="#me-calc">How we calculate</a></p>`],
+      ? ['Why do voice cues stop when my phone locks?', `<p>iPhone pauses apps when the screen locks, so spoken cues play only while Walking Companion is on screen. Walking Companion keeps the screen awake during a workout. If the phone does lock, interval changes arrive as notifications with a sound (or a vibration on silent), as long as you’ve allowed notifications in Me, then Reminders.</p>`]
+      : ['Why do voice cues stop when my screen locks?', `<p>Browsers pause pages that aren’t on screen, so spoken cues play only while Walking Companion is open and visible. During a workout Walking Companion asks your browser to keep the screen awake, where your browser allows it. Keep the page open on your treadmill console and turn the volume up.</p>`],
+    ['Why don’t my calories match my treadmill or watch?', `<p>Every device uses its own formula. Walking Companion shows estimated active energy from the ACSM equations, which leaves out the energy you’d use at rest anyway, while many treadmills show total energy. All of these are estimates and can differ substantially from your actual burn. <a class="me-inline" href="#me-calc">How we calculate</a></p>`],
     ['How do I back up my data?', `<p>Go to Me, then Back up & restore, and tap Export backup. Save the file somewhere safe, such as iCloud Drive or Files. To restore, tap Import backup and choose the file. A monthly backup is a good habit. <a class="me-inline" href="#me-data">Back up now</a></p>`],
     ['How do I change my plan or training days?', `<p>Tap Edit plan answers on the Me tab to change your goal, schedule, where you walk or readiness answers. Your plan updates from the current week.</p>`],
   ];
   if (isNative && legal.support) faq = legal.support.faq; // the same answers as the published support page
   if (USE_LINK) return `<section class="card me-contact">
       <p class="eyebrow">Get help</p>
-      <p class="body-s">Report a problem or ask a question on the Hillpace support page. A real person reads every message.</p>
+      <p class="body-s">Report a problem or ask a question on the Walking Companion support page. A real person reads every message.</p>
       <div class="btn-row">
         <a class="btn btn-primary me-btn" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener noreferrer">${icon('external')}Open support page</a>
       </div>
-      <p class="body-xs">Please mention your app version: Hillpace ${esc(VERSION)} (${platform}).</p>
+      <p class="body-xs">Please mention your app version: Walking Companion ${esc(VERSION)} (${platform}).</p>
     </section>
     <section class="me-sec"><h2 class="group-title">Common questions</h2><div class="group me-faq ${isNative && legal.support ? 'me-legal' : ''}">${faq.map(([q, a]) => `<details><summary><span>${esc(q)}</span>${icon('chevD')}</summary><div class="me-faq-body">${a}</div></details>`).join('')}</div></section>`;
   return `<section class="card me-contact">
@@ -1313,9 +1314,9 @@ function supportPage() {
       <p class="me-email" id="me-email">${esc(SUPPORT_EMAIL)}</p>
       <div class="btn-row">
         <button type="button" class="btn btn-primary" data-act="copy-email">${icon('copy')}Copy address</button>
-        ${isNative ? `<a class="btn me-btn btn-ghost" href="mailto:${esc(SUPPORT_EMAIL)}?subject=${encodeURIComponent(`Hillpace ${VERSION} support`)}">${icon('mail')}Write an email</a>` : ''}
+        ${isNative ? `<a class="btn me-btn btn-ghost" href="mailto:${esc(SUPPORT_EMAIL)}?subject=${encodeURIComponent(`Walking Companion ${VERSION} support`)}">${icon('mail')}Write an email</a>` : ''}
       </div>
-      <p class="body-xs">Please mention your app version: Hillpace ${esc(VERSION)} (${platform}).</p>
+      <p class="body-xs">Please mention your app version: Walking Companion ${esc(VERSION)} (${platform}).</p>
     </section>
     <section class="me-sec"><h2 class="group-title">Common questions</h2><div class="group me-faq ${isNative && legal.support ? 'me-legal' : ''}">${faq.map(([q, a]) => `<details><summary><span>${esc(q)}</span>${icon('chevD')}</summary><div class="me-faq-body">${a}</div></details>`).join('')}</div></section>`;
 }
@@ -1408,7 +1409,7 @@ function commitField(v, field, input) {
       const n = parseNum(raw);
       if (n == null) return 'Enter your age.';
       if (Number.isNaN(n) || n !== Math.round(n)) return 'Enter your age in whole years.';
-      if (n < 13) return 'Hillpace is made for ages 13 and up.';
+      if (n < 13) return 'Walking Companion is made for ages 13 and up.';
       if (n > 100) return 'Enter an age up to 100.';
       let toFit = false;
       save((m) => { m.profile.age = n; if (n < 18 && m.profile.goal === 'lose') { m.profile.goal = 'fitter'; m.profile.goalWeight = null; toFit = true; } });
@@ -1507,7 +1508,7 @@ async function onSwitch(v, sw, on, input) {
     case 'voice': save((m) => { m.profile.cues.voice = on; }); if (on) loadVoices(v); else stopSpeaking(); paint(v); break;
     case 'beeps': save((m) => { m.profile.cues.beeps = on; }); if (on) { unlockAudio(); beep('tick'); } break;
     case 'reminders': input.disabled = true; await setReminders(v, on); break;
-    case 'health': if (!on) { save((m) => { m.profile.health.enabled = false; }); toast('Apple Health off. Hillpace won’t save or read Health data.'); paint(v); } break;
+    case 'health': if (!on) { save((m) => { m.profile.health.enabled = false; }); toast('Apple Health off. Walking Companion won’t save or read Health data.'); paint(v); } break;
     case 'watch': save((m) => { m.profile.health.watch = on; }); break;
     case 'doctorAck': {
       if (on) {

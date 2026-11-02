@@ -263,7 +263,7 @@ export const customs = () => state.main.customs || [];
 
 /** Resolve any workout id to { id, name, focus, desc, category, kind, intensity, custom, build(L, short) }. */
 export function getWorkout(id) {
-  if (id === FREE_WALK_ID) return { id, free: true, category: 'free', kind: 'easy', name: 'Just walk', focus: 'Open-ended walk', intensity: 1, desc: 'Walk for as long as you like. Change your pace as you go; Hillpace keeps time, distance and an estimate of your effort.', build: () => freeWalkSegments() };
+  if (id === FREE_WALK_ID) return { id, free: true, category: 'free', kind: 'easy', name: 'Just walk', focus: 'Open-ended walk', intensity: 1, desc: 'Walk for as long as you like. Change your pace as you go; Walking Companion keeps time, distance and an estimate of your effort.', build: () => freeWalkSegments() };
   if (WORKOUTS[id]) return { id, ...WORKOUTS[id], name: workoutName(id) };
   const c = customs().find((x) => x.id === id);
   if (!c) return null;

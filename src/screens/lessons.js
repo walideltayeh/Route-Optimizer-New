@@ -7,9 +7,9 @@ export const LESSONS = [
     title: 'Why incline works',
     minutes: 2,
     body: `<p>Walking uphill asks your legs to lift your body as well as carry it forward. That raises your heart rate and the energy you use without making you go faster, so your feet still land at walking pace, which many people find kinder to their joints than running.</p>
-<p>The standard ACSM walking equation shows the effect. At 5 km/h (3.1 mph), walking at a 10% incline uses well over twice the active energy of walking on the flat. Like every figure in Hillpace, that is an estimate.</p>
+<p>The standard ACSM walking equation shows the effect. At 5 km/h (3.1 mph), walking at a 10% incline uses well over twice the active energy of walking on the flat. Like every figure in Walking Companion, that is an estimate.</p>
 <p>Climbing also works your calves, hamstrings and glutes harder, so your plan raises the incline a little at a time while your calves and Achilles tendons adapt. If the back of your heel or calf feels sore, stay lower for a few more sessions.</p>
-<p><b>No incline?</b> On a flat treadmill or walking pad, Hillpace turns each climb into slightly faster walking, so your sessions still get harder as the plan moves on. Outdoors, hills on your route do the same job as incline: slow down a little on the way up and let your effort, not your speed, guide you.</p>`,
+<p><b>No incline?</b> On a flat treadmill or walking pad, Walking Companion turns each climb into slightly faster walking, so your sessions still get harder as the plan moves on. Outdoors, hills on your route do the same job as incline: slow down a little on the way up and let your effort, not your speed, guide you.</p>`,
     source: 'ACSM’s Guidelines for Exercise Testing and Prescription; CDC physical activity guidance.',
   },
   {
@@ -17,7 +17,7 @@ export const LESSONS = [
     title: 'Effort and the talk test',
     minutes: 2,
     body: `<p>You don’t need a heart-rate monitor to judge effort. The talk test is a simple guide: during moderate activity you can talk but not sing, and during vigorous activity you can only say a few words before you need a breath.</p>
-<p>Hillpace uses a 1 to 10 effort scale with the same anchors:</p>
+<p>Walking Companion uses a 1 to 10 effort scale with the same anchors:</p>
 <ul><li><b>3–4:</b> you can talk in full sentences</li><li><b>5–6:</b> short phrases only</li><li><b>7–8:</b> a few words at a time</li><li><b>9–10:</b> you can’t talk</li></ul>
 <p>Climbs and power walks should feel like 5 to 7. Recoveries should bring you back to 3 or 4 so you can work hard again. After each workout you rate the whole session. If two sessions in a row feel very hard, your plan eases off. If two feel easy, it offers a small step up, and you decide. Rate honestly: there is no prize for a high number.</p>`,
     source: 'CDC, Measuring physical activity intensity; WHO guidelines on physical activity (2020).',
@@ -26,7 +26,7 @@ export const LESSONS = [
     id: 'warmup',
     title: 'Warm-up and cool-down',
     minutes: 2,
-    body: `<p>Every Hillpace workout starts with a few minutes of easy and brisk walking, on a low incline if you have one, and ends the same way. The warm-up raises your heart rate and breathing gradually, warms your muscles and gives your calves and Achilles tendons time to adjust before the steeper work begins.</p>
+    body: `<p>Every Walking Companion workout starts with a few minutes of easy and brisk walking, on a low incline if you have one, and ends the same way. The warm-up raises your heart rate and breathing gradually, warms your muscles and gives your calves and Achilles tendons time to adjust before the steeper work begins.</p>
 <p>The cool-down lets your heart rate and breathing settle. Stopping suddenly after hard effort can leave some people light-headed, because blood pools in the legs when they stop moving. A few easy minutes of walking helps prevent that.</p>
 <p>Gentle calf and hip stretches afterwards can feel good, but they are optional. If you are short on time, shorten the main set rather than the warm-up: the 30-minute version on Today keeps both ends of the workout and still counts toward your week.</p>`,
     source: 'ACSM’s Guidelines for Exercise Testing and Prescription; NHS exercise guidance.',
@@ -35,7 +35,7 @@ export const LESSONS = [
     id: 'handrails',
     title: 'Handrails and form',
     minutes: 2,
-    body: `<p>Holding the handrails on a steep incline takes part of your weight off your legs. Research on treadmill walking shows this lowers the real effort, so energy figures on a console or in an app can be well above what you actually used. If you usually hold on, turn off “I walk hands-free” in Me, then Where you walk, and Hillpace lowers its estimates on inclines of 8% and above.</p>
+    body: `<p>Holding the handrails on a steep incline takes part of your weight off your legs. Research on treadmill walking shows this lowers the real effort, so energy figures on a console or in an app can be well above what you actually used. If you usually hold on, turn off “I walk hands-free” in Me, then Where you walk, and Walking Companion lowers its estimates on inclines of 8% and above.</p>
 <p>A light touch for balance is fine. Good form on a slope looks like this:</p>
 <ul><li>Stand tall and lean slightly forward from the ankles, not the waist.</li><li>Look ahead rather than down at your feet.</li><li>Take shorter steps as the slope gets steeper.</li><li>Let your arms swing naturally.</li></ul>
 <p>If you can’t keep up without gripping the rails, lower the speed or incline instead. A setting you can walk hands-free is a better workout than a harder one you have to hang on to.</p>`,
@@ -58,7 +58,7 @@ export const LESSONS = [
     body: `<p>When you are eating a little less, what you eat matters as well as how much. Protein tends to be more filling than refined snacks, and getting enough of it alongside regular activity can help you hold on to muscle while you lose weight.</p>
 <p>Some practical ideas:</p>
 <ul><li>Include a protein food at each meal: eggs, yoghurt, fish, chicken, beans, lentils, tofu or lean meat.</li><li>Fill half your plate with vegetables or salad for volume and fibre.</li><li>Choose water or unsweetened drinks most of the time.</li><li>Feeling hungry after a workout is normal. A balanced meal usually satisfies better than a large snack.</li></ul>
-<p>Hillpace doesn’t prescribe what to eat. If you have kidney disease, diabetes or another health condition, or you are unsure what suits you, ask your doctor or a registered dietitian.</p>`,
+<p>Walking Companion doesn’t prescribe what to eat. If you have kidney disease, diabetes or another health condition, or you are unsure what suits you, ask your doctor or a registered dietitian.</p>`,
     source: 'NHS Eatwell Guide; WHO healthy diet guidance.',
   },
   {
@@ -66,7 +66,7 @@ export const LESSONS = [
     title: 'Plateaus and water weight',
     minutes: 2,
     body: `<p>Body weight can swing by 1 kg (about 2 lb) or more from one day to the next. Salt, carbohydrate, hormones, how much you have drunk and what is still in your digestive system all move the scale. A new exercise routine can also make your muscles hold extra water for a while as they recover.</p>
-<p>That is why Hillpace shows a smoothed trend instead of reacting to every weigh-in. The trend moves slowly and tells you more than any single day.</p>
+<p>That is why Walking Companion shows a smoothed trend instead of reacting to every weigh-in. The trend moves slowly and tells you more than any single day.</p>
 <p>A real plateau is when the trend stays flat for three to four weeks. It is common, partly because a smaller body uses less energy. If it happens:</p>
 <ul><li>Weigh in the same way each time: same time of day, before eating.</li><li>Look at your other progress: minutes, distance, climb and how you feel.</li><li>Consider a small change to your eating, or add more daily steps.</li></ul>
 <p>Weighing in a few times a week works for many people, and so does not weighing in at all. You can hide weight figures at any time in Me.</p>`,
@@ -106,9 +106,9 @@ export const LESSONS = [
     id: 'outdoor',
     title: 'Walking outdoors',
     minutes: 2,
-    body: `<p>Walking outside needs no equipment. Hillpace coaches it by effort: how hard it feels and how easily you can talk. A few habits keep it safe and comfortable:</p>
+    body: `<p>Walking outside needs no equipment. Walking Companion coaches it by effort: how hard it feels and how easily you can talk. A few habits keep it safe and comfortable:</p>
 <ul><li><b>Be seen.</b> Wear bright or reflective clothing, and carry a light after dark. Where there is no pavement or path, walk facing oncoming traffic.</li><li><b>Stay aware.</b> Keep your cues at a volume that still lets you hear traffic and cyclists, and look up when you cross.</li><li><b>Wear the right shoes.</b> Comfortable, supportive walking or running shoes with a good grip suit most routes.</li><li><b>Treat hills as a bonus.</b> Slow down on the way up so your effort stays where the cue asks, and take shorter steps on the way down.</li><li><b>Mind the heat.</b> On hot days walk early or late, choose shade, drink water before and after, and carry some on longer walks. Ease off if you feel dizzy, sick or unusually tired.</li></ul>
-<p>Outdoors, Hillpace can’t see your real speed or the slope under your feet, so distance and energy are estimates based on your paces on flat ground.</p>`,
+<p>Outdoors, Walking Companion can’t see your real speed or the slope under your feet, so distance and energy are estimates based on your paces on flat ground.</p>`,
     source: 'NHS, Walking for health; CDC guidance on pedestrian safety and heat; The Highway Code (UK), rules for pedestrians.',
   },
 ];

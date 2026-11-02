@@ -1,14 +1,14 @@
 // Migration from the earlier single-file "Incline Interval Coach" page (same artifact URL, versions 1–3).
 // That version stored, per user, a doc data/users/<uid>/profile = {profile, weights, updated}
 // and a subcollection data/users/<uid>/profile/sessions/<id>. Its calories were GROSS (included resting burn);
-// Hillpace shows NET active calories, so we subtract the resting cost (1 MET) when converting.
+// Walking Companion shows NET active calories, so we subtract the resting cost (1 MET) when converting.
 import { defaultMain, uid as makeId } from './store.js';
 
 const num = (x) => (typeof x === 'number' && isFinite(x) ? x : null);
 const str = (x, max = 300) => (typeof x === 'string' ? x.slice(0, max) : '');
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Convert the old {profile, weights, sessions} shape into Hillpace {main, sessions}. Returns null if nothing usable. */
+/** Convert the old {profile, weights, sessions} shape into Walking Companion {main, sessions}. Returns null if nothing usable. */
 export function convertV1({ profile, weights, sessions }) {
   const p = profile && typeof profile === 'object' ? profile : {};
   const w = (Array.isArray(weights) ? weights : []).filter((x) => x && YMD.test(x.d) && num(x.kg) > 20 && x.kg < 400).map((x) => ({ d: x.d, kg: Math.round(x.kg * 10) / 10 }));
@@ -45,7 +45,7 @@ export function convertV1({ profile, weights, sessions }) {
     return {
       id: str(s.id, 40).replace(/[^a-z0-9]/gi, '') || makeId(),
       date: new Date(s.date).toISOString(),
-      workoutId: null, // old ids don't map onto Hillpace workouts
+      workoutId: null, // old ids don't map onto Walking Companion workouts
       name: str(s.name, 60) || 'Treadmill session',
       planSlot: null, level: null, length: Math.round(planned / 60),
       durationSec: sec, plannedSec: planned,

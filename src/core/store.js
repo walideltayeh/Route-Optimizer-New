@@ -607,9 +607,9 @@ function onSaveError(e) {
   const code = e && e.code;
   if (adapter.name === 'cloud') {
     if (code === 'quota_exceeded') setSync('warn', 'Account storage is full', 'Your latest changes are only in this browser. Export a backup to keep them.');
-    else setSync('warn', 'Not synced yet', 'Your latest changes are only in this browser for now. Hillpace keeps trying to sync them.');
+    else setSync('warn', 'Not synced yet', 'Your latest changes are only in this browser for now. Walking Companion keeps trying to sync them.');
   } else if (adapter.name === 'device') {
-    setSync('warn', 'Couldn’t save to iPhone storage', 'Hillpace will try again. If this keeps happening, free up some space and export a backup.');
+    setSync('warn', 'Couldn’t save to iPhone storage', 'Walking Companion will try again. If this keeps happening, free up some space and export a backup.');
   } else {
     setSync('warn', 'Couldn’t save', 'Export a backup to keep your latest changes.');
   }

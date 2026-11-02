@@ -1,5 +1,5 @@
-// End-to-end journeys against dist/hillpace.html (Playwright, Node).
-//   node scripts/build.mjs --dev && node tests/e2e.mjs [--only a,f,c,d,g,h,e] [--page path/to/hillpace.html] [--headed]
+// End-to-end journeys against dist/walking-companion.html (Playwright, Node).
+//   node scripts/build.mjs --dev && node tests/e2e.mjs [--only a,f,c,d,g,h,e] [--page path/to/walking-companion.html] [--headed]
 //   Journey a also runs b (the same fresh user starts the workout).
 // Fails (exit 1) on any failed check, page error, console error, or an unregistered cross-screen action.
 // Screenshots for review are written to tests/shots/.
@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-const PAGE = opt('--page', join(ROOT, 'dist/hillpace.html'));
+const PAGE = opt('--page', join(ROOT, 'dist/walking-companion.html'));
 const ONLY = (opt('--only', 'a,f,c,d,g,h,e') || '').split(',');
 const SHOTS = join(ROOT, 'tests/shots');
 mkdirSync(SHOTS, { recursive: true });

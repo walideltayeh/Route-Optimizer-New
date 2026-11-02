@@ -1,4 +1,4 @@
-// Who is using Hillpace, and where their data lives. Used by the landing (sign-in) page and Me.
+// Who is using Walking Companion, and where their data lives. Used by the landing (sign-in) page and Me.
 //
 //   kind 'claude'   – signed in to claude.ai: data is private to this person's account and syncs across their devices
 //   kind 'readonly' – signed in, but the page was shared with view-only access: data can only be kept on this device

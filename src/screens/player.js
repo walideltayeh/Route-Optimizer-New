@@ -185,15 +185,15 @@ function cueStatusHtml(kind, surface = activeSurface()) {
   const extra = voiceOff ? '<span class="pr-cue-extra">Voice cues are off in settings. Beeps and the on-screen countdown still guide you.</span>' : '';
   if (kind === 'free') {
     const tens = !voiceOff && (+p.cues.detail || 2) >= 2;
-    const what = tens ? 'Hillpace tells you every 10 minutes how long you’ve walked. ' : '';
+    const what = tens ? 'Walking Companion tells you every 10 minutes how long you’ve walked. ' : '';
     const freeExtra = voiceOff ? '<span class="pr-cue-extra">Voice cues are off in settings.</span>' : '';
     const lock = env === 'ios' ? 'If your phone locks, voice cues pause but your time keeps counting.' : 'Voice cues pause if the screen locks or you switch apps, but your time keeps counting.';
-    return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>${env === 'ios' ? 'Keep Hillpace open' : 'Keep this page open'}</b>${what}${lock}${freeExtra}</div>`;
+    return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>${env === 'ios' ? 'Keep Walking Companion open' : 'Keep this page open'}</b>${what}${lock}${freeExtra}</div>`;
   }
   if (kind === 'loading') return `<span class="banner-icon">${icon('bell')}</span><div class="banner-body"><b>Checking cue settings</b>${extra}</div>`;
   if (kind === 'granted') return `<span class="banner-icon">${icon('bell')}</span><div class="banner-body"><b>Lock-screen cues are on</b>If your phone locks, interval changes arrive as notifications with a vibration.${extra}</div>`;
   if (kind === 'prompt') return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>Keep the screen on</b>Voice cues stop if your phone locks. Allow lock-screen cues to get each interval change as a notification with a vibration.${extra}<button class="btn btn-sm btn-ghost pr-allow" type="button" data-act="allow-cues">${icon('bell')}Allow lock-screen cues</button></div>`;
-  if (kind === 'denied') return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>Keep the screen on</b>Voice cues stop if your phone locks, and notifications for Hillpace are off, so interval changes won’t reach the lock screen.${extra}</div>`;
+  if (kind === 'denied') return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>Keep the screen on</b>Voice cues stop if your phone locks, and notifications for Walking Companion are off, so interval changes won’t reach the lock screen.${extra}</div>`;
   if (surface === 'outdoor') return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>Keep the screen on for voice cues</b>Outdoors your phone is usually in a pocket. In a web browser, voice cues and beeps only play while this page is open and the screen is on.${extra}</div>`;
   return `<span class="banner-icon">${icon('voice')}</span><div class="banner-body"><b>Keep this page open</b>Voice cues and beeps stop if the screen locks or you switch to another app.${extra}</div>`;
 }
@@ -611,7 +611,7 @@ function createRun(plan, snap) {
   function schedule() {
     if (free || !features.lockScreenCues || !engine.running || engine.finished) return;
     const list = engine.upcoming().map((b) => {
-      if (b.finish || !b.seg) return { at: b.at, title: 'Workout complete', body: 'Open Hillpace to see your summary.' };
+      if (b.finish || !b.seg) return { at: b.at, title: 'Workout complete', body: 'Open Walking Companion to see your summary.' };
       const { n, N } = modeOrdinal(segs, b.index);
       const body = outdoor ? `Effort ${effortFor(b.seg.type).rpe} out of 10 · ${effortFor(b.seg.type).talk}` : `${speedStr(engine.speed(b.seg))} ${speedUnit()}${hasInc ? ` · ${incShort(b.seg.incline)}` : ''}`;
       return { at: b.at, title: `Next: ${outdoor ? effName(b.seg.type) : modeName(b.seg.type)} (${n} of ${N})`, body };

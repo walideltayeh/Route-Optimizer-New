@@ -106,7 +106,7 @@ let artifactDb = null; // {db, uid} on claude.ai, used once to bring over data f
 
 /**
  * The earlier "Incline Interval Coach" version of this page stored workouts under a different path.
- * If this account has nothing in Hillpace yet, convert that history and finish setup in edit mode.
+ * If this account has nothing in Walking Companion yet, convert that history and finish setup in edit mode.
  */
 async function migrateEarlierVersion() {
   if (!artifactDb || state.main.onboarded || state.sessions.length || state.main.weights.length) return;
@@ -116,7 +116,7 @@ async function migrateEarlierVersion() {
   actions.closeOnboarding && actions.closeOnboarding();
   actions.openOnboarding({ edit: true });
   const n = data.sessions.length, w = data.main.weights.length;
-  toast(`Welcome to Hillpace. We brought over ${n} workout${n === 1 ? '' : 's'}${w ? ` and ${w} weigh-in${w === 1 ? '' : 's'}` : ''}. Finish a few questions to build your plan.`, { ms: 6000 });
+  toast(`Welcome to Walking Companion. We brought over ${n} workout${n === 1 ? '' : 's'}${w ? ` and ${w} weigh-in${w === 1 ? '' : 's'}` : ''}. Finish a few questions to build your plan.`, { ms: 6000 });
 }
 
 async function chooseAdapter() {
@@ -133,7 +133,7 @@ async function chooseAdapter() {
       artifactDb = { db, uid };
       const a = store.artifactAdapter(db, uid, store.applyRemote);
       // Live updates stopped (writes still go through and report their own errors).
-      a.onError = () => store.setSync('warn', 'Live sync paused', 'Changes from your other devices show up the next time you open Hillpace.');
+      a.onError = () => store.setSync('warn', 'Live sync paused', 'Changes from your other devices show up the next time you open Walking Companion.');
       return a;
     } catch { return null; }
   }
@@ -196,5 +196,5 @@ onAppState((active) => {
   if (!document.body.classList.contains('immersive')) actions.refresh(); // dates may have rolled over
 });
 
-window.addEventListener('error', (e) => console.error('[hillpace]', e.message));
+window.addEventListener('error', (e) => console.error('[walking-companion]', e.message));
 boot().catch((e) => { console.error(e); toast('Something went wrong while starting. Your data is safe.'); });

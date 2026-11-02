@@ -26,7 +26,7 @@ const DAY_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 const PRESET_DAYS = { 3: [1, 3, 5], 4: [1, 3, 5, 6], 5: [1, 2, 4, 5, 6], 6: [1, 2, 3, 4, 5, 6] };
 // 'treadmill' is the "Where will you walk most?" step (the id is kept so saved drafts and deep links still resolve).
 const ORDER = ['welcome', 'goal', 'about', 'body', 'goalweight', 'pace', 'treadmill', 'fitness', 'schedule', 'readiness', 'reveal', 'permissions'];
-const ACCEPT_TEXT = 'I understand Hillpace is not a medical device. I’ll check with a doctor before starting and before making medical decisions.';
+const ACCEPT_TEXT = 'I understand Walking Companion is not a medical device. I’ll check with a doctor before starting and before making medical decisions.';
 
 const GOALS = [
   { value: 'lose', label: 'Lose weight', sub: 'Workouts plus a goal date range and a suggested daily intake', icon: 'trendDown' },
@@ -35,7 +35,7 @@ const GOALS = [
   { value: 'hike', label: 'Train for a hike', sub: 'Climbing strength for trails and long days out', icon: 'mountain' },
 ];
 
-/** Original readiness questions (written for Hillpace; not a standard questionnaire). me.js may import these. */
+/** Original readiness questions (written for Walking Companion; not a standard questionnaire). me.js may import these. */
 export const READINESS_QUESTIONS = [
   { id: 'heart', text: 'Has a doctor ever told you that you have a heart condition or high blood pressure?' },
   { id: 'chest', text: 'Do you feel pain or pressure in your chest at rest, in daily life, or when you exercise?' },
@@ -369,7 +369,7 @@ function windowText(win) {
 
 const NUM = {
   age: { dec: 0, step: 1, start: 35, min: () => 13, max: () => 100, get: () => d.age, set: (v) => { d.age = v == null ? null : Math.round(v); },
-    err: (v) => (v < 13 ? 'Hillpace is made for ages 13 and up.' : v > 100 ? 'Enter an age up to 100.' : null) },
+    err: (v) => (v < 13 ? 'Walking Companion is made for ages 13 and up.' : v > 100 ? 'Enter an age up to 100.' : null) },
   heightCm: { dec: 0, min: () => 120, max: () => 230, get: () => d.heightCm, set: (v) => { d.heightCm = v; } },
   ft: { dec: 0, min: () => 3, max: () => 7, get: () => d.hft, set: (v) => { d.hft = v; syncFtIn(); } },
   inch: { dec: 0, min: () => 0, max: () => 11, get: () => d.hin, set: (v) => { d.hin = v; syncFtIn(); } },
@@ -456,7 +456,7 @@ const STEPS = {
         <span class="onb-mark">${hillMark()}</span>
         <div class="onb-hero-text">
           <p class="eyebrow">Walking coach</p>
-          <h1 class="onb-brand" tabindex="-1">Hillpace</h1>
+          <h1 class="onb-brand" tabindex="-1">Walking Companion</h1>
           <p class="onb-promise">Walking plans that fit where you walk: incline, flat or outdoors.</p>
         </div>
         ${chart ? `<div class="onb-hero-chart">${chart}<div class="onb-hero-cap"><span>Hill Repeats</span><span class="num">45 min · 7 climbs</span></div></div>` : ''}
@@ -540,7 +540,7 @@ const STEPS = {
       const g = goalLimits();
       if (!g) {
         return head('Your goal', 'Goal weight') + banner('', 'info', 'Let’s focus on fitness instead',
-          'Your weight is already in the lower part of the healthy range for your height, so Hillpace won’t set a weight-loss goal. You’ll still get the full 12-week plan.') +
+          'Your weight is already in the lower part of the healthy range for your height, so Walking Companion won’t set a weight-loss goal. You’ll still get the full 12-week plan.') +
           `<div class="stack"><button type="button" class="btn btn-primary btn-block" data-act="to-fitter">Build a fitness plan instead</button><button type="button" class="btn btn-text btn-block" data-act="to-goal">Choose a different goal</button></div>`;
       }
       if (d.goalWeight == null) d.goalWeight = suggestGoal(g);
@@ -731,7 +731,7 @@ const STEPS = {
         cards.push(permCard('notif', 'bell', 'Notifications', 'A reminder on training days, and a banner at each interval change if your phone locks. Voice cues need the screen on.', 'Allow notifications',
           { on: `Allowed. We’ll remind you at ${esc(d.reminderTime)} on training days.`, off: 'Not allowed. You can change this later in the Settings app.', later: 'Skipped. You can turn reminders on later in Me.' }));
       }
-      return head('Optional', 'Two optional extras', 'Hillpace works fully without these. Nothing is asked until you tap a button.') + `<div class="stack">${cards.join('')}</div>`;
+      return head('Optional', 'Two optional extras', 'Walking Companion works fully without these. Nothing is asked until you tap a button.') + `<div class="stack">${cards.join('')}</div>`;
     },
     foot: () => `<button type="button" class="btn btn-primary btn-lg btn-block" data-act="next">Go to my plan</button>`,
     valid: () => null,
@@ -937,7 +937,7 @@ function revealHtml() {
   else if (lose && nums) goalBlock = goalSection();
   else if (lose && !nums) goalBlock = banner('', 'eyeOff', 'Numbers are hidden', `Calories, intake and weight projections are turned off. Your plan tracks minutes, distance${isIncline() ? ' and climb' : ' and effort'}. You can turn numbers back on in Me.`);
   else if (d.goal === 'lose' && !adult()) goalBlock = banner('', 'info', 'Built for fitness', 'Calorie and weight targets are for adults, so your plan focuses on getting fitter.');
-  else if (d.goal === 'lose' && pregnantNow()) goalBlock = banner('', 'heart', 'Built for staying active', 'During pregnancy, Hillpace doesn’t set weight-loss targets, and the hardest interval workouts stay locked. Your plan is set to Get fitter.');
+  else if (d.goal === 'lose' && pregnantNow()) goalBlock = banner('', 'heart', 'Built for staying active', 'During pregnancy, Walking Companion doesn’t set weight-loss targets, and the hardest interval workouts stay locked. Your plan is set to Get fitter.');
 
   const safety = anyYes() ? banner('', 'heart', 'Light and moderate to start', 'Until you confirm you’ve checked with your doctor, your plan uses light and moderate workouts only. Confirm any time in Me, under Health & safety.') : '';
 
@@ -1508,7 +1508,7 @@ function open({ edit: isEdit = false, step = null } = {}) {
   ov.className = 'overlay onb';
   ov.setAttribute('role', 'dialog');
   ov.setAttribute('aria-modal', 'true');
-  ov.setAttribute('aria-label', edit ? 'Edit plan answers' : 'Set up Hillpace');
+  ov.setAttribute('aria-label', edit ? 'Edit plan answers' : 'Set up Walking Companion');
   ov.innerHTML = `<div class="onb-topo" aria-hidden="true">${topo({ w: 520, h: 420, seed: 5, lines: 15, cx: 0.72, cy: 0.22 })}</div>
     <header class="onb-top"></header>
     <div class="onb-stage"></div>
